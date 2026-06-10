@@ -1,78 +1,47 @@
-\chapter{Estado del Arte}
+\chapter{Marco Te\'orico}\label{ch:marco-teorico}
 
-\emph{El siguiente capítulo presenta un ejemplo de Estado del Arte. Se puede observar el uso de referencias bibliográficas, la estructura del contenido y el estilo de redacción académica esperado.}
+El presente marco te\'orico re\'une los modelos conceptuales y tecnol\'ogicos que sustentan el desarrollo del sistema predictivo de accidentabilidad laboral. Se abordan los paradigmas actuales de prevenci\'on de riesgos, las metodolog\'{\i}as de aprendizaje autom\'atico aplicadas a datos tabulares, la necesidad de modelos interpretables y los esquemas de despliegue en la nube.
 
-Este cap\'{\i}tulo asume cierta familiaridad con c\'alculo lambda y computaci\'on cu\'antica. Si este no es el caso del lector, se sugiere leer primero el cap\'{\i}tulo 2 y luego el presente cap\'{\i}tulo.
+\section{Gesti\'on de Riesgos Laborales y el Paradigma de la Prevenci\'on 4.0}
 
-En 1982, Richard Feynman destac\'o que la computaci\'on cl\'asica no alcanza para crear simulaciones de forma eficiente \parencite{Feynman1982}, debido
-a la propia construcci\'on de las computadoras cl\'asicas.
-La simulaci\'on de interacciones entre \(N\) part\'{\i}culas a nivel cu\'antico presenta una complejidad de orden exponencial de los recursos necesarios en la computaci\'on cl\'asica y esto no sucede si lo hici\'eramos directamente con una computadora con propiedades cu\'anticas.
+Hist\'oricamente, la gesti\'on de la seguridad en el \'ambito laboral ha estado dominada por modelos de inspecci\'on y control reactivos. En estos esquemas, la actuaci\'on de las autoridades y de las Aseguradoras de Riesgos del Trabajo (ART) se daba principalmente como respuesta a la ocurrencia de un siniestro o a la recepci\'on de una denuncia, con el fin de mitigar consecuencias legales y econ\'omicas. Sin embargo, los altos costos asociados a la siniestralidad y el impacto del ausentismo en la productividad empresarial han impulsado la necesidad de evolucionar hacia modelos proactivos y planificados.
 
-La computaci\'on cu\'antica puede ser vista como un modelo de computaci\'on para la mec\'anica cu\'antica. La idea es considerar
-los estados de las part\'{\i}culas como estados del sistema computacional, y su evoluci\'on como un proceso de c\'omputo. Como tal,
-puede ser estudiado desde la teor\'{\i}a de lenguajes de programaci\'on, y desde all\'{\i}, la teor\'{\i}a de tipos. Tener una teor\'{\i}a
-de tipos completa para la computaci\'on cu\'antica induce nuevas conexiones con l\'ogica, siguiendo el isomorfismo de Curry-Howard \parencite{SorensenUrzyczyn2006}. Finalmente, este camino redundar\'a en una l\'ogica formal de la mec\'anica cu\'antica, fundamentada
-por las ciencias de la computaci\'on.
+En este contexto, el Estado nacional ha comenzado a promover una modernizaci\'on del sector. Este cambio de paradigma fue formalizado mediante la Resoluci\'on 48/2025 de la Superintendencia de Riesgos del Trabajo (SRT), publicada en el \emph{Bolet\'{\i}n Oficial de la Rep\'ublica Argentina} el 4 de noviembre de 2025. Dicha normativa establece los lineamientos de la ``Prevenci\'on 4.0'', incentivando a las aseguradoras a integrar tecnolog\'{\i}as de la informaci\'on, an\'alisis de grandes vol\'umenes de datos e Inteligencia Artificial para anticipar eventos no deseados \parencite{srt_res48_2025}.
 
-Una de las soluciones m\'as importantes presentadas por la computaci\'on cu\'antica fue dada por Peter Shor,
-en 1994 \parencite{Shor1994}. La importancia del algoritmo de Shor es la utilizaci\'on de la transformada r\'apida cu\'antica de Fourier, que tiene aplicaciones en much\'{\i}simas \'areas. Por ejemplo, permite la descomposici\'on en factores de un n\'umero, de vital importancia
-para romper la criptograf\'{\i}a de clave p\'ublica. Otro algoritmo de gran importancia es el algoritmo de Grover \parencite{Grover1996},
-por Lov K. Grover en 1996, que permite la b\'usqueda de un valor en una secuencia no ordenada, por ejemplo, para todas las combinaciones de mol\'eculas hasta dar con una que cumpla una propiedad en particular.
+La aplicaci\'on de este marco normativo habilita el desarrollo de sistemas predictivos que optimicen la asignaci\'on de recursos limitados, en particular de inspectores y prevencionistas, focalizando los esfuerzos de auditor\'{\i}a en aquellos establecimientos con mayor probabilidad de sufrir un accidente en el corto plazo, en l\'{\i}nea con las nuevas orientaciones de la SRT en materia de prevenci\'on tecnol\'ogica \parencite{srt_prevencion40,srt_res48_2025}.
 
-En principio estos algoritmos se describen en t\'erminos de circuitos.
-En la b\'usqueda de un lenguaje de programaci\'on que permita abstraer los conceptos,
-un concepto que nace es el de \emph{control cl\'asico}, el cual se basa
-en dirigir instrucciones a una computadora cu\'antica desde una computadora cl\'asica. Las primeras nociones de
-este manejo las da Peter Selinger en el a\~no 2004 \parencite{Selinger2004} basado en la idea de qRAM de Knill \parencite{Knill1996},
-el cual propone que es necesario un conjunto de instrucciones de alto nivel que se abstraigan del hardware,
-con un flujo de control cl\'asico.
+En t\'erminos operativos, la adopci\'on de modelos de inteligencia artificial resulta relevante para la gesti\'on de programas regulatorios vigentes como el Programa de Empleadores con Siniestralidad Elevada (PESE). El PESE tiene por objetivo realizar el seguimiento y control de empleadores con altos niveles de siniestralidad, estableciendo acciones espec\'{\i}ficas de prevenci\'on orientadas a reducir la accidentalidad y mejorar las condiciones de salud y seguridad en el trabajo \parencite{srt_pese}.
 
-De este tipo de control es como nace Quipper \parencite{GreenEtAl2013}, un lenguaje
-embebido creado en 2013, que utiliza Haskell como el lenguaje de programaci\'on mediante
-la importaci\'on de librer\'{\i}as, lo que lo clasifica como lenguaje funcional. Se clasifica como
-escalable y expresivo de orden superior.
+Una vez incluido en el PESE, el empleador y su ART deben cumplir obligaciones espec\'{\i}ficas durante un per\'{\i}odo de dos a\~nos, entre las que se destacan la confecci\'on del Informe General del Empleador (IGE), la suscripci\'on de un Plan de Reducci\'on de la Siniestralidad (PRS) con plan de visitas, la actualizaci\'on del Relevamiento General de Riesgos Laborales (RGRL) y el cumplimiento del plan de fiscalizaci\'on por parte de la aseguradora \parencite{srt_pese}. En este escenario, la implementaci\'on de un modelo predictivo permite identificar de manera temprana aquellos establecimientos con trayectorias de mayor riesgo. De este modo, la aseguradora puede intervenir preventivamente antes de que la empresa alcance los umbrales de inclusi\'on en el PESE, reduciendo costos de cumplimiento regulatorio y, fundamentalmente, evitando la materializaci\'on de da\~nos a la salud de los trabajadores.
 
-En el a\~no 2017, se publica QWIRE, un lenguaje de programaci\'on cu\'antica creado para escribir en alto nivel la
-programaci\'on de circuitos cu\'anticos, interpretando a estos como superoperadores en matrices de densidad \parencite{PaykinRandZdancewic2017} (similar a Quipper).
+\section{Modelos Predictivos y Machine Learning para Clasificaci\'on}
 
-Tambi\'en existen lenguajes cu\'anticos imperativos, como QCL (que permite al usuario definir sus propios
-operadores y funciones con una sintaxis parecida a C), o el m\'as reciente Q\# de Microsoft (que lee y
-devuelve datos cl\'asicos) nombrado as\'{\i} en referencia a C\#, dado que se accede mediante este \'ultimo.
+Para lograr la anticipaci\'on de siniestros, se recurre al Aprendizaje Autom\'atico (\emph{Machine Learning}), una rama de la Inteligencia Artificial que permite a los sistemas aprender e identificar patrones complejos a partir de datos hist\'oricos sin ser expl\'{\i}citamente programados \parencite{bishop2006}.
 
-Otro tipo de control es el control cu\'antico, introducido por Altenkirch y Grattage
-\parencite{AltenkirchGrattage2005},
-donde se propone un c\'alculo que no necesite de un control indirecto de la computadora cu\'antica, sino que se
-pueda usar directamente en la misma. En 2019, se propone una extensi\'on cu\'antica al \(\lambda\)-c\'alculo (Lineal)
-m\'as expresivo \parencite{DiazcaroEtAl2019}, en el paradigma de control cu\'antico, basado en la t\'ecnica de la realizabilidad \parencite{Kleene1945}. Lineal~\parencite{ArrighiDowek2017} fue uno de los primeros lenguajes que tuvo como objetivo desarrollar un c\'alculo lambda de control cu\'antico. Es un c\'alculo lambda sin tipos extendido con superposiciones lineales arbitrarias. Las reglas de reescritura garantizan la confluencia y se toma una forma can\'onica como forma normal de los t\'erminos. Para evitar la clonaci\'on, se considera una estrategia {\em call-by-base}: se puede aplicar una abstracci\'on \(\lambda x.t\) a una superposici\'on de valores \((\alpha.v+\beta.w)\) que producen \(\alpha. (\lambda x.t)v+\beta.(\lambda x.t)w\). De esta manera, no s\'olo se evita la clonaci\'on, sino que adem\'as todas las abstracciones son lineales por construcci\'on. Esto permite expresar matrices y vectores y, por tanto, programas cu\'anticos, pero tambi\'en mapas no unitarios y, por supuesto, vectores no normalizados.
+En el contexto de este proyecto, el problema se modela como una tarea de clasificaci\'on binaria supervisada, donde el objetivo es predecir si un establecimiento laboral sufrir\'a o no un accidente en un per\'{\i}odo determinado. En problemas de riesgo laboral, este enfoque resulta especialmente \'util cuando existen m\'ultiples variables interrelacionadas, como n\'ominas, antecedentes de siniestros, rubro de actividad, caracter\'{\i}sticas de la planta laboral, diagn\'osticos, edades de trabajadores, entre otras, cuya combinaci\'on no puede capturarse de manera adecuada mediante reglas fijas o umbrales simples.
 
-\begin{center}
-	\ldots Texto \ldots
-\end{center}
+La literatura especializada en aprendizaje autom\'atico sobre datos tabulares ha mostrado de forma consistente que los modelos basados en \'arboles de decisi\'on ensamblados suelen ofrecer un desempe\~no competitivo y en muchos contextos superior frente a arquitecturas de aprendizaje profundo, especialmente cuando el volumen de datos es moderado, las variables son heterog\'eneas y la interpretabilidad del modelo resulta relevante \parencite{grinsztajn2022}. Dentro de esta familia de algoritmos, XGBoost (\emph{Extreme Gradient Boosting}) ocupa un lugar destacado por su eficiencia computacional y su capacidad de modelar relaciones no lineales entre variables. El m\'etodo combina secuencialmente m\'ultiples \'arboles de decisi\'on d\'ebiles, de modo que cada nuevo \'arbol corrige los errores residuales del conjunto anterior, optimizando una funci\'on de p\'erdida regularizada que contribuye a controlar el sobreajuste (\emph{overfitting}) \parencite{chen2016}.
 
-De las extensiones del \(\lambda\)-c\'alculo, Lambda-\(S\) \parencite{DiazcaroDowekRinaldi2019, DiazcaroMalherbe2024} presenta un sistema de tipos capaz de distinguir
-entre un estado superpuesto y un qubit con un estado no superpuesto respecto a una base dada. En esta tesis se propone
-una extensi\'on a Lambda-\(S\) para permitir identificar valores duplicables en m\'as de una base de medici\'on.
+En dominios como la siniestralidad laboral, adem\'as, suele presentarse un desbalance marcado entre clases: los accidentes constituyen eventos relativamente infrecuentes frente al conjunto de establecimientos sin siniestros en un per\'{\i}odo dado. En este escenario, la m\'etrica de exactitud (\emph{accuracy}) puede resultar enga\~nosa, ya que un modelo que prediga sistem\'aticamente la clase mayoritaria obtendr\'{\i}a un porcentaje elevado de aciertos sin detectar los casos de riesgo relevantes \parencite{he2009}. Por ello, en problemas de detecci\'on de eventos cr\'{\i}ticos resulta m\'as adecuado priorizar m\'etricas orientadas a la clase positiva, como la sensibilidad (\emph{recall}), que mide la proporci\'on de casos de accidente correctamente identificados. Ello permite minimizar los falsos negativos, es decir, establecimientos con riesgo real que el sistema clasificar\'{\i}a err\'oneamente como seguros, un error particularmente grave en un contexto preventivo.
 
-Lambda-\(S\) est\'a enfocado en la propiedad cu\'antica conocida como superposici\'on. Su sistema de tipos puede distinguir entre estados superpuestos, respecto a una base dada, y estados de dicha base. Este sistema de tipos representa un dual de la l\'ogica lineal \parencite{DiazcaroMalherbe2020}.
+En s\'{\i}ntesis, la combinaci\'on de clasificaci\'on supervisada, modelos de ensamble para datos tabulares y m\'etricas sensibles al desbalance de clases constituye la base conceptual que justifica el enfoque predictivo adoptado en este trabajo.
 
-En \(\lambda\)-calculo, aplicar el t\'ermino \(\lambda x.(x \otimes x)\), que expresa una funci\'on no lineal, a un t\'ermino \(u\) produce el t\'ermino \((\lambda x.(x \otimes x))u\), que se eval\'ua a \(u
-	\otimes u\). Pero \enquote{clonar} este vector, es decir, el t\'ermino \(u\), est\'a prohibido en la computaci\'on cu\'antica.
-Varias extensiones cu\'anticas al \(\lambda\)-c\'alculo tratan este problema de diferentes maneras.
+\section{Inteligencia Artificial Explicable (XAI) y Valores SHAP}
 
-Una manera es prohibir la construcci\'on del t\'ermino \(\lambda x.(x \otimes x)\), usando un sistema de tipos inspirado en la l\'ogica lineal
-\parencite{Girard1987,Abramsky1993}, lo que, por ejemplo, deriv\'o en c\'alculos l\'ogico-lineales 
-\parencite{	AltenkirchGrattage2005,
-	SelingerValiron2009,
-	GreenEtAl2013,
-	PaganiSelingerValiron2014,
-	Zorzi2016}.
+Uno de los principales obst\'aculos para la adopci\'on de modelos predictivos de alta complejidad como los algoritmos basados en \'arboles en entornos empresariales y regulatorios es su car\'acter de ``caja negra''. Si bien estos modelos pueden alcanzar un elevado desempe\~no predictivo, no ofrecen de manera intr\'{\i}nseca una explicaci\'on comprensible de los factores que conducen a una determinada clasificaci\'on. En el \'ambito de la prevenci\'on de riesgos laborales, esta limitaci\'on resulta especialmente relevante: un inspector o prevencionista no puede fundar de manera operativa una auditor\'{\i}a o una intervenci\'on preventiva apoy\'andose \'unicamente en un puntaje o probabilidad de riesgo desprovisto de interpretaci\'on.
 
-\begin{center}
-	\ldots Texto \ldots
-\end{center}
+Frente a esta problem\'atica surge el campo de la Inteligencia Artificial Explicable (\emph{Explainable Artificial Intelligence}, XAI), orientado a desarrollar m\'etodos que hagan comprensibles, transparentes y auditables los resultados producidos por sistemas de aprendizaje autom\'atico \parencite{arrieta2020}. En t\'erminos conceptuales, la XAI no busca reemplazar el juicio experto humano, sino complementarlo: traduce salidas algor\'{\i}tmicas en informaci\'on interpretable que permita a los responsables de la toma de decisiones evaluar si una predicci\'on es razonable, identificar las variables m\'as influyentes y comunicar el fundamento de una acci\'on preventiva.
 
-Esto deriv\'o ulteriormente en una sem\'antica categ\'orica para el lenguaje, donde los t\'erminos del lenguaje son interpretados en una categor\'{\i}a cartesiana \textbf{Set}, mientras que las operaciones ocurren en una categor\'{\i}a aditiva monoidal \textbf{Vec}, a donde se transportan usando una \emph{adjunci\'on} entre ambas categor\'{\i}as \parencite{DiazcaroMalherbe2024, DiazcaroMalherbe2020}.
+Para hacer comprensibles las predicciones del modelo XGBoost, se utilizan los valores SHAP, una t\'ecnica que indica cu\'anto influye cada variable en el resultado de un caso concreto ---por ejemplo, la cantidad de empleados, el historial de siniestros o el rubro de actividad--- \parencite{lundberg2017}. De este modo, en lugar de mostrar solo que un establecimiento tiene alto riesgo, el sistema puede explicar qu\'e factores empujaron esa clasificaci\'on, como un aumento reciente de siniestros o un tama\~no de plantilla elevado. Eso permite que inspectores y prevencionistas de la ART entiendan el motivo de la alerta, prioricen acciones correctivas y justifiquen una auditor\'{\i}a con argumentos concretos, no solo con un n\'umero.
 
-Este lenguaje permite expresar algoritmos cu\'anticos con una informaci\'on muy precisa sobre los datos cu\'anticos procesados por esos algoritmos. Sin embargo, dado que ya se cuenta con un lenguaje que puede decidir cu\'ando un qubit est\'a en una base computacional, y cu\'ando podr\'{\i}a no estarlo, sin necesidad de medir, sino simplemente por haber seguido su evoluci\'on a lo largo del algoritmo, es interesante extender dicha t\'ecnica a otras bases, que es lo que hacemos en esta tesis.
+As\'{\i}, la incorporaci\'on de XAI mediante valores SHAP no solo responde a una necesidad t\'ecnica de interpretabilidad, sino que constituye un requisito de usabilidad, trazabilidad y confianza en soluciones predictivas destinadas a entornos regulados, donde las decisiones deben poder explicarse ante equipos de prevenci\'on, auditor\'{\i}a y cumplimiento normativo \parencite{arrieta2020,lundberg2017}.
 
-% Generalmente, uno puede poner acá un breve párrafo sobre la estructura de la tesis, explicando qué se verá en cada capítulo, y dicha explicación de a lo sumo una línea de largo. Consultar con los docentes de la PFI previamente.
+\section{Arquitectura Cloud Computing y Patrones de Dise\~no de Software}
+
+Un modelo predictivo solo aporta valor si puede ser usado en la operaci\'on diaria de la ART. Sin embargo, por restricciones de seguridad y por la complejidad de los sistemas heredados (\emph{legacy}), como los ERP de las aseguradoras, no siempre resulta viable integrar el algoritmo directamente dentro de esas plataformas. Por ello, resulta adecuado desplegar la soluci\'on como un sistema independiente en la nube, accesible mediante una aplicaci\'on web que consuma los resultados del modelo sin modificar la infraestructura existente.
+
+La computaci\'on en la nube consiste en acceder a recursos inform\'aticos ---servidores, almacenamiento y redes--- a trav\'es de Internet de forma flexible y bajo demanda, sin que la organizaci\'on deba administrar toda la infraestructura f\'{\i}sica \parencite{mell2011}. La nube p\'ublica permite alojar el sistema predictivo en servidores remotos; en este proyecto, mediante instancias de c\'omputo el\'astico Amazon EC2, lo que facilita el despliegue, el mantenimiento y la escalabilidad seg\'un la cantidad de usuarios y consultas.
+
+En cuanto al dise\~no del software, se adopta una arquitectura cliente-servidor en lugar de una aplicaci\'on monol\'{\i}tica. Esto significa separar el sistema en capas con responsabilidades distintas que se comunican mediante API REST, un est\'andar que permite intercambiar datos entre el \emph{frontend} y el \emph{backend} a trav\'es de solicitudes HTTP \parencite{fielding2000}. La capa de \emph{backend}, desarrollada en .NET con C\#, se encarga de la l\'ogica de negocio, la persistencia en base de datos relacional (SQL Server) y la ejecuci\'on o exposici\'on de las predicciones del modelo XGBoost. La capa de \emph{frontend}, construida con React, ofrece la interfaz gr\'afica mediante la cual prevencionistas e inspectores consultan los niveles de riesgo y las explicaciones asociadas.
+
+Esta separaci\'on facilita que cada componente evolucione de forma independiente, simplifica el mantenimiento y permite entregar una herramienta segura e interactiva, que opera sobre datos previamente anonimizados y no requiere acceso directo a los sistemas internos de la aseguradora.

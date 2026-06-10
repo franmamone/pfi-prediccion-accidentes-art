@@ -52,13 +52,18 @@
 % \parbox[b] es para poner texto sobre el bottom
 \newpagestyle{ruled}{
 	\sethead{\includegraphics[width=3.7cm]{./images/UADE_LARGE}}
-			{\parbox[b]{0.43\textwidth}{\raggedright\MakeUppercase{Título de la PFI}}} % El parámetro 0.43 puede modificarse para tener más espacio en la columan del medio, y que así el título de la tesis entre mejor.
+			{\raisebox{-0.4ex}{%
+				\begin{tabular}[b]{@{}l@{}}
+					\MakeUppercase{Predicción de Accidentología} \\[1pt]
+					\MakeUppercase{Laboral}\hspace{0.35em}\MakeUppercase{para ART}
+				\end{tabular}%
+			}} % Título abreviado del encabezado (sin \parbox ancho: evita huecos).
 			{
 				\raisebox{1.5ex}{%
-					\parbox[b]{0.26\textwidth}{\raggedleft
+					\parbox[b]{0.28\textwidth}{\raggedleft
 					\begin{tabular}{r}
-						Curry, Haskell \\
-						Howard, William Alvin
+						Mamone, \\
+						Francisco Dante
 					\end{tabular}
 					}
 				}
@@ -82,7 +87,7 @@
 %Lo ideal ser\'{\i}a lo siguiente
 %\setmarginsrb{2.7cm}{4cm}{2.3cm}{2.5cm}{2cm}{0.5cm}{2cm}{0.5cm}
 %Pero estos valores se suman, por lo que en realidad ir\'{\i}a asi:
-\setmarginsrb{2.7cm}{2cm}{2.3cm}{1.5cm}{0cm}{2cm}{0cm}{1cm}
+\setmarginsrb{2.7cm}{2cm}{2.3cm}{1.5cm}{1.6cm}{0.8cm}{0cm}{1cm}
 % M\'argenes, pero otra opci\'on mas acotada
 % \usepackage[top=4cm,bottom=2.5cm,left=2.7cm,right=2.3cm]{geometry}
 
@@ -142,6 +147,7 @@
 % Para tablas complejas
 \usepackage{multicol,multirow}
 \usepackage{array,longtable}
+\usepackage{pdflscape}
 
 % Times New Roman para texto y matemáticas. Debe ir antes de los paquetes AMS.
 \usepackage{mathptmx}
@@ -171,6 +177,7 @@
     \bfseries{Cronograma} \end{center}}
 
 \input{config/symbols}
+\input{config/delivery}
 
 \usepackage[normalem]{ulem}
 
@@ -251,25 +258,41 @@
   clip
 ]{cover/Caratula.pdf}
 \clearpage
-	\input{chapters/title}
-	\input{chapters/acknowledgments}
-	\newpage
-	\input{chapters/summary}
-	\newpage
-	\input{chapters/abstract}
+	\ifdeliverytitle
+		\input{chapters/title}
+	\fi
+	\ifdeliveryacknowledgments
+		\input{chapters/acknowledgments}
+	\fi
+	\ifdeliverysummary
+		\newpage
+		\input{chapters/summary}
+	\fi
+	\ifdeliveryabstract
+		\newpage
+		\input{chapters/abstract}
+	\fi
 	\newpage
 	\tableofcontents
 	\input{chapters/chapter01}
 	\input{chapters/chapter02}
-	\input{chapters/conclusion}
+	\ifdeliveryconclusion
+		\input{chapters/conclusion}
+	\fi
 
 	\addcontentsline{toc}{chapter}{Bibliograf\'{\i}a}
 	\printbibliography{}
 
-	\appendix
-	\input{chapters/appendix/annex}
-	\newpage
-	\listoffigures
-	\newpage
-	\listoftables
+	\ifdeliveryannex
+		\appendix
+		\input{chapters/appendix/annex}
+	\fi
+	\ifdeliverylistoffigures
+		\newpage
+		\listoffigures
+	\fi
+	\ifdeliverylistoftables
+		\newpage
+		\listoftables
+	\fi
 \end{document}

@@ -1,0 +1,48 @@
+% =============================================================================
+% Configuración por entrega — cambiar true/false según lo que deba ir en el PDF.
+% true  = se incluye en el documento y en el índice (cuando corresponda).
+% false = no se compila ni aparece en el índice.
+%
+% Para una entrega futura: poné \delivery...true en las secciones que necesites.
+% =============================================================================
+
+\makeatletter
+
+\newcommand{\delivery@settrue}[1]{\csname #1true\endcsname}
+\newcommand{\delivery@setfalse}[1]{\csname #1false\endcsname}
+
+% Portada y preliminares
+\newif\ifdeliverytitle              % Segunda portada LaTeX (chapters/title.tex)
+\newif\ifdeliveryacknowledgments     % Agradecimientos
+\newif\ifdeliverysummary             % Resumen
+\newif\ifdeliveryabstract            % Abstract
+
+% Cuerpo principal (además de los capítulos que siempre están en main.tex)
+\newif\ifdeliveryconclusion          % Conclusión
+
+% Anexos (cada uno por separado)
+\newif\ifdeliveryannex               % Bloque de anexos (índice + contenido)
+\newif\ifdeliveryannexschedule       % Cronograma / Gantt
+\newif\ifdeliveryannexsurveys        % Encuestas (User Research)
+\newif\ifdeliveryannexinterviews      % Entrevistas (User Research)
+
+% Listas al final
+\newif\ifdeliverylistoffigures       % Lista de figuras
+\newif\ifdeliverylistoftables        % Lista de tablas
+
+% -----------------------------------------------------------------------------
+% ENTREGA ACTUAL: Marco Teórico + Estado del Arte
+% -----------------------------------------------------------------------------
+\delivery@setfalse{deliverytitle}
+\delivery@setfalse{deliveryacknowledgments}
+\delivery@setfalse{deliverysummary}
+\delivery@setfalse{deliveryabstract}
+\delivery@setfalse{deliveryconclusion}
+\delivery@setfalse{deliveryannex}
+\delivery@setfalse{deliveryannexschedule}
+\delivery@setfalse{deliveryannexsurveys}
+\delivery@setfalse{deliveryannexinterviews}
+\delivery@setfalse{deliverylistoffigures}
+\delivery@settrue{deliverylistoftables}
+
+\makeatother

@@ -1,0 +1,82 @@
+\begin{landscape}
+	\footnotesize
+	\setlength{\tabcolsep}{3pt}
+	\renewcommand{\arraystretch}{1.15}
+	\begin{longtable}{@{}p{1.6cm}p{2.4cm}p{2.2cm}p{2.4cm}p{2cm}p{2.2cm}p{2.4cm}p{2.6cm}@{}}
+		\caption{Matriz de antecedentes}\label{tab:matriz-antecedentes} \\
+		\hline
+		\textbf{Autor y A\~no} & \textbf{T\'{\i}tulo} & \textbf{Objetivo del Trabajo} & \textbf{Enfoque / Metodolog\'{\i}a} & \textbf{Tecnolog\'{\i}as Utilizadas} & \textbf{Resultados Principales} & \textbf{Limitaciones Reconocidas} & \textbf{Aporte para el Proyecto Propio} \\
+		\hline
+		\endfirsthead
+		\caption[]{Matriz de antecedentes (continuaci\'on)} \\
+		\hline
+		\textbf{Autor y A\~no} & \textbf{T\'{\i}tulo} & \textbf{Objetivo del Trabajo} & \textbf{Enfoque / Metodolog\'{\i}a} & \textbf{Tecnolog\'{\i}as Utilizadas} & \textbf{Resultados Principales} & \textbf{Limitaciones Reconocidas} & \textbf{Aporte para el Proyecto Propio} \\
+		\hline
+		\endhead
+		\hline
+		\endfoot
+		Yapi, A. (2025) arXiv &
+		A new machine learning framework for occupational accidents forecasting with safety inspections integration &
+		Proponer un marco predictivo de accidentes laborales integrando como variable la frecuencia y resultados de las inspecciones de seguridad. &
+		Desarrollo de un modelo predictivo con datos hist\'oricos de inspecciones y siniestros (Francia). Validaci\'on con m\'etricas de clasificaci\'on binaria. &
+		Redes Neuronales Recurrentes (LSTM), modelos basados en \'arboles (Random Forest, XGBoost), Python. &
+		Los modelos de \'arbol superan a LSTM en viabilidad operativa. Incluir inspecciones previas mejora la predicci\'on hasta un 18\,\% de ganancia en \emph{recall}. &
+		Las redes profundas exigen gran capacidad de c\'omputo, operan como ``caja negra'' y fueron validadas bajo marcos regulatorios extranjeros (Francia). &
+		Valida la inclusi\'on de auditor\'{\i}as como variable predictiva. Refuerza la brecha: necesidad de aplicar SHAP y adaptar el modelo al marco normativo argentino (SRT/PESE). \\
+		\hline
+		Zamora-Cevallos, E. (2024) Revista Metropolitana de Ciencias Aplicadas &
+		Modelo predictivo para determinar patrones y tendencias que influyen en los accidentes de trabajo &
+		Identificar mediante datos hist\'oricos los patrones y tendencias principales que derivan en siniestralidad laboral en Ecuador. &
+		An\'alisis de datos hist\'oricos de accidentabilidad. Enfoque cuantitativo con modelos de Machine Learning y regresi\'on lineal. &
+		Modelos de Machine Learning (clasificadores), Regresi\'on Lineal. &
+		Identificaci\'on de patrones estad\'{\i}sticos en la siniestralidad. Detecci\'on de variables de mayor incidencia. &
+		El enfoque recae netamente en las previsiones matem\'aticas, careciendo de interfaces o herramientas para explicar las decisiones al personal de campo. &
+		Evidencia que el sector se centra en detectar patrones matem\'aticos. Subraya el diferencial del presente proyecto: la incorporaci\'on de XAI (valores SHAP) para traducir esos patrones a los prevencionistas. \\
+		\hline
+		Subauste Oliden, D. A. (2023) UPC (Tesis de grado) &
+		Sistema de predicci\'on de riesgos de accidentes laborales en el sector manufactura utilizando t\'ecnicas de redes bayesianas y \'arbol de decisi\'on &
+		Desarrollar un sistema de predicci\'on de riesgos laborales enfocado exclusivamente en el sector manufacturero del Per\'u. &
+		Dise\~no y entrenamiento de modelos de clasificaci\'on sobre datos sectoriales de manufactura. Evaluaci\'on con m\'etricas est\'andar. &
+		Redes Bayesianas, \'Arboles de Decisi\'on simples. &
+		Viabilidad t\'ecnica de clasificar riesgos en el sector manufactura. Precisi\'on limitada por el uso de algoritmos simples. &
+		La precisi\'on predictiva se acota al utilizar algoritmos de clasificaci\'on tradicionales, que presentan dificultades con el sobreajuste (\emph{overfitting}) en datos heterog\'eneos. &
+		Justifica la elecci\'on de XGBoost como algoritmo de ensamble superador que maneja el sobreajuste eficientemente en datos corporativos heterog\'eneos. \\
+		\hline
+		Sarkar, S.; Maiti, J. (2022) IJERPH (MDPI) &
+		Occupational Injury Risk Mitigation: Machine Learning Approach and Feature Optimization for Smart Workplace Surveillance &
+		Proponer un modelo predictivo de gravedad de lesiones laborales multisector con optimizaci\'on de variables, utilizando 66\,405 registros de OSHA (EE.UU.). &
+		An\'alisis multisector con datos de OSHA (20 categor\'{\i}as NAICS). Comparaci\'on de cinco algoritmos. Optimizaci\'on de hiperpar\'ametros. &
+		Support Vector Machine, K-Nearest Neighbors, Na\"{\i}ve Bayes, \'Arbol de Decisi\'on, Random Forest. Dataset OSHA (EE.UU.). &
+		Random Forest super\'o a los dem\'as modelos (\emph{accuracy} 0,895 hospitalizaci\'on; 0,954 amputaci\'on). Las 3 variables m\'as influyentes: naturaleza de la lesi\'on, tipo de evento, parte del cuerpo afectada. &
+		El modelo se entrena con datos estructurados de reportes post-accidente, no predice eventos futuros a nivel de establecimiento. Aplica la legislaci\'on norteamericana (OSHA). &
+		Primer antecedente directo de aplicaci\'on multisector con Random Forest. Confirma la superioridad de los m\'etodos de ensamble. Diferencia: el presente proyecto predice accidentabilidad futura a nivel de empleador, no clasifica lesiones pasadas. \\
+		\hline
+		Mosquera Navarro, R. (2021) Informaci\'on Tecnol\'ogica &
+		Predicci\'on de la accidentalidad laboral en la industria de pulpa y papel usando algoritmos de clasificaci\'on &
+		Predecir accidentes acotando el modelo a las variables espec\'{\i}ficas de la industria de pulpa y papel en Colombia. &
+		An\'alisis de datos hist\'oricos de una sola planta industrial. Entrenamiento y evaluaci\'on de clasificadores tradicionales. &
+		Algoritmos de clasificaci\'on tradicionales y anal\'{\i}tica de datos. &
+		Viabilidad de aplicar ML a la predicci\'on de accidentes en el sector papelero. Alta dependencia del entorno de una \'unica planta. &
+		Alta dependencia de las variables de entorno de una sola planta, lo que reduce la escalabilidad del sistema hacia otros rubros. &
+		Demuestra la viabilidad por sector. Resalta que el presente sistema aborda la brecha multi-rubro (cartera CIIU completa de una ART). \\
+		\hline
+		Su\'arez S\'anchez, F. A. (2021) Universidad de Medell\'{\i}n &
+		Modelo de simulaci\'on y predicci\'on de riesgos laborales en la construcci\'on de edificios: caso Colombia &
+		Predecir y simular riesgos laborales en obras de construcci\'on en Colombia mediante simulaci\'on estad\'{\i}stica. &
+		Simulaci\'on de Montecarlo, tablas de contingencia (Chi-cuadrado), encuestas de campo. &
+		M\'etodo de Montecarlo, software estad\'{\i}stico SPSS. &
+		Identificaci\'on de factores de riesgo predominantes en el sector construcci\'on colombiano. Modelo de simulaci\'on funcional para ese contexto. &
+		El modelo est\'a fuertemente anclado a un \'unico sector y a las variables demogr\'aficas y normativas de Colombia. No aplica ML. &
+		Confirma la utilidad de la predicci\'on en la regi\'on. Diferencia metodol\'ogica clara: evoluci\'on de la simulaci\'on estad\'{\i}stica sectorial hacia un modelo de ML (XGBoost) escalable y multisector. \\
+		\hline
+		Zermane, A. et al. (2022) Safety Science (Elsevier) &
+		Predicting fatal fall from heights accidents using random forest classification machine learning model &
+		Predecir ca\'{\i}das fatales desde alturas en la industria de la construcci\'on en Malasia utilizando un modelo de Random Forest. &
+		An\'alisis de registros del Departamento de Salud y Seguridad Ocupacional de Malasia. Comparaci\'on de algoritmos de ensamble vs.\ \'arboles simples. &
+		Random Forest, MLP (redes neuronales), \'Arboles de Decisi\'on. Dataset nacional de Malasia. &
+		Random Forest super\'o a MLP y \'Arboles de Decisi\'on, logrando \emph{accuracy} entre 96\,\% y 100\,\%. Los factores m\'as influyentes fueron edad, posici\'on del trabajo y experiencia. &
+		Modelo exclusivo del sector construcci\'on y de la legislaci\'on malaya. Sin componente de explicabilidad (XAI). Resultados no generalizables a otros rubros. &
+		Refuerza la superioridad de Random Forest y XGBoost sobre redes neuronales para datos tabulares sectoriales. Confirma la necesidad de adaptar el modelo a la normativa local (en este caso, SRT Argentina). \\
+		\hline
+	\end{longtable}
+\end{landscape}
