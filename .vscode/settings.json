@@ -20,10 +20,10 @@
     ],
     "latex-workshop.latex.recipes": [
         {
-            "name": "pdflatex -> biber -> pdflatex",
-            "tools": ["pdflatex", "biber", "pdflatex"]
+            "name": "pdflatex -> biber -> pdflatex x2",
+            "tools": ["pdflatex", "biber", "pdflatex", "pdflatex"]
         }
     ],
     "latex-workshop.latex.autoBuild.run": "onSave",
-    "latex-workshop.latex.recipe.default": "pdflatex -> biber -> pdflatex"
+    "latex-workshop.latex.recipe.default": "pdflatex -> biber -> pdflatex x2",
 }

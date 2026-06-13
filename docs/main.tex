@@ -20,7 +20,7 @@
 \setcounter{secnumdepth}{3}
 % Esto último es para la cantidad de niveles en el índice
 
-\AtEveryBibitem{\clearfield{urldate}}
+\DeclareFieldFormat{urldate}{\mkbibbrackets{consultado\space#1}}
 
 % Para colores
 \usepackage[usenames,dvipsnames]{xcolor}
@@ -49,36 +49,7 @@
 \usepackage{textcase}
 \usepackage{pdfpages}
 
-% \parbox[b] es para poner texto sobre el bottom
-\newpagestyle{ruled}{
-	\sethead{\includegraphics[width=3.7cm]{./images/UADE_LARGE}}
-			{\raisebox{-0.4ex}{%
-				\begin{tabular}[b]{@{}l@{}}
-					\MakeUppercase{Predicción de Accidentología} \\[1pt]
-					\MakeUppercase{Laboral}\hspace{0.35em}\MakeUppercase{para ART}
-				\end{tabular}%
-			}} % Título abreviado del encabezado (sin \parbox ancho: evita huecos).
-			{
-				\raisebox{1.5ex}{%
-					\parbox[b]{0.28\textwidth}{\raggedleft
-					\begin{tabular}{r}
-						Mamone, \\
-						Francisco Dante
-					\end{tabular}
-					}
-				}
-			}\headrule{}
-	\setfoot[][][P\'agina \thepage\ de~\pageref*{LastPage}]{}{}{P\'agina \thepage\ de~\pageref*{LastPage}}\footrule{}
-	}
-\pagestyle{ruled}
-% Cambiar el color de la linea divisora:
-% \renewcommand\makeheadrule{\color{cyan}\rule[-.3\baselineskip]{\linewidth}{0.4pt}}
-% \renewcommand\makefootrule{\color{cyan}\rule[\baselineskip]{\linewidth}{0.4pt}}
-
-% Para que la primera página de cada capítulo no sea tratada como especial
-\makeatletter
-\let\ps@plain\ps@ruled
-\makeatother
+% Estilo de página (definido después de hyperref; ver más abajo).
 
 % M\'argenes
 \usepackage{vmargin}
@@ -115,6 +86,7 @@
 \setlength{\textfloatsep}{5pt}
 
 % Para notas
+\PassOptionsToPackage{hidelinks}{hyperref}
 \usepackage{todonotes}
 \setlength{\marginparwidth}{2cm} % El margen es muy estrecho. Esto es solo para solucionar un warning
 \newcommand{\Nico}[1]{\todo[color=green!30,inline]{\textbf{Nico:} #1}}
@@ -231,13 +203,47 @@
 %    colorlinks,
 %    citecolor=red
 %}
-% Para la entrega final:
-\usepackage[hidelinks]{hyperref}
+% Para la entrega final (hyperref ya cargado por todonotes):
 \hypersetup{
     colorlinks=false,
     pdfborder={0 0 0},
     linktoc=none
 }
+\usepackage{xurl}
+\setcounter{biburlnumpenalty}{9000}
+\setcounter{biburlucpenalty}{9000}
+\setcounter{biburllcpenalty}{9000}
+
+% \parbox[b] es para poner texto sobre el bottom
+\newpagestyle{ruled}{
+	\sethead{\includegraphics[width=3.7cm]{./images/UADE_LARGE}}
+			{\raisebox{-0.4ex}{%
+				\begin{tabular}[b]{@{}l@{}}
+					\MakeUppercase{Predicción de Accidentología} \\[1pt]
+					\MakeUppercase{Laboral}\hspace{0.35em}\MakeUppercase{para ART}
+				\end{tabular}%
+			}} % Título abreviado del encabezado (sin \parbox ancho: evita huecos).
+			{
+				\raisebox{1.5ex}{%
+					\parbox[b]{0.28\textwidth}{\raggedleft
+					\begin{tabular}{r}
+						Mamone, \\
+						Francisco Dante
+					\end{tabular}
+					}
+				}
+			}\headrule{}
+	\setfoot[][][P\'agina \thepage\ de~\protect\pageref{LastPage}]{}{}{P\'agina \thepage\ de~\protect\pageref{LastPage}}\footrule{}
+	}
+\pagestyle{ruled}
+% Cambiar el color de la linea divisora:
+% \renewcommand\makeheadrule{\color{cyan}\rule[-.3\baselineskip]{\linewidth}{0.4pt}}
+% \renewcommand\makefootrule{\color{cyan}\rule[\baselineskip]{\linewidth}{0.4pt}}
+
+% Para que la primera página de cada capítulo no sea tratada como especial
+\makeatletter
+\let\ps@plain\ps@ruled
+\makeatother
 
 \DefineBibliographyStrings{spanish}{
   online   = {En línea},
