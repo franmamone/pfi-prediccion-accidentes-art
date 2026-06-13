@@ -1,9 +1,54 @@
-\anexo{Cronograma de Actividades}
+\anexo{Cronograma de Actividades}\label{anexo:cronograma}
 
-En líneas generales, el desarrollo del proyecto ha avanzado conforme a lo planificado. No obstante, se presentó una demora en \ldots, motivo por el cual \ldots. A continuación, se presenta el cronograma actualizado con las tareas realizadas, en curso y replanificadas, que reflejan el estado actual del proyecto.
+El desarrollo del proyecto avanza conforme a lo planificado para el hito de entrega del 25\%. Las actividades de definici\'on, marco te\'orico y estado del arte fueron completadas entre abril y mayo de 2026, sin desv\'{\i}os significativos respecto del calendario inicial. La investigaci\'on con usuarios (encuestas y entrevistas) se mantiene planificada para junio y julio de 2026, en l\'{\i}nea con el alcance acordado para la entrega del 50\%, de modo que el presente informe pueda concentrarse en los antecedentes conceptuales y la fundamentaci\'on de la brecha de investigaci\'on.
 
-%\begin{figure}[ht]
-%    \centering
-%    \includegraphics[width=0.7\textheight]{./././images/Cronograma.png}
-%    \caption{Cronograma de actividades.}
-%\end{figure}
+\begin{landscape}
+\begin{figure}[ht]
+	\centering
+	\footnotesize
+	\begin{ganttchart}[
+		x unit=1.05cm,
+		y unit chart=0.55cm,
+		time slot format=isodate,
+		time slot unit=month,
+		title/.style={draw=none, fill=gray!25},
+		title label font=\small\bfseries,
+		bar label font=\scriptsize,
+		group label font=\small\bfseries,
+		bar/.style={fill=blue!35, draw=blue!60},
+		bar complete/.style={fill=green!45, draw=green!60!black},
+		bar height=0.55,
+		group height=0.35,
+		group peaks height=0.2,
+		milestone height=0.45,
+		progress label text={},
+		canvas/.style={draw=none},
+		vgrid={*1{draw=gray!20}},
+		hgrid={*1{draw=gray!20}}
+	]{2026-04-01}{2026-11-30}
+		\gantttitlecalendar{year, month=shortname} \\
+		\ganttgroup{Antecedentes (hito 25\%)}{2026-04-01}{2026-05-31} \\
+		\ganttbar[progress=100]{Propuesta y definición}{2026-04-01}{2026-04-30} \\
+		\ganttbar[progress=100]{Marco teórico}{2026-04-15}{2026-05-15} \\
+		\ganttbar[progress=100]{Estado del arte}{2026-05-01}{2026-05-31} \\
+		\ganttmilestone{Entrega 25\%}{2026-05-31} \\
+		\ganttgroup{Desarrollo (hito 50\%)}{2026-06-01}{2026-07-31} \\
+		\ganttbar{Investigación con usuarios}{2026-06-01}{2026-06-30} \\
+		\ganttbar{Ingeniería de datos}{2026-06-01}{2026-07-15} \\
+		\ganttbar{Modelado XGBoost}{2026-07-01}{2026-07-31} \\
+		\ganttmilestone{Entrega 50\%}{2026-07-31} \\
+		\ganttgroup{Integración (hito 75\%)}{2026-08-01}{2026-09-30} \\
+		\ganttbar{Explicabilidad SHAP}{2026-08-01}{2026-08-31} \\
+		\ganttbar{Backend API (.NET)}{2026-08-01}{2026-09-15} \\
+		\ganttbar{Frontend (React)}{2026-08-15}{2026-09-30} \\
+		\ganttbar{Despliegue en AWS}{2026-09-01}{2026-09-30} \\
+		\ganttmilestone{Entrega 75\%}{2026-09-30} \\
+		\ganttgroup{Cierre (hito 100\%)}{2026-10-01}{2026-11-30} \\
+		\ganttbar{Validación y métricas}{2026-10-01}{2026-10-31} \\
+		\ganttbar{Documentación final}{2026-11-01}{2026-11-30} \\
+		\ganttmilestone{Entrega final}{2026-11-30}
+	\end{ganttchart}
+	\caption{Cronograma de actividades del proyecto y estado de avance al hito del 25\%.}
+	\label{fig:cronograma}
+\end{figure}
+\end{landscape}
