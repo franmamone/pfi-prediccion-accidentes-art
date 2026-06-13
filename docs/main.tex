@@ -20,7 +20,7 @@
 \setcounter{secnumdepth}{3}
 % Esto último es para la cantidad de niveles en el índice
 
-\DeclareFieldFormat{urldate}{\mkbibbrackets{consultado\space#1}}
+\AtEveryBibitem{\clearfield{urldate}}
 
 % Para colores
 \usepackage[usenames,dvipsnames]{xcolor}
@@ -226,18 +226,18 @@
 
 
 % IMPORTANTE: En la entrega final de UADE se debe dejar sin color. Usar el bloque comentado a continuación y comentar el bloque activo.
-\usepackage{hyperref}
-\hypersetup{
-    colorlinks,
-    citecolor=red
-}
-% Para la entrega final:
-%\usepackage[hidelinks]{hyperref}
+%\usepackage{hyperref}
 %\hypersetup{
-%    colorlinks=false,
-%    pdfborder={0 0 0},
-%    linktoc=none
+%    colorlinks,
+%    citecolor=red
 %}
+% Para la entrega final:
+\usepackage[hidelinks]{hyperref}
+\hypersetup{
+    colorlinks=false,
+    pdfborder={0 0 0},
+    linktoc=none
+}
 
 \DefineBibliographyStrings{spanish}{
   online   = {En línea},
