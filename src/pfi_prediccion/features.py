@@ -23,6 +23,19 @@ def enrich_panel_features(panel: pd.DataFrame) -> pd.DataFrame:
 
     out["ciiu_seccion"] = out["actividad_ciiu_establecimiento"].map(ciiu_seccion)
 
+    # Visitas: preferir datos mensuales de prevención; si no, fallback accidente.
+    if "visitas_planificadas_12m_prev" in out.columns:
+        out["visitas_planificadas_12m"] = out["visitas_planificadas_12m_prev"].fillna(
+            out.get("visitas_planificadas_12m")
+        )
+        out["visitas_realizadas_12m"] = out["visitas_realizadas_12m_prev"].fillna(
+            out.get("visitas_realizadas_12m")
+        )
+        out = out.drop(
+            columns=["visitas_planificadas_12m_prev", "visitas_realizadas_12m_prev"],
+            errors="ignore",
+        )
+
     if "visitas_planificadas_12m" in out.columns and "visitas_realizadas_12m" in out.columns:
         planned = pd.to_numeric(out["visitas_planificadas_12m"], errors="coerce").fillna(0)
         done = pd.to_numeric(out["visitas_realizadas_12m"], errors="coerce").fillna(0)
@@ -41,15 +54,38 @@ def enrich_panel_features(panel: pd.DataFrame) -> pd.DataFrame:
     out["flag_alto_riesgo_historico"] = (out.get("accidentes_12m", 0) >= 3).astype(int)
     out["flag_sin_historial_accidente"] = (out.get("accidentes_total_previos", 0) == 0).astype(int)
 
+    def _num_col(df: pd.DataFrame, col: str) -> pd.Series:
+        if col in df.columns:
+            return pd.to_numeric(df[col], errors="coerce")
+        return pd.Series(np.nan, index=df.index, dtype=float)
+
+    dotacion = _num_col(out, "dotacion_establecimiento")
+    capitas = _num_col(out, "cantidad_capitas")
+    exposicion = dotacion.fillna(capitas).fillna(0).clip(lower=0)
+
     if "dotacion_establecimiento" in out.columns:
         out["log_dotacion"] = np.log1p(
             pd.to_numeric(out["dotacion_establecimiento"], errors="coerce").fillna(0).clip(lower=0)
         )
     else:
-        out["log_dotacion"] = 0.0
+        out["log_dotacion"] = np.log1p(exposicion)
+
+    out["tasa_accidentes_12m_exposicion"] = np.where(
+        exposicion > 0,
+        out.get("accidentes_12m", 0) / exposicion,
+        np.nan,
+    )
+    out["accidentes_por_capita_12m"] = np.where(
+        capitas.fillna(0) > 0,
+        out.get("accidentes_12m", 0) / capitas,
+        np.nan,
+    )
 
     if "meses_desde_ultimo_accidente" in out.columns:
         out["meses_desde_ultimo_accidente"] = out["meses_desde_ultimo_accidente"].fillna(999)
+
+    if "meses_desde_ultima_visita" in out.columns:
+        out["meses_desde_ultima_visita"] = out["meses_desde_ultima_visita"].fillna(999)
 
     out["mes_sin"] = np.sin(2 * np.pi * out["mes"] / 12)
     out["mes_cos"] = np.cos(2 * np.pi * out["mes"] / 12)

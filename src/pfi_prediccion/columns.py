@@ -94,6 +94,16 @@ UNIVERSE_COLUMNS: list[str] = [
 ]
 
 
+PREVENCION_COLUMNS: list[str] = [
+    "id_establecimiento",
+    "periodo",
+    "anio",
+    "mes",
+    "visitas_planificadas_mes",
+    "visitas_realizadas_mes",
+]
+
+
 def read_ssms_csv(path: Path, min_columns: int = 10) -> pd.DataFrame:
     """Lee un export de SSMS sin encabezados (prueba ;, tab y ,)."""
     for sep in (";", "\t", ","):
@@ -150,4 +160,20 @@ def normalize_universe_df(df: pd.DataFrame) -> pd.DataFrame:
     out.columns = [str(c).strip() for c in out.columns]
     out = out.replace({"NULL": pd.NA, "null": pd.NA, "": pd.NA})
     out = out.drop_duplicates(subset=["id_establecimiento"], keep="first")
+    return out
+
+
+def normalize_prevencion_df(df: pd.DataFrame) -> pd.DataFrame:
+    out = df.copy()
+    normalized = {str(c).strip().lower() for c in out.columns}
+    if "id_establecimiento" not in normalized or "periodo" not in normalized:
+        if len(out.columns) != len(PREVENCION_COLUMNS):
+            raise ValueError(
+                f"Se esperaban {len(PREVENCION_COLUMNS)} columnas de prevención, "
+                f"pero el archivo tiene {len(out.columns)}."
+            )
+        out.columns = PREVENCION_COLUMNS
+
+    out.columns = [str(c).strip() for c in out.columns]
+    out = out.replace({"NULL": pd.NA, "null": pd.NA, "": pd.NA})
     return out

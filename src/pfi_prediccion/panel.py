@@ -199,9 +199,96 @@ def _attach_universe_context(panel: pd.DataFrame, universe: pd.DataFrame) -> pd.
     ).merge(uni, on="id_establecimiento", how="left")
 
 
+def _attach_empleador_rolling_features(panel: pd.DataFrame, accidents: pd.DataFrame) -> pd.DataFrame:
+    """Agregados mensuales de accidentes a nivel empleador (sin leakage de T+1)."""
+    if "id_empleador" not in panel.columns:
+        return panel
+
+    emp_acc = accidents[["id_empleador", "periodo"]].copy()
+    emp_acc["periodo_key"] = emp_acc["periodo"]
+    emp_monthly = (
+        emp_acc.groupby(["id_empleador", "periodo_key"], as_index=False)
+        .size()
+        .rename(columns={"size": "accidentes_empleador_en_mes"})
+    )
+
+    emp_panel = panel[["id_establecimiento", "id_empleador", "periodo_key"]].drop_duplicates()
+    emp_panel = emp_panel.merge(emp_monthly, on=["id_empleador", "periodo_key"], how="left")
+    emp_panel["accidentes_empleador_en_mes"] = emp_panel["accidentes_empleador_en_mes"].fillna(0)
+
+    g = emp_panel.groupby("id_empleador", sort=False)["accidentes_empleador_en_mes"]
+    emp_panel["accidentes_empleador_3m"] = g.transform(
+        lambda s: s.rolling(3, min_periods=1).sum()
+    ).astype(int)
+    emp_panel["accidentes_empleador_6m"] = g.transform(
+        lambda s: s.rolling(6, min_periods=1).sum()
+    ).astype(int)
+    emp_panel["accidentes_empleador_12m"] = g.transform(
+        lambda s: s.rolling(12, min_periods=1).sum()
+    ).astype(int)
+
+    keep = [
+        "id_empleador",
+        "periodo_key",
+        "accidentes_empleador_3m",
+        "accidentes_empleador_6m",
+        "accidentes_empleador_12m",
+    ]
+    return panel.merge(
+        emp_panel[keep].drop_duplicates(["id_empleador", "periodo_key"]),
+        on=["id_empleador", "periodo_key"],
+        how="left",
+    )
+
+
+def _months_since_last_event(flag_series: pd.Series) -> pd.Series:
+    arr = flag_series.to_numpy(dtype=float)
+    out = np.full(len(arr), np.nan)
+    last = -1
+    for i, value in enumerate(arr):
+        if value > 0:
+            last = i
+        if last >= 0:
+            out[i] = float(i - last)
+    return pd.Series(out, index=flag_series.index)
+
+
+def _attach_prevencion_mes(panel: pd.DataFrame, prevencion: pd.DataFrame) -> pd.DataFrame:
+    """Une visitas mensuales y calcula rolling 12m + meses desde última visita."""
+    prev = prevencion.copy()
+    if "periodo_key" not in prev.columns:
+        prev["periodo_key"] = pd.PeriodIndex(prev["periodo"], freq="M")
+
+    prev = prev[
+        [
+            "id_establecimiento",
+            "periodo_key",
+            "visitas_planificadas_mes",
+            "visitas_realizadas_mes",
+        ]
+    ].drop_duplicates(["id_establecimiento", "periodo_key"])
+
+    out = panel.merge(prev, on=["id_establecimiento", "periodo_key"], how="left")
+    out["visitas_planificadas_mes"] = out["visitas_planificadas_mes"].fillna(0).astype(int)
+    out["visitas_realizadas_mes"] = out["visitas_realizadas_mes"].fillna(0).astype(int)
+
+    g = out.groupby("id_establecimiento", sort=False)
+    out["visitas_planificadas_12m_prev"] = g["visitas_planificadas_mes"].transform(
+        lambda s: s.rolling(12, min_periods=1).sum()
+    ).astype(int)
+    out["visitas_realizadas_12m_prev"] = g["visitas_realizadas_mes"].transform(
+        lambda s: s.rolling(12, min_periods=1).sum()
+    ).astype(int)
+    out["meses_desde_ultima_visita"] = g["visitas_realizadas_mes"].transform(
+        _months_since_last_event
+    )
+    return out
+
+
 def build_establishment_month_panel(
     accidents: pd.DataFrame,
     universe: pd.DataFrame | None = None,
+    prevencion: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     """Panel establecimiento × mes con target prospectivo T+1."""
     df = _prepare_accidents(accidents)
@@ -238,6 +325,17 @@ def build_establishment_month_panel(
     else:
         print("[panel] Contexto desde accidentes...", flush=True)
         panel = _attach_accident_context(panel, df)
+
+    if "id_empleador" not in panel.columns and "id_empleador" in df.columns:
+        emp_map = df.groupby("id_establecimiento")["id_empleador"].first().reset_index()
+        panel = panel.merge(emp_map, on="id_establecimiento", how="left")
+
+    print("[panel] Agregados por empleador...", flush=True)
+    panel = _attach_empleador_rolling_features(panel, df)
+
+    if prevencion is not None and not prevencion.empty:
+        print(f"[panel] Uniendo prevención ({len(prevencion):,} filas visitas×mes)...", flush=True)
+        panel = _attach_prevencion_mes(panel, prevencion)
 
     panel["periodo_objetivo"] = (panel["periodo_key"] + 1).astype(str)
     panel = panel.drop(columns=["periodo_key"])

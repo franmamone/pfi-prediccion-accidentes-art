@@ -14,9 +14,12 @@ MODELS_DIR = REPO_ROOT / "models"
 
 ACCIDENTS_PARQUET = RAW_DIR / "accidentes_ml.parquet"
 UNIVERSE_PARQUET = RAW_DIR / "establecimientos_universo.parquet"
+PREVENCION_PARQUET = RAW_DIR / "prevencion_establecimiento_mes.parquet"
 PANEL_PARQUET = PROCESSED_DIR / "panel_establecimiento_mes.parquet"
 
 MODEL_PIPELINE_PATH = MODELS_DIR / "model_pipeline.joblib"
+MODEL_PIPELINE_COLD_PATH = MODELS_DIR / "model_pipeline_cold.joblib"
+MODEL_PIPELINE_WARM_PATH = MODELS_DIR / "model_pipeline_warm.joblib"
 MODEL_XGBOOST_PATH = MODELS_DIR / "xgboost_model.json"
 MODEL_THRESHOLD_PATH = MODELS_DIR / "threshold.json"
 
