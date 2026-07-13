@@ -10,10 +10,11 @@ import pandas as pd
 from sklearn.metrics import average_precision_score, precision_recall_curve
 
 from .config import MODEL_PIPELINE_PATH, REPORTS_DIR, TARGET_COLUMN, TEST_YEAR, ensure_dirs
-from .inference import predict_proba_batched
+from .inference import predict_blended_batched
 
 
 TOP_K_VALUES = [50, 100, 200, 500, 1000, 2000]
+TOP_K_PER_MONTH = [50, 100, 200]
 
 
 def recall_at_top_k(y_true: np.ndarray, y_prob: np.ndarray, k: int) -> dict:
@@ -41,6 +42,40 @@ def recall_at_top_k(y_true: np.ndarray, y_prob: np.ndarray, k: int) -> dict:
     }
 
 
+def top_k_per_month(
+    scored: pd.DataFrame,
+    k_values: list[int] | None = None,
+) -> dict:
+    """Métricas top-K por mes (operación real: N visitas/mes)."""
+    k_values = k_values or TOP_K_PER_MONTH
+    if "periodo" not in scored.columns:
+        raise ValueError("Se requiere columna periodo en scored.")
+
+    monthly: list[dict] = []
+    for periodo, group in scored.groupby("periodo", sort=True):
+        y_true = group[TARGET_COLUMN].to_numpy()
+        y_prob = group["score_riesgo"].to_numpy()
+        row = {"periodo": str(periodo), "filas": len(group), "positivos": int(y_true.sum())}
+        for k in k_values:
+            m = recall_at_top_k(y_true, y_prob, k)
+            row[f"precision_at_{k}"] = m["precision"]
+            row[f"recall_at_{k}"] = m["recall"]
+        monthly.append(row)
+
+    summary: dict[str, float] = {}
+    for k in k_values:
+        prec_col = f"precision_at_{k}"
+        rec_col = f"recall_at_{k}"
+        summary[f"mean_precision_at_{k}_per_month"] = float(
+            np.mean([r[prec_col] for r in monthly if r["filas"] >= k])
+        )
+        summary[f"mean_recall_at_{k}_per_month"] = float(
+            np.mean([r[rec_col] for r in monthly if r["filas"] >= k])
+        )
+
+    return {"months": monthly, "summary": summary}
+
+
 def evaluate_model(
     panel: pd.DataFrame,
     reports_dir: Path | None = None,
@@ -51,7 +86,6 @@ def evaluate_model(
     reports_dir.mkdir(parents=True, exist_ok=True)
 
     artifact = joblib.load(pipeline_path or MODEL_PIPELINE_PATH)
-    pipeline = artifact["pipeline"]
     threshold = float(artifact["threshold"])
     features = artifact["features"]
 
@@ -60,7 +94,7 @@ def evaluate_model(
     y_test = test_df[TARGET_COLUMN].to_numpy()
 
     print(f"[evaluate] Prediciendo test ({len(X_test):,} filas)...", flush=True)
-    y_prob = predict_proba_batched(pipeline, X_test)
+    y_prob = predict_blended_batched(artifact, X_test)
 
     top_k_metrics = [recall_at_top_k(y_test, y_prob, k) for k in TOP_K_VALUES]
 
@@ -100,11 +134,19 @@ def evaluate_model(
     scored = scored.sort_values("score_riesgo", ascending=False)
     scored.to_csv(reports_dir / "scored_panel_test_2024.csv", index=False, sep=";")
 
+    per_month = top_k_per_month(scored)
+    (reports_dir / "top_k_per_month.json").write_text(
+        json.dumps(per_month, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+
     results = {
         "test_rows": len(test_df),
         "pr_auc": pr_auc,
         "threshold": threshold,
-        "top_k": top_k_metrics,
+        "dual_model": bool(artifact.get("dual_model")),
+        "top_k_global": top_k_metrics,
+        "top_k_per_month": per_month["summary"],
         "chart_path": str(chart_path),
         "scored_path": str(reports_dir / "scored_panel_test_2024.csv"),
     }
