@@ -26,6 +26,7 @@ from pfi_prediccion.eda import run_eda
 from pfi_prediccion.evaluate import evaluate_model
 from pfi_prediccion.explain import run_shap_explain
 from pfi_prediccion.export import export_accidents_parquet
+from pfi_prediccion.dataset_reports import run_dataset_reports
 from pfi_prediccion.panel import build_establishment_month_panel, panel_summary
 from pfi_prediccion.train import train_baseline
 
@@ -76,6 +77,11 @@ def main() -> None:
         "--skip-shap",
         action="store_true",
         help="Omitir explicabilidad SHAP al final",
+    )
+    parser.add_argument(
+        "--skip-reports",
+        action="store_true",
+        help="Omitir gráficos de reporte extendidos al final",
     )
     args = parser.parse_args()
 
@@ -135,6 +141,11 @@ def main() -> None:
         print("[pipeline] SHAP (muestra)...", flush=True)
         shap_metrics = run_shap_explain(panel)
 
+    reports_metrics = None
+    if not args.skip_reports:
+        print("[pipeline] Reportes gráficos del dataset...", flush=True)
+        reports_metrics = run_dataset_reports(accidents, panel=panel)
+
     print(
         json.dumps(
             {
@@ -149,6 +160,7 @@ def main() -> None:
                 "model": train_metrics,
                 "evaluation": eval_metrics,
                 "shap": shap_metrics,
+                "reports": reports_metrics,
             },
             ensure_ascii=False,
             indent=2,
