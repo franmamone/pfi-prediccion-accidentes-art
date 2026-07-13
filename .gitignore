@@ -329,3 +329,21 @@ TSWLatexianTemp*
 # option is specified. Footnotes are the stored in a file with suffix Notes.bib.
 # Uncomment the next line to have this generated file ignored.
 #*Notes.bib
+
+# Python / pipeline ML
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.env
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+reports/*
+!reports/.gitkeep
+.ipynb_checkpoints/
+models/*.json
+models/*.ubj
+models/*.joblib
+*.parquet
