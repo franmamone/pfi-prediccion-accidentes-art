@@ -74,6 +74,15 @@ NUMERIC_FEATURES = [
     "visitas_planificadas_mes",
     "visitas_realizadas_mes",
     "meses_desde_ultima_visita",
+    "dotacion_nomina_mes",
+    "edad_promedio",
+    "pct_mayores_50",
+    "pct_mujeres",
+    "antiguedad_promedio_meses",
+    "pct_antiguedad_menor_6m",
+    "tareas_distintas",
+    "pct_en_tarea_principal",
+    "ratio_dotacion_nomina_capitas",
 ]
 
 CATEGORICAL_FEATURES = [

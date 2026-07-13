@@ -12,8 +12,12 @@ PANEL_START_MONTH = pd.Period(PANEL_START, freq="M")
 CONTEXT_COLUMNS = [
     "id_empleador",
     "actividad_ciiu_empleador",
+    "actividad_ciiu_empleador_nombre",
     "actividad_ciiu_establecimiento",
+    "actividad_ciiu_establecimiento_nombre",
     "actividad_ciiu_rev4_principal",
+    "actividad_ciiu_rev4_nombre",
+    "actividad_grupo_nombre",
     "cantidad_capitas",
     "nivel_seguridad_empleador",
     "nivel_seguridad_establecimiento",
@@ -285,10 +289,49 @@ def _attach_prevencion_mes(panel: pd.DataFrame, prevencion: pd.DataFrame) -> pd.
     return out
 
 
+NOMINA_FEATURE_COLUMNS = [
+    "dotacion_nomina_mes",
+    "edad_promedio",
+    "pct_mayores_50",
+    "pct_mujeres",
+    "antiguedad_promedio_meses",
+    "pct_antiguedad_menor_6m",
+    "tareas_distintas",
+    "pct_en_tarea_principal",
+]
+
+
+def _attach_nomina_mes(panel: pd.DataFrame, nomina: pd.DataFrame) -> pd.DataFrame:
+    """Une agregados de nómina vigente al cierre de cada mes."""
+    nom = nomina.copy()
+    if "periodo_key" not in nom.columns:
+        nom["periodo_key"] = pd.PeriodIndex(nom["periodo"], freq="M")
+
+    nom_cols = [
+        c
+        for c in NOMINA_FEATURE_COLUMNS
+        if c in nom.columns and c not in {"id_establecimiento", "periodo_key"}
+    ]
+    nom = nom[["id_establecimiento", "periodo_key", *nom_cols]].drop_duplicates(
+        ["id_establecimiento", "periodo_key"]
+    )
+
+    out = panel.merge(nom, on=["id_establecimiento", "periodo_key"], how="left")
+    if "dotacion_nomina_mes" in out.columns:
+        out["dotacion_nomina_mes"] = out["dotacion_nomina_mes"].fillna(0).astype(int)
+    for col in nom_cols:
+        if col == "dotacion_nomina_mes":
+            continue
+        if col in out.columns:
+            out[col] = pd.to_numeric(out[col], errors="coerce")
+    return out
+
+
 def build_establishment_month_panel(
     accidents: pd.DataFrame,
     universe: pd.DataFrame | None = None,
     prevencion: pd.DataFrame | None = None,
+    nomina: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     """Panel establecimiento × mes con target prospectivo T+1."""
     df = _prepare_accidents(accidents)
@@ -336,6 +379,10 @@ def build_establishment_month_panel(
     if prevencion is not None and not prevencion.empty:
         print(f"[panel] Uniendo prevención ({len(prevencion):,} filas visitas×mes)...", flush=True)
         panel = _attach_prevencion_mes(panel, prevencion)
+
+    if nomina is not None and not nomina.empty:
+        print(f"[panel] Uniendo nómina ({len(nomina):,} filas est×mes)...", flush=True)
+        panel = _attach_nomina_mes(panel, nomina)
 
     panel["periodo_objetivo"] = (panel["periodo_key"] + 1).astype(str)
     panel = panel.drop(columns=["periodo_key"])

@@ -7,9 +7,15 @@ import pandas as pd
 
 from _bootstrap import SRC  # noqa: F401
 
-from pfi_prediccion.columns import normalize_accidents_df, normalize_prevencion_df, normalize_universe_df
+from pfi_prediccion.columns import (
+    normalize_accidents_df,
+    normalize_nomina_df,
+    normalize_prevencion_df,
+    normalize_universe_df,
+)
 from pfi_prediccion.config import (
     ACCIDENTS_PARQUET,
+    NOMINA_PARQUET,
     PANEL_PARQUET,
     PREVENCION_PARQUET,
     UNIVERSE_PARQUET,
@@ -34,6 +40,12 @@ def _load_prevencion() -> pd.DataFrame | None:
     if not PREVENCION_PARQUET.exists():
         return None
     return normalize_prevencion_df(pd.read_parquet(PREVENCION_PARQUET))
+
+
+def _load_nomina() -> pd.DataFrame | None:
+    if not NOMINA_PARQUET.exists():
+        return None
+    return normalize_nomina_df(pd.read_parquet(NOMINA_PARQUET))
 
 
 def main() -> None:
@@ -87,13 +99,24 @@ def main() -> None:
     else:
         print("Prevención no encontrada (opcional). Ver docs/MEJORAS_ESTADO.md", flush=True)
 
+    nomina = _load_nomina()
+    if nomina is not None:
+        print(f"Nómina cargada: {len(nomina):,} filas est×mes", flush=True)
+    else:
+        print("Nómina no encontrada (opcional). Ver docs/MEJORAS_ESTADO.md", flush=True)
+
     eda_summary = run_eda(accidents)
 
     if args.skip_panel and PANEL_PARQUET.exists():
         print(f"[pipeline] Cargando panel existente: {PANEL_PARQUET}", flush=True)
         panel = pd.read_parquet(PANEL_PARQUET)
     else:
-        panel = build_establishment_month_panel(accidents, universe=universe, prevencion=prevencion)
+        panel = build_establishment_month_panel(
+            accidents,
+            universe=universe,
+            prevencion=prevencion,
+            nomina=nomina,
+        )
         print("[pipeline] Guardando panel...", flush=True)
         panel.to_parquet(PANEL_PARQUET, index=False)
 
@@ -119,6 +142,7 @@ def main() -> None:
                 "export": str(export_path),
                 "universe": universe is not None,
                 "prevencion": prevencion is not None,
+                "nomina": nomina is not None,
                 "panel": str(PANEL_PARQUET),
                 "eda": eda_summary,
                 "panel_summary": panel_stats,

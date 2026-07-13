@@ -15,6 +15,7 @@ MODELS_DIR = REPO_ROOT / "models"
 ACCIDENTS_PARQUET = RAW_DIR / "accidentes_ml.parquet"
 UNIVERSE_PARQUET = RAW_DIR / "establecimientos_universo.parquet"
 PREVENCION_PARQUET = RAW_DIR / "prevencion_establecimiento_mes.parquet"
+NOMINA_PARQUET = RAW_DIR / "nomina_establecimiento_mes.parquet"
 PANEL_PARQUET = PROCESSED_DIR / "panel_establecimiento_mes.parquet"
 
 MODEL_PIPELINE_PATH = MODELS_DIR / "model_pipeline.joblib"

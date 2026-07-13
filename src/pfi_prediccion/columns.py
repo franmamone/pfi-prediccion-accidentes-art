@@ -31,9 +31,13 @@ VIEW_COLUMNS: list[str] = [
     "id_tipo_turno_trabajador",
     "cantidad_capitas",
     "actividad_ciiu_empleador",
+    "actividad_ciiu_empleador_nombre",
     "nivel_seguridad_empleador",
     "actividad_ciiu_establecimiento",
+    "actividad_ciiu_establecimiento_nombre",
     "actividad_ciiu_rev4_principal",
+    "actividad_ciiu_rev4_nombre",
+    "actividad_grupo_nombre",
     "frecuencia_visita_ciiu_meses",
     "id_tipo_establecimiento",
     "flag_establecimiento_principal",
@@ -77,9 +81,13 @@ UNIVERSE_COLUMNS: list[str] = [
     "id_empleador",
     "cantidad_capitas",
     "actividad_ciiu_empleador",
+    "actividad_ciiu_empleador_nombre",
     "nivel_seguridad_empleador",
     "actividad_ciiu_establecimiento",
+    "actividad_ciiu_establecimiento_nombre",
     "actividad_ciiu_rev4_principal",
+    "actividad_ciiu_rev4_nombre",
+    "actividad_grupo_nombre",
     "frecuencia_visita_ciiu_meses",
     "id_tipo_establecimiento",
     "flag_establecimiento_principal",
@@ -101,6 +109,21 @@ PREVENCION_COLUMNS: list[str] = [
     "mes",
     "visitas_planificadas_mes",
     "visitas_realizadas_mes",
+]
+
+NOMINA_COLUMNS: list[str] = [
+    "id_establecimiento",
+    "periodo",
+    "anio",
+    "mes",
+    "dotacion_nomina_mes",
+    "edad_promedio",
+    "pct_mayores_50",
+    "pct_mujeres",
+    "antiguedad_promedio_meses",
+    "pct_antiguedad_menor_6m",
+    "tareas_distintas",
+    "pct_en_tarea_principal",
 ]
 
 
@@ -173,6 +196,22 @@ def normalize_prevencion_df(df: pd.DataFrame) -> pd.DataFrame:
                 f"pero el archivo tiene {len(out.columns)}."
             )
         out.columns = PREVENCION_COLUMNS
+
+    out.columns = [str(c).strip() for c in out.columns]
+    out = out.replace({"NULL": pd.NA, "null": pd.NA, "": pd.NA})
+    return out
+
+
+def normalize_nomina_df(df: pd.DataFrame) -> pd.DataFrame:
+    out = df.copy()
+    normalized = {str(c).strip().lower() for c in out.columns}
+    if "id_establecimiento" not in normalized or "periodo" not in normalized:
+        if len(out.columns) != len(NOMINA_COLUMNS):
+            raise ValueError(
+                f"Se esperaban {len(NOMINA_COLUMNS)} columnas de nómina, "
+                f"pero el archivo tiene {len(out.columns)}."
+            )
+        out.columns = NOMINA_COLUMNS
 
     out.columns = [str(c).strip() for c in out.columns]
     out = out.replace({"NULL": pd.NA, "null": pd.NA, "": pd.NA})

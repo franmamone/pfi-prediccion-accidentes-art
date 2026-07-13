@@ -81,6 +81,18 @@ def enrich_panel_features(panel: pd.DataFrame) -> pd.DataFrame:
         np.nan,
     )
 
+    if "dotacion_nomina_mes" in out.columns:
+        nomina_dot = pd.to_numeric(out["dotacion_nomina_mes"], errors="coerce").fillna(0)
+        out["ratio_dotacion_nomina_capitas"] = np.where(
+            capitas.fillna(0) > 0,
+            nomina_dot / capitas,
+            np.nan,
+        )
+        out["pct_mayores_50"] = pd.to_numeric(out.get("pct_mayores_50"), errors="coerce")
+        out["pct_en_tarea_principal"] = pd.to_numeric(
+            out.get("pct_en_tarea_principal"), errors="coerce"
+        )
+
     if "meses_desde_ultimo_accidente" in out.columns:
         out["meses_desde_ultimo_accidente"] = out["meses_desde_ultimo_accidente"].fillna(999)
 
