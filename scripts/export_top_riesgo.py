@@ -12,6 +12,7 @@ import pandas as pd
 from _bootstrap import SRC  # noqa: F401
 
 from pfi_prediccion.config import MODEL_PIPELINE_PATH, PANEL_PARQUET, REPORTS_DIR, ensure_dirs
+from pfi_prediccion.inference import predict_blended_batched
 
 
 def main() -> None:
@@ -34,7 +35,6 @@ def main() -> None:
     ensure_dirs()
     panel = pd.read_parquet(PANEL_PARQUET)
     artifact = joblib.load(MODEL_PIPELINE_PATH)
-    pipeline = artifact["pipeline"]
     threshold = float(artifact["threshold"])
     features = artifact["features"]
 
@@ -43,7 +43,7 @@ def main() -> None:
     if subset.empty:
         raise ValueError(f"No hay filas para el período {periodo}")
 
-    subset["score_riesgo"] = pipeline.predict_proba(subset[features])[:, 1]
+    subset["score_riesgo"] = predict_blended_batched(artifact, subset[features])
     subset["alerta"] = (subset["score_riesgo"] >= threshold).astype(int)
     subset["rank"] = subset["score_riesgo"].rank(ascending=False, method="first").astype(int)
 

@@ -25,11 +25,17 @@ def main() -> None:
         default=str(REPORTS_DIR),
         help="Carpeta de métricas",
     )
+    parser.add_argument("--dual", action="store_true", help="Modelo dual cold/warm")
     args = parser.parse_args()
 
     ensure_dirs()
     panel = pd.read_parquet(args.input)
-    metrics = train_baseline(panel, reports_dir=args.reports_dir)
+    metrics = train_baseline(
+        panel,
+        reports_dir=args.reports_dir,
+        dual_model=args.dual,
+        full_retrain=args.full_retrain,
+    )
     print(json.dumps({"ok": True, **metrics}, ensure_ascii=False, indent=2))
 
 
