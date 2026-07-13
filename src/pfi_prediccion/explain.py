@@ -11,6 +11,7 @@ import shap
 
 from .config import MODEL_PIPELINE_PATH, REPORTS_DIR, TARGET_COLUMN, TEST_YEAR, ensure_dirs
 from .inference import predict_blended_batched
+from .shap_narrative import build_human_readable_explanation
 
 SHAP_SAMPLE_ROWS = 500
 SHAP_MAX_DISPLAY = 20
@@ -71,19 +72,44 @@ def run_shap_explain(
     scores = predict_blended_batched(artifact, X_sample)
     top_row = int(np.argmax(scores))
     row_idx = sample.index[top_row]
+    row_series = sample.loc[row_idx]
     row_X = X_sample.iloc[[top_row]]
     Xt_row, _ = _preprocessed_matrix(pipeline, row_X)
     shap_row = explainer.shap_values(Xt_row)[0]
+    human = build_human_readable_explanation(row_series, feature_names, shap_row)
     local_explain = {
-        "id_establecimiento": str(sample.loc[row_idx, "id_establecimiento"]),
-        "periodo": str(sample.loc[row_idx, "periodo"]),
+        "id_establecimiento": str(row_series["id_establecimiento"]),
+        "periodo": str(row_series["periodo"]),
         "score_riesgo": float(scores[top_row]),
-        "target_real": int(sample.loc[row_idx, TARGET_COLUMN]),
+        "target_real": int(row_series[TARGET_COLUMN]),
         "top_drivers": [
             {"feature": feature_names[i], "shap": float(shap_row[i])}
             for i in np.argsort(-np.abs(shap_row))[:10]
         ],
+        "explicacion_legible": human,
     }
+
+    # Ejemplos adicionales: top 3 scores con narrativa
+    top3_idx = np.argsort(-scores)[:3]
+    ejemplos_legibles = []
+    for rank, ti in enumerate(top3_idx, start=1):
+        ridx = sample.index[int(ti)]
+        rser = sample.loc[ridx]
+        rX = X_sample.iloc[[int(ti)]]
+        Xt_r, _ = _preprocessed_matrix(pipeline, rX)
+        shap_r = explainer.shap_values(Xt_r)[0]
+        ejemplos_legibles.append(
+            {
+                "ranking": rank,
+                "id_establecimiento": str(rser["id_establecimiento"]),
+                "periodo": str(rser["periodo"]),
+                "score_riesgo": float(scores[int(ti)]),
+                "target_real": int(rser[TARGET_COLUMN]),
+                "explicacion_legible": build_human_readable_explanation(
+                    rser, feature_names, shap_r
+                ),
+            }
+        )
 
     bar_path = reports_dir / "shap_local_top_prediction.png"
     top_local = local_explain["top_drivers"][:10]
@@ -96,7 +122,8 @@ def run_shap_explain(
     plt.xlabel("SHAP value")
     plt.title(
         f"Top predicción — est. {local_explain['id_establecimiento']} "
-        f"({local_explain['periodo']}) score={local_explain['score_riesgo']:.3f}"
+        f"({local_explain['periodo']}) score={local_explain['score_riesgo']:.3f}\n"
+        f"{human.get('resumen', '')[:120]}"
     )
     plt.tight_layout()
     plt.savefig(bar_path, dpi=120, bbox_inches="tight")
@@ -108,8 +135,9 @@ def run_shap_explain(
         "local_plot": str(bar_path),
         "global_top_features": top_features,
         "local_example": local_explain,
+        "ejemplos_legibles_top3": ejemplos_legibles,
         "dual_model": bool(artifact.get("dual_model")),
-        "note": "SHAP calculado con pipeline warm (o único); segmento cold usa el mismo preprocess.",
+        "note": "SHAP calculado con pipeline warm (o único). Ver explicacion_legible para motivos en español.",
     }
     (reports_dir / "shap_report.json").write_text(
         json.dumps(result, indent=2, ensure_ascii=False),
