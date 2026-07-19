@@ -11,7 +11,7 @@ import pandas as pd
 
 from _bootstrap import SRC  # noqa: F401
 
-from pfi_prediccion.config import MODEL_PIPELINE_PATH, PANEL_PARQUET, REPORTS_DIR, ensure_dirs
+from pfi_prediccion.config import MODEL_PIPELINE_PATH, PANEL_PARQUET, REPORTS_RANKING_DIR, ensure_dirs
 from pfi_prediccion.inference import predict_blended_batched
 
 
@@ -27,7 +27,7 @@ def main() -> None:
     parser.add_argument(
         "--output",
         type=str,
-        default=str(REPORTS_DIR / "top_riesgo.csv"),
+        default=str(REPORTS_RANKING_DIR / "top_riesgo.csv"),
         help="CSV de salida (;)",
     )
     args = parser.parse_args()

@@ -9,7 +9,14 @@ import numpy as np
 import pandas as pd
 import shap
 
-from .config import MODEL_PIPELINE_PATH, REPORTS_DIR, TARGET_COLUMN, TEST_YEAR, ensure_dirs
+from .config import (
+    HOLDOUT_YEAR,
+    MODEL_PIPELINE_PATH,
+    REPORTS_SHAP_DIR,
+    TARGET_COLUMN,
+    TEST_YEAR,
+    ensure_dirs,
+)
 from .inference import predict_blended_batched
 from .shap_narrative import build_human_readable_explanation
 
@@ -33,7 +40,7 @@ def run_shap_explain(
 ) -> dict:
     """SHAP global (summary) y ejemplo por predicción sobre muestra de test."""
     ensure_dirs()
-    reports_dir = Path(reports_dir or REPORTS_DIR)
+    reports_dir = Path(reports_dir or REPORTS_SHAP_DIR)
     reports_dir.mkdir(parents=True, exist_ok=True)
 
     artifact = joblib.load(pipeline_path or MODEL_PIPELINE_PATH)
@@ -41,6 +48,13 @@ def run_shap_explain(
     pipeline = artifact.get("pipeline_warm") or artifact["pipeline"]
 
     test_df = panel[panel["anio"] == TEST_YEAR].copy()
+    if test_df.empty:
+        # Fallback si aún no hay holdout 2025 exportado
+        year = int(panel["anio"].max())
+        test_df = panel[panel["anio"] == year].copy()
+        print(f"[shap] Holdout {HOLDOUT_YEAR} vacío; usando año {year}.", flush=True)
+    if TARGET_COLUMN in test_df.columns:
+        test_df = test_df[test_df[TARGET_COLUMN].notna()].copy()
     if test_df.empty:
         raise ValueError("No hay filas de test para SHAP.")
 
@@ -81,7 +95,11 @@ def run_shap_explain(
         "id_establecimiento": str(row_series["id_establecimiento"]),
         "periodo": str(row_series["periodo"]),
         "score_riesgo": float(scores[top_row]),
-        "target_real": int(row_series[TARGET_COLUMN]),
+        "target_real": (
+            int(row_series[TARGET_COLUMN])
+            if TARGET_COLUMN in row_series.index and pd.notna(row_series[TARGET_COLUMN])
+            else None
+        ),
         "top_drivers": [
             {"feature": feature_names[i], "shap": float(shap_row[i])}
             for i in np.argsort(-np.abs(shap_row))[:10]
@@ -104,7 +122,11 @@ def run_shap_explain(
                 "id_establecimiento": str(rser["id_establecimiento"]),
                 "periodo": str(rser["periodo"]),
                 "score_riesgo": float(scores[int(ti)]),
-                "target_real": int(rser[TARGET_COLUMN]),
+                "target_real": (
+                    int(rser[TARGET_COLUMN])
+                    if TARGET_COLUMN in rser.index and pd.notna(rser[TARGET_COLUMN])
+                    else None
+                ),
                 "explicacion_legible": build_human_readable_explanation(
                     rser, feature_names, shap_r
                 ),

@@ -10,7 +10,7 @@ import pandas as pd
 
 from _bootstrap import SRC  # noqa: F401
 
-from pfi_prediccion.config import ACCIDENTS_PARQUET, PANEL_PARQUET, REPORTS_DIR, ensure_dirs
+from pfi_prediccion.config import ACCIDENTS_PARQUET, PANEL_PARQUET, REPORTS_LEGACY_DIR, ensure_dirs
 
 
 def main() -> None:
@@ -25,7 +25,7 @@ def main() -> None:
         "--output",
         type=str,
         default=None,
-        help="CSV de salida (default: reports/<nombre>.csv)",
+        help="CSV de salida (default: reports/legacy/<nombre>.csv)",
     )
     parser.add_argument(
         "--max-rows",
@@ -44,7 +44,7 @@ def main() -> None:
     if args.max_rows:
         df = df.head(args.max_rows)
 
-    output_path = Path(args.output) if args.output else REPORTS_DIR / f"{input_path.stem}.csv"
+    output_path = Path(args.output) if args.output else REPORTS_LEGACY_DIR / f"{input_path.stem}.csv"
     output_path.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(output_path, index=False, encoding="utf-8-sig", sep=";")
 

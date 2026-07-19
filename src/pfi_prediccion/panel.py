@@ -3,11 +3,19 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from .config import PANEL_END, PANEL_START, TARGET_COLUMN
+from .config import (
+    DATA_END,
+    PANEL_END,
+    PANEL_START,
+    TARGET_COLUMN,
+    TARGET_COLUMN_1M,
+    TARGET_COLUMN_3M,
+)
 from .features import enrich_panel_features
 
 PANEL_LAST_FEATURE_MONTH = pd.Period(PANEL_END, freq="M")
 PANEL_START_MONTH = pd.Period(PANEL_START, freq="M")
+DATA_END_MONTH = pd.Period(DATA_END, freq="M")
 
 CONTEXT_COLUMNS = [
     "id_empleador",
@@ -69,8 +77,10 @@ def _months_since_last_accident(counts: pd.Series) -> pd.Series:
 def _build_grid(
     accidents: pd.DataFrame,
     universe: pd.DataFrame | None,
+    last_feature_month: pd.Period | None = None,
 ) -> pd.DataFrame:
-    periods = pd.period_range(PANEL_START_MONTH, PANEL_LAST_FEATURE_MONTH, freq="M")
+    end = last_feature_month or PANEL_LAST_FEATURE_MONTH
+    periods = pd.period_range(PANEL_START_MONTH, end, freq="M")
 
     if universe is not None and not universe.empty:
         est_ids = universe["id_establecimiento"].dropna().unique()
@@ -83,7 +93,7 @@ def _build_grid(
         chunks: list[pd.DataFrame] = []
         for eid, start in first_accident.items():
             start = max(start, PANEL_START_MONTH)
-            est_periods = pd.period_range(start, PANEL_LAST_FEATURE_MONTH, freq="M")
+            est_periods = pd.period_range(start, end, freq="M")
             if len(est_periods) == 0:
                 continue
             chunks.append(
@@ -100,16 +110,46 @@ def _build_grid(
     return panel
 
 
-def _rolling_accident_features(panel: pd.DataFrame) -> pd.DataFrame:
+def _rolling_accident_features(
+    panel: pd.DataFrame,
+    data_end: pd.Period | None = None,
+) -> pd.DataFrame:
+    """Features rolling + targets 1m/3m. Bordes sin futuro completo → NaN (no cero)."""
     out = panel.sort_values(["id_establecimiento", "periodo_key"]).copy()
     g = out.groupby("id_establecimiento", sort=False)["accidentes_en_mes"]
+    end = data_end or DATA_END_MONTH
 
     out["accidentes_3m"] = g.transform(lambda s: s.rolling(3, min_periods=1).sum()).astype(int)
     out["accidentes_6m"] = g.transform(lambda s: s.rolling(6, min_periods=1).sum()).astype(int)
     out["accidentes_12m"] = g.transform(lambda s: s.rolling(12, min_periods=1).sum()).astype(int)
     out["accidentes_total_previos"] = g.transform("cumsum").astype(int)
-    out[TARGET_COLUMN] = g.shift(-1).fillna(0).gt(0).astype(int)
     out["meses_desde_ultimo_accidente"] = g.transform(_months_since_last_accident)
+
+    # Target 1m: accidente en T+1. Sin futuro completo → NaN (nunca rellenar con 0).
+    t1 = g.shift(-1)
+    out[TARGET_COLUMN_1M] = np.nan
+    mask_1m = t1.notna() & (out["periodo_key"] < end)
+    out.loc[mask_1m, TARGET_COLUMN_1M] = t1.loc[mask_1m].gt(0).astype(float)
+
+    # Target 3m: accidente en T+1, T+2 o T+3
+    t2 = g.shift(-2)
+    t3 = g.shift(-3)
+    out[TARGET_COLUMN_3M] = np.nan
+    mask_3m = (
+        (out["periodo_key"] <= (end - 3))
+        & t1.notna()
+        & t2.notna()
+        & t3.notna()
+    )
+    out.loc[mask_3m, TARGET_COLUMN_3M] = (
+        t1.loc[mask_3m].gt(0) | t2.loc[mask_3m].gt(0) | t3.loc[mask_3m].gt(0)
+    ).astype(float)
+
+    # Alias legacy
+    out[TARGET_COLUMN] = out[TARGET_COLUMN_1M]
+    out["periodo_objetivo_1m"] = (out["periodo_key"] + 1).astype(str)
+    out["periodo_objetivo_3m_inicio"] = (out["periodo_key"] + 1).astype(str)
+    out["periodo_objetivo_3m_fin"] = (out["periodo_key"] + 3).astype(str)
     return out
 
 
@@ -327,19 +367,36 @@ def _attach_nomina_mes(panel: pd.DataFrame, nomina: pd.DataFrame) -> pd.DataFram
     return out
 
 
+def _infer_data_end(accidents: pd.DataFrame) -> pd.Period:
+    """Último mes con accidentes observados (acota targets)."""
+    max_period = accidents["periodo"].max()
+    if pd.isna(max_period):
+        return DATA_END_MONTH
+    observed = pd.Period(str(max_period), freq="M")
+    return min(observed, DATA_END_MONTH)
+
+
 def build_establishment_month_panel(
     accidents: pd.DataFrame,
     universe: pd.DataFrame | None = None,
     prevencion: pd.DataFrame | None = None,
     nomina: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
-    """Panel establecimiento × mes con target prospectivo T+1."""
+    """Panel establecimiento × mes con targets prospectivos 1m y 3m."""
     df = _prepare_accidents(accidents)
     if df.empty:
         raise ValueError("El dataset de accidentes está vacío.")
 
-    print(f"[panel] Construyendo grilla...", flush=True)
-    panel = _build_grid(df, universe)
+    data_end = _infer_data_end(df)
+    # Incluir hasta data_end en la grilla para poder calcular shifts de target;
+    # las filas sin futuro completo quedan con target NaN.
+    last_feature = min(PANEL_LAST_FEATURE_MONTH, data_end)
+    print(
+        f"[panel] Construyendo grilla hasta {last_feature} "
+        f"(datos observados hasta {data_end})...",
+        flush=True,
+    )
+    panel = _build_grid(df, universe, last_feature_month=last_feature)
 
     monthly_counts = (
         df.groupby(["id_establecimiento", "periodo"], as_index=False)
@@ -358,10 +415,14 @@ def build_establishment_month_panel(
     panel["mes"] = panel["periodo_key"].dt.month
 
     print(f"[panel] {len(panel):,} filas — calculando features temporales...", flush=True)
-    panel = _rolling_accident_features(panel)
+    panel = _rolling_accident_features(panel, data_end=data_end)
 
     if universe is not None and not universe.empty:
-        print(f"[panel] Uniendo universo ({universe['id_establecimiento'].nunique():,} establecimientos)...", flush=True)
+        print(
+            f"[panel] Uniendo universo "
+            f"({universe['id_establecimiento'].nunique():,} establecimientos)...",
+            flush=True,
+        )
         panel = _attach_universe_context(panel, universe)
         print("[panel] Contexto dinámico desde accidentes...", flush=True)
         panel = _attach_dynamic_accident_context(panel, df)
@@ -377,27 +438,48 @@ def build_establishment_month_panel(
     panel = _attach_empleador_rolling_features(panel, df)
 
     if prevencion is not None and not prevencion.empty:
-        print(f"[panel] Uniendo prevención ({len(prevencion):,} filas visitas×mes)...", flush=True)
+        print(
+            f"[panel] Uniendo prevención ({len(prevencion):,} filas visitas×mes)...",
+            flush=True,
+        )
         panel = _attach_prevencion_mes(panel, prevencion)
 
     if nomina is not None and not nomina.empty:
         print(f"[panel] Uniendo nómina ({len(nomina):,} filas est×mes)...", flush=True)
         panel = _attach_nomina_mes(panel, nomina)
 
-    panel["periodo_objetivo"] = (panel["periodo_key"] + 1).astype(str)
+    panel["periodo_objetivo"] = panel["periodo_objetivo_1m"]
+    panel["data_end"] = str(data_end)
     panel = panel.drop(columns=["periodo_key"])
     panel = enrich_panel_features(panel)
-    print(f"[panel] Listo: {len(panel):,} filas.", flush=True)
+    print(
+        f"[panel] Listo: {len(panel):,} filas. "
+        f"Targets 1m evaluables: {int(panel[TARGET_COLUMN_1M].notna().sum()):,}; "
+        f"3m: {int(panel[TARGET_COLUMN_3M].notna().sum()):,}.",
+        flush=True,
+    )
     return panel.reset_index(drop=True)
 
 
 def panel_summary(panel: pd.DataFrame) -> dict:
-    positives = int(panel[TARGET_COLUMN].sum())
+    def _rate(col: str) -> dict:
+        s = panel[col] if col in panel.columns else pd.Series(dtype=float)
+        valid = s.dropna()
+        positives = int(valid.sum()) if len(valid) else 0
+        return {
+            "evaluables": int(len(valid)),
+            "positivos": positives,
+            "tasa_positiva": positives / len(valid) if len(valid) else 0.0,
+        }
+
     return {
         "filas": len(panel),
         "establecimientos": panel["id_establecimiento"].nunique(),
-        "positivos": positives,
-        "tasa_positiva": positives / len(panel) if len(panel) else 0.0,
         "periodo_min": panel["periodo"].min(),
         "periodo_max": panel["periodo"].max(),
+        "target_1m": _rate(TARGET_COLUMN_1M),
+        "target_3m": _rate(TARGET_COLUMN_3M),
+        # Compat
+        "positivos": _rate(TARGET_COLUMN_1M)["positivos"],
+        "tasa_positiva": _rate(TARGET_COLUMN_1M)["tasa_positiva"],
     }

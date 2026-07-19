@@ -7,7 +7,7 @@ import pandas as pd
 
 from _bootstrap import SRC  # noqa: F401
 
-from pfi_prediccion.config import PANEL_PARQUET, REPORTS_DIR, ensure_dirs
+from pfi_prediccion.config import PANEL_PARQUET, REPORTS_MODEL_DIR, ensure_dirs
 from pfi_prediccion.train import train_baseline
 
 
@@ -22,7 +22,7 @@ def main() -> None:
     parser.add_argument(
         "--reports-dir",
         type=str,
-        default=str(REPORTS_DIR),
+        default=str(REPORTS_MODEL_DIR),
         help="Carpeta de métricas",
     )
     parser.add_argument("--dual", action="store_true", help="Modelo dual cold/warm")
