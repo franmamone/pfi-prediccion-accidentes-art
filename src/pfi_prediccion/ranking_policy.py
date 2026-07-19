@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -12,6 +13,7 @@ from .config import (
     CAPACITY_CRITICAL,
     CAPACITY_MONTHLY,
     CAPACITY_QUARTERLY,
+    DATA_END,
     HORIZON_1M,
     HORIZON_3M,
     PROCESSED_DIR,
@@ -23,17 +25,12 @@ from .config import (
 )
 from .features import ciiu_seccion
 from .inference import predict_blended_batched
+from .ranking_explain import explain_ranking_items
 
 
+# Agrupación por división CIIU Rev.3 (2 dígitos), coherente con el panel.
 SECTOR_LABELS = {
-    "41": "Construcción",
-    "42": "Construcción",
-    "43": "Construcción",
-    "10": "Industria",
-    "11": "Industria",
-    "12": "Industria",
-    "13": "Industria",
-    "14": "Industria",
+    "45": "Construcción",
     "15": "Industria",
     "16": "Industria",
     "17": "Industria",
@@ -53,17 +50,20 @@ SECTOR_LABELS = {
     "31": "Industria",
     "32": "Industria",
     "33": "Industria",
-    "45": "Comercio",
-    "46": "Comercio",
-    "47": "Comercio",
-    "49": "Transporte",
-    "50": "Transporte",
-    "51": "Transporte",
-    "52": "Transporte",
-    "53": "Transporte",
-    "86": "Salud",
-    "87": "Salud",
-    "88": "Salud",
+    "34": "Industria",
+    "35": "Industria",
+    "36": "Industria",
+    "37": "Industria",
+    "50": "Comercio",
+    "51": "Comercio",
+    "52": "Comercio",
+    "55": "Comercio",
+    "60": "Transporte",
+    "61": "Transporte",
+    "62": "Transporte",
+    "63": "Transporte",
+    "64": "Transporte",
+    "85": "Salud",
 }
 
 
@@ -177,16 +177,61 @@ def export_ranking_contract(
     ranking = build_master_ranking(panel, periodo=periodo, horizon=horizon)
     periodo = str(ranking["periodo"].iloc[0])
 
+    # SHAP individual sobre el top operativo: requiere features completas del panel del mes.
+    month_panel = panel[panel["periodo"] == periodo].copy()
+    month_panel = month_panel.merge(
+        ranking[["id_establecimiento", "score_riesgo", "ranking"]],
+        on="id_establecimiento",
+        how="inner",
+        suffixes=("", "_rank"),
+    )
+    if "score_riesgo_rank" in month_panel.columns:
+        month_panel["score_riesgo"] = month_panel["score_riesgo_rank"]
+        month_panel = month_panel.drop(columns=["score_riesgo_rank"])
+    shap_by_id, shap_agregados = explain_ranking_items(
+        month_panel, horizon=horizon, top_n=CAPACITY_MONTHLY
+    )
+    additivity_ok = sum(1 for v in shap_by_id.values() if v.get("additivity_ok"))
+    additivity_fail = len(shap_by_id) - additivity_ok
+
     csv_path = output_dir / f"ranking_maestro_{horizon}_{periodo}.csv"
     json_path = output_dir / f"ranking_maestro_{horizon}_{periodo}.json"
     contract_path = output_dir / "ranking_contract.json"
 
     ranking.to_csv(csv_path, index=False, sep=";")
 
+    items = ranking.head(CAPACITY_MONTHLY).to_dict(orient="records")
+    # Evitar NaN/NaT en JSON (targets futuros no evaluables).
+    for item in items:
+        for key, value in list(item.items()):
+            if value is None:
+                continue
+            if isinstance(value, float) and (pd.isna(value) or value != value):
+                item[key] = None
+            elif pd.isna(value):
+                item[key] = None
+        est_id = str(item["id_establecimiento"])
+        shap_info = shap_by_id.get(est_id)
+        if not shap_info:
+            item["contribuciones"] = []
+            item["motivo_principal"] = None
+            continue
+        item["contribuciones"] = shap_info["contribuciones"]
+        item["motivo_principal"] = shap_info.get("motivo_principal")
+
+    model_path = model_pipeline_path(horizon)
+    modelo_version = model_path.name
+    if "data_end" in panel.columns and panel["data_end"].notna().any():
+        datos_hasta = str(panel.loc[panel["data_end"].notna(), "data_end"].iloc[0])
+    else:
+        datos_hasta = DATA_END
+
     payload = {
         "periodo": periodo,
         "horizonte": horizon,
         "generado_para": "api_dotnet / react_app",
+        "modelo_version": modelo_version,
+        "datos_hasta": datos_hasta,
         "politica": {
             "capacidad_criticos": CAPACITY_CRITICAL,
             "capacidad_mensual": CAPACITY_MONTHLY,
@@ -203,6 +248,8 @@ def export_ranking_contract(
                 "Cola PRS obligatoria separada de la predictiva.",
                 "Establecimientos en cooldown se marcan pero no se excluyen automáticamente de la vista.",
                 "Score = prioridad relativa, no probabilidad calibrada por defecto.",
+                "contribuciones SHAP = aporte en escala interna del modelo (margen), no probabilidad ni % del puntaje.",
+                "shap_agregados = media exacta sobre matriz completa top-K (no promedia los 5 factores truncados).",
             ],
         },
         "totales": {
@@ -211,9 +258,36 @@ def export_ranking_contract(
             "altos": int((ranking["banda"] == "alto").sum()),
             "en_cooldown": int(ranking["en_cooldown"].sum()),
             "con_obligacion_prs": int(ranking["obligacion_prs"].sum()),
+            "shap_explicados": len(shap_by_id),
+            "shap_aditividad_ok": additivity_ok,
+            "shap_aditividad_fail": additivity_fail,
         },
-        "items": ranking.head(CAPACITY_MONTHLY).to_dict(orient="records"),
+        "shap_agregados": shap_agregados,
+        "items": items,
     }
+    # Hash estable del contenido analítico (sin timestamps).
+    hash_body = json.dumps(
+        {
+            "periodo": periodo,
+            "horizonte": horizon,
+            "modelo_version": modelo_version,
+            "datos_hasta": datos_hasta,
+            "items": [
+                {
+                    "id": i["id_establecimiento"],
+                    "ranking": i["ranking"],
+                    "score": round(float(i["score_riesgo"]), 6),
+                }
+                for i in items
+            ],
+            "shap_agregados": shap_agregados,
+        },
+        sort_keys=True,
+        ensure_ascii=False,
+        default=str,
+    ).encode("utf-8")
+    payload["artifact_hash"] = hashlib.sha256(hash_body).hexdigest()
+
     json_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
 
     contract = {
@@ -239,6 +313,9 @@ def export_ranking_contract(
         "contract": str(contract_path),
         "parquet": str(processed),
         "totales": payload["totales"],
+        "shap_explicados": len(shap_by_id),
+        "shap_aditividad_ok": additivity_ok,
+        "artifact_hash": payload["artifact_hash"],
     }
 
 
