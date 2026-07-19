@@ -8,7 +8,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Usuario> Usuarios => Set<Usuario>();
     public DbSet<RankingSnapshot> RankingSnapshots => Set<RankingSnapshot>();
     public DbSet<RankingItem> RankingItems => Set<RankingItem>();
+    public DbSet<RankingItemContribucion> RankingItemContribuciones => Set<RankingItemContribucion>();
+    public DbSet<SnapshotShapAgregado> SnapshotShapAgregados => Set<SnapshotShapAgregado>();
+    public DbSet<RankingItemOutcome> RankingItemOutcomes => Set<RankingItemOutcome>();
+    public DbSet<SnapshotMetricaObservada> SnapshotMetricasObservadas => Set<SnapshotMetricaObservada>();
+    public DbSet<SnapshotCobertura> SnapshotCoberturas => Set<SnapshotCobertura>();
     public DbSet<AppConfigEntry> AppConfig => Set<AppConfigEntry>();
+    public DbSet<AgendaItem> AgendaItems => Set<AgendaItem>();
+    public DbSet<VisitaApp> VisitasApp => Set<VisitaApp>();
+    public DbSet<AgendaEvento> AgendaEventos => Set<AgendaEvento>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -17,13 +25,120 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .IsUnique();
 
         modelBuilder.Entity<RankingSnapshot>()
-            .HasIndex(s => new { s.Periodo, s.Horizonte })
-            .IsUnique();
+            .HasIndex(s => new { s.Periodo, s.Horizonte, s.ArtifactHash });
 
         modelBuilder.Entity<RankingItem>()
             .HasOne(i => i.Snapshot)
             .WithMany(s => s.Items)
             .HasForeignKey(i => i.SnapshotId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<RankingItem>()
+            .HasIndex(i => new { i.SnapshotId, i.IdEstablecimiento })
+            .IsUnique();
+
+        modelBuilder.Entity<RankingItem>()
+            .HasIndex(i => new { i.SnapshotId, i.Ranking })
+            .IsUnique();
+
+        modelBuilder.Entity<RankingItemContribucion>()
+            .HasOne(c => c.RankingItem)
+            .WithMany(i => i.Contribuciones)
+            .HasForeignKey(c => c.RankingItemId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<RankingItemContribucion>()
+            .HasIndex(c => new { c.RankingItemId, c.Orden })
+            .IsUnique();
+
+        modelBuilder.Entity<SnapshotShapAgregado>()
+            .HasOne(s => s.Snapshot)
+            .WithMany(s => s.ShapAgregados)
+            .HasForeignKey(s => s.SnapshotId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<SnapshotShapAgregado>()
+            .HasIndex(s => new { s.SnapshotId, s.TopK, s.Feature })
+            .IsUnique();
+
+        modelBuilder.Entity<RankingItemOutcome>()
+            .HasOne(o => o.RankingItem)
+            .WithOne(i => i.Outcome)
+            .HasForeignKey<RankingItemOutcome>(o => o.RankingItemId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<RankingItemOutcome>()
+            .HasIndex(o => o.RankingItemId)
+            .IsUnique();
+
+        modelBuilder.Entity<SnapshotMetricaObservada>()
+            .HasOne(m => m.Snapshot)
+            .WithMany(s => s.MetricasObservadas)
+            .HasForeignKey(m => m.SnapshotId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<SnapshotMetricaObservada>()
+            .HasIndex(m => new { m.SnapshotId, m.TopK })
+            .IsUnique();
+
+        modelBuilder.Entity<SnapshotCobertura>()
+            .HasOne(c => c.Snapshot)
+            .WithMany(s => s.Coberturas)
+            .HasForeignKey(c => c.SnapshotId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<SnapshotCobertura>()
+            .HasIndex(c => new { c.SnapshotId, c.TopK })
+            .IsUnique();
+
+        modelBuilder.Entity<AgendaItem>()
+            .HasOne(a => a.Usuario)
+            .WithMany()
+            .HasForeignKey(a => a.UsuarioId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<AgendaItem>()
+            .HasOne(a => a.Snapshot)
+            .WithMany()
+            .HasForeignKey(a => a.SnapshotId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<AgendaItem>()
+            .HasOne(a => a.SnapshotItem)
+            .WithMany()
+            .HasForeignKey(a => a.SnapshotItemId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<AgendaItem>()
+            .Property(a => a.RowVersion)
+            .IsRowVersion();
+
+        modelBuilder.Entity<VisitaApp>()
+            .HasOne(v => v.Usuario)
+            .WithMany()
+            .HasForeignKey(v => v.UsuarioId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<VisitaApp>()
+            .HasOne(v => v.AgendaItem)
+            .WithOne(a => a.Visita)
+            .HasForeignKey<VisitaApp>(v => v.AgendaItemId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<AgendaEvento>()
+            .HasOne(e => e.AgendaItem)
+            .WithMany(a => a.Eventos)
+            .HasForeignKey(e => e.AgendaItemId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<AgendaEvento>()
+            .HasOne(e => e.Actor)
+            .WithMany()
+            .HasForeignKey(e => e.ActorUsuarioId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<AgendaEvento>()
+            .HasIndex(e => e.OperacionId)
+            .IsUnique();
     }
 }
