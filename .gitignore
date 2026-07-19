@@ -335,6 +335,10 @@ TSWLatexianTemp*
 venv/
 __pycache__/
 *.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .env
 data/raw/*
 data/processed/*
@@ -342,8 +346,22 @@ data/processed/*
 !data/processed/.gitkeep
 reports/*
 !reports/.gitkeep
+!reports/README.md
+!reports/*/.gitkeep
+!reports/dataset/
+reports/dataset/*
+!reports/dataset/.gitkeep
+!reports/dataset/README.md
 .ipynb_checkpoints/
 models/*.json
 models/*.ubj
 models/*.joblib
 *.parquet
+
+# App .NET / Node
+apps/**/bin/
+apps/**/obj/
+apps/**/node_modules/
+apps/**/dist/
+apps/**/.env
+apps/**/*.user
