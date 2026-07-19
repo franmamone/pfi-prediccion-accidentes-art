@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchRiesgo, type Horizonte } from "../api";
+import { ciiuDivisionName } from "../ciiu";
+import { motivoLabel, riesgoLabel } from "../labels";
 
 export function ExportPage() {
   const [horizonte, setHorizonte] = useState<Horizonte>("1m");
@@ -14,12 +16,13 @@ export function ExportPage() {
     try {
       const data = await fetchRiesgo({ horizonte, top: 225 });
       const header = [
-        "ranking",
+        "posicion_prioridad",
         "id_establecimiento",
-        "score_riesgo",
-        "banda",
+        "puntaje_riesgo",
+        "riesgo",
         "motivo",
         "ciiu_division",
+        "actividad",
         "cantidad_capitas",
         "dotacion_nomina_mes",
       ];
@@ -30,9 +33,10 @@ export function ExportPage() {
             item.ranking,
             item.idEstablecimiento,
             item.scoreRiesgo,
-            item.banda,
-            item.motivo ?? "",
+            riesgoLabel(item.banda),
+            motivoLabel(item.motivo),
             item.ciiuDivision ?? "",
+            ciiuDivisionName(item.ciiuDivision),
             item.cantidadCapitas ?? "",
             item.dotacionNominaMes ?? "",
           ].join(";"),
@@ -42,7 +46,7 @@ export function ExportPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `ranking_${data.horizonte}_${data.periodo}.csv`;
+      a.download = `lista_prioridad_${data.horizonte}_${data.periodo}.csv`;
       a.click();
       URL.revokeObjectURL(url);
       setStatus(`Exportados ${data.items.length} registros (${data.periodo}).`);
@@ -54,7 +58,7 @@ export function ExportPage() {
   return (
     <>
       <h1 className="page-title">Exportaciones</h1>
-      <p className="page-sub">Descargá el ranking vigente para llevar a campo.</p>
+      <p className="page-sub">Descargá la lista de prioridad vigente para llevar a campo.</p>
       <div className="panel" style={{ display: "flex", gap: 12, alignItems: "end", flexWrap: "wrap" }}>
         <div className="horizon-toggle">
           <button className={horizonte === "1m" ? "active" : ""} onClick={() => setHorizonte("1m")}>

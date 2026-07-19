@@ -1,17 +1,25 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
-import { clearSession, getStoredUser, getToken, login as apiLogin, type User } from "./api";
+import {
+  clearSession,
+  getStoredUser,
+  getToken,
+  login as apiLogin,
+  storeUser,
+  type User,
+} from "./api";
 
 type AuthState = {
   user: User | null;
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  setUser: (user: User) => void;
 };
 
 const AuthContext = createContext<AuthState | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => getStoredUser());
+  const [user, setUserState] = useState<User | null>(() => getStoredUser());
   const [token, setToken] = useState<string | null>(() => getToken());
 
   const value = useMemo<AuthState>(
@@ -20,13 +28,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       token,
       async login(email, password) {
         const data = await apiLogin(email, password);
-        setUser(data.user);
+        setUserState(data.user);
         setToken(data.access_token);
       },
       logout() {
         clearSession();
-        setUser(null);
+        setUserState(null);
         setToken(null);
+      },
+      setUser(next) {
+        storeUser(next);
+        setUserState(next);
       },
     }),
     [user, token],
