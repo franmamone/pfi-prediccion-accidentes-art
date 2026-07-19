@@ -8,7 +8,7 @@ import pandas as pd
 from _bootstrap import SRC  # noqa: F401
 
 from pfi_prediccion.columns import normalize_accidents_df
-from pfi_prediccion.config import ACCIDENTS_PARQUET, REPORTS_DIR, ensure_dirs
+from pfi_prediccion.config import ACCIDENTS_PARQUET, REPORTS_EDA_DIR, ensure_dirs
 from pfi_prediccion.eda import run_eda
 
 
@@ -23,7 +23,7 @@ def main() -> None:
     parser.add_argument(
         "--output-dir",
         type=str,
-        default=str(REPORTS_DIR),
+        default=str(REPORTS_EDA_DIR),
         help="Carpeta de reportes",
     )
     args = parser.parse_args()

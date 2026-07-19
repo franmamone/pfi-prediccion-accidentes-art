@@ -11,18 +11,28 @@ import pandas as pd
 from _bootstrap import SRC  # noqa: F401
 
 from pfi_prediccion.columns import normalize_accidents_df
-from pfi_prediccion.config import ACCIDENTS_PARQUET, PANEL_PARQUET, REPORTS_DIR, ensure_dirs
+from pfi_prediccion.config import (
+    ACCIDENTS_PARQUET,
+    PANEL_PARQUET,
+    REPORTS_DATASET_DIR,
+    REPORTS_EDA_DIR,
+    ensure_dirs,
+)
 from pfi_prediccion.dataset_reports import run_dataset_reports
 from pfi_prediccion.eda import run_eda
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Gráficos de reporte: accidentes, panel, modelo y catálogo explicativo."
+        description=(
+            "Reportes separados: contexto 2022-2025, entrenamiento 2022-2023 "
+            "y desempeño holdout 2025."
+        )
     )
     parser.add_argument("--accidents", type=str, default=str(ACCIDENTS_PARQUET))
     parser.add_argument("--panel", type=str, default=str(PANEL_PARQUET))
-    parser.add_argument("--output-dir", type=str, default=str(REPORTS_DIR))
+    parser.add_argument("--output-dir", type=str, default=str(REPORTS_DATASET_DIR))
+    parser.add_argument("--eda-output-dir", type=str, default=str(REPORTS_EDA_DIR))
     parser.add_argument(
         "--skip-eda",
         action="store_true",
@@ -40,7 +50,7 @@ def main() -> None:
 
     if not args.skip_eda:
         print("[reports] EDA básico de accidentes...", flush=True)
-        run_eda(accidents, output_dir=args.output_dir)
+        run_eda(accidents, output_dir=Path(args.eda_output_dir))
 
     result = run_dataset_reports(accidents, panel=panel, output_dir=args.output_dir)
     print(json.dumps({"ok": True, **result}, ensure_ascii=False, indent=2))
