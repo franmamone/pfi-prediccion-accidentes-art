@@ -14,7 +14,9 @@ import {
 import { useAuth } from "../auth";
 import { CancelarVisitaDialog } from "../components/CancelarVisitaDialog";
 import { RealizarVisitaDialog } from "../components/RealizarVisitaDialog";
+import { EmptyState, SkeletonTable } from "../components/UiKit";
 import { motivoLabel, riesgoLabel } from "../labels";
+import { useToast } from "../toast";
 
 const TABS: { id: EstadoAgenda; label: string }[] = [
   { id: "programada", label: "Programadas" },
@@ -46,6 +48,7 @@ function formatDateTime(iso: string): string {
 }
 
 export function AgendaPage() {
+  const toast = useToast();
   const { user } = useAuth();
   const canAssign = user?.rol === "Admin" || user?.rol === "Coordinador";
   const [params, setParams] = useSearchParams();
@@ -61,7 +64,6 @@ export function AgendaPage() {
   const [desde, setDesde] = useState("");
   const [hasta, setHasta] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [editId, setEditId] = useState<number | null>(null);
@@ -121,7 +123,6 @@ export function AgendaPage() {
     setEditFecha(item.fechaPlanificada.slice(0, 10));
     setEditUsuario(item.usuarioId);
     setEditNotas(item.notas ?? "");
-    setSuccess(null);
     setError(null);
   }
 
@@ -157,7 +158,7 @@ export function AgendaPage() {
         notas: editNotas,
       });
       setEditId(null);
-      setSuccess("Visita reprogramada.");
+      toast.success("Visita reprogramada");
       load();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "No se pudo reprogramar");
@@ -182,7 +183,7 @@ export function AgendaPage() {
           onClose={() => setCancelarItem(null)}
           onDone={() => {
             setCancelarItem(null);
-            setSuccess("Visita cancelada. El establecimiento vuelve a Priorización.");
+            toast.success("Visita cancelada", "El establecimiento vuelve a Priorización.");
             load();
           }}
         />
@@ -194,7 +195,7 @@ export function AgendaPage() {
           onClose={() => setRealizarItem(null)}
           onDone={() => {
             setRealizarItem(null);
-            setSuccess("Visita marcada como realizada.");
+            toast.success("Visita realizada");
             load();
           }}
         />
@@ -208,7 +209,6 @@ export function AgendaPage() {
             className={tab === t.id ? "active" : ""}
             onClick={() => {
               setTab(t.id);
-              setSuccess(null);
               setEditId(null);
               setCancelarItem(null);
               setRealizarItem(null);
@@ -258,24 +258,26 @@ export function AgendaPage() {
       </div>
 
       {error && <div className="error">{error}</div>}
-      {success && <div className="success">{success}</div>}
-      {loading && <p className="muted">Cargando agenda…</p>}
+      {loading && <SkeletonTable rows={6} />}
 
       {!loading && items.length === 0 && (
         <div className="panel">
-          <p className="page-sub" style={{ marginBottom: 12 }}>
-            {emptyHint}
-          </p>
-          {tab === "programada" && (
-            <Link className="btn" to="/riesgo">
-              Ir a priorización
-            </Link>
-          )}
+          <EmptyState
+            title={emptyHint}
+            detail={tab === "programada" ? "Podés programar visitas desde la lista de priorización." : undefined}
+            action={
+              tab === "programada" ? (
+                <Link className="btn" to="/riesgo">
+                  Ir a priorización
+                </Link>
+              ) : undefined
+            }
+          />
         </div>
       )}
 
       {items.length > 0 && (
-        <div className="table-wrap panel" style={{ padding: 0 }}>
+        <div className="table-wrap panel table-sticky" style={{ padding: 0 }}>
           <table className="data">
             <thead>
               <tr>
@@ -402,7 +404,6 @@ export function AgendaPage() {
                                 className="btn"
                                 disabled={busyId === item.id}
                                 onClick={() => {
-                                  setSuccess(null);
                                   setRealizarItem(item);
                                 }}
                                 title="Marcar visita como realizada"
@@ -423,7 +424,6 @@ export function AgendaPage() {
                                 className="ghost-btn danger"
                                 disabled={busyId === item.id}
                                 onClick={() => {
-                                  setSuccess(null);
                                   setCancelarItem(item);
                                 }}
                                 title="Cancelar y devolver a priorización"

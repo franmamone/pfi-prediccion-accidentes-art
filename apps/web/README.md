@@ -25,6 +25,8 @@ Prevencionista demo: `prevencionista@pfi.local` / `Prev123!`
 
 El proxy de Vite reenvía `/api` → `localhost:5080`.
 
+Atajos: `Ctrl+.` modo enfoque · `Esc` cierra paneles.
+
 ## Pantallas
 
 - Login (ojito de contraseña + tema)

@@ -254,3 +254,14 @@ export function IconHistory(p: IconProps) {
     </Svg>
   );
 }
+
+export function IconFocus(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M4 9V5h4" />
+      <path d="M20 9V5h-4" />
+      <path d="M4 15v4h4" />
+      <path d="M20 15v4h-4" />
+    </Svg>
+  );
+}

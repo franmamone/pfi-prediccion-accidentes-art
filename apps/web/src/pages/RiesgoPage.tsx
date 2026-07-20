@@ -14,6 +14,7 @@ import {
   VISITA_RECIENTE_MESES,
 } from "../columnHelp";
 import { ProgramarVisitaDialog } from "../components/ProgramarVisitaDialog";
+import { EmptyState, SkeletonTable } from "../components/UiKit";
 import { IconCalendar, IconCheck, IconExternal, IconX } from "../icons";
 import {
   estadoOperativoBadgeClass,
@@ -22,14 +23,17 @@ import {
   motivoLabel,
   riesgoLabel,
 } from "../labels";
+import { consumeRiesgoScroll, getHorizontePref, saveRiesgoScroll, setHorizontePref } from "../prefs";
+import { useToast } from "../toast";
 
 function Th({ id, children }: { id: string; children: ReactNode }) {
   return <th title={help(id)}>{children}</th>;
 }
 
 export function RiesgoPage() {
+  const toast = useToast();
   const [params, setParams] = useSearchParams();
-  const horizonte = (params.get("horizonte") as Horizonte) || "1m";
+  const horizonte = (params.get("horizonte") as Horizonte) || getHorizontePref();
   const banda = params.get("banda") || "";
   const sector = params.get("sector") || "";
   const motivo = params.get("motivo") || "";
@@ -44,10 +48,28 @@ export function RiesgoPage() {
   const [items, setItems] = useState<RankingItem[]>([]);
   const [periodo, setPeriodo] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [programar, setProgramar] = useState<RankingItem | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+
+  useEffect(() => {
+    if (!params.get("horizonte")) {
+      const merged = new URLSearchParams(params);
+      merged.set("horizonte", getHorizontePref());
+      setParams(merged, { replace: true });
+    }
+  }, [params, setParams]);
+
+  useEffect(() => {
+    setHorizontePref(horizonte);
+  }, [horizonte]);
+
+  useEffect(() => {
+    const y = consumeRiesgoScroll();
+    if (y == null) return;
+    const id = window.setTimeout(() => window.scrollTo({ top: y, behavior: "auto" }), 40);
+    return () => window.clearTimeout(id);
+  }, []);
 
   const load = useCallback(() => {
     let alive = true;
@@ -122,6 +144,10 @@ export function RiesgoPage() {
 
   function clearFilters() {
     setParams(new URLSearchParams({ horizonte }));
+  }
+
+  function rememberScroll() {
+    saveRiesgoScroll(window.scrollY);
   }
 
   return (
@@ -249,8 +275,7 @@ export function RiesgoPage() {
       </div>
 
       {error && <div className="error">{error}</div>}
-      {success && <div className="success">{success}</div>}
-      {loading && <p className="muted">Cargando lista de prioridad…</p>}
+      {loading && <SkeletonTable rows={10} />}
 
       {programar && (
         <ProgramarVisitaDialog
@@ -259,13 +284,28 @@ export function RiesgoPage() {
           onClose={() => setProgramar(null)}
           onDone={() => {
             setProgramar(null);
-            setSuccess("Visita programada. Podés verla en Agenda.");
+            toast.success("Visita programada", "Ya está disponible en Agenda.");
             setReloadKey((k) => k + 1);
           }}
         />
       )}
 
-      <div className="table-wrap panel" style={{ padding: 0 }}>
+      {!loading && items.length === 0 && !error ? (
+        <div className="panel">
+          <EmptyState
+            title="Ningún establecimiento con estos filtros"
+            detail="Probá limpiar filtros o cambiar el horizonte Mes / Trimestre."
+            action={
+              <button type="button" className="ghost-btn" onClick={clearFilters}>
+                Limpiar filtros
+              </button>
+            }
+          />
+        </div>
+      ) : null}
+
+      {!loading && items.length > 0 ? (
+      <div className="table-wrap panel table-sticky" style={{ padding: 0 }}>
         <table className="data">
           <thead>
             <tr>
@@ -370,6 +410,7 @@ export function RiesgoPage() {
                     className={`badge ${estadoOperativoBadgeClass(estado)} estado-link`}
                     to={estadoLink}
                     title={estadoTitle}
+                    onClick={estado === "pendiente" ? rememberScroll : undefined}
                   >
                     {estadoOperativoLabel(estado)}
                   </Link>
@@ -381,10 +422,7 @@ export function RiesgoPage() {
                       className="icon-btn primary"
                       title="Programar visita con fecha y responsable"
                       aria-label="Programar visita"
-                      onClick={() => {
-                        setSuccess(null);
-                        setProgramar(item);
-                      }}
+                      onClick={() => setProgramar(item)}
                     >
                       <IconCalendar size={16} />
                     </button>
@@ -405,6 +443,7 @@ export function RiesgoPage() {
                     to={`/establecimientos/${item.idEstablecimiento}?horizonte=${horizonte}`}
                     title="Ver detalle: explicación del puntaje, acierto histórico y ficha operativa"
                     aria-label="Ver detalle"
+                    onClick={rememberScroll}
                   >
                     <IconExternal size={16} />
                   </Link>
@@ -415,6 +454,7 @@ export function RiesgoPage() {
           </tbody>
         </table>
       </div>
+      ) : null}
     </>
   );
 }

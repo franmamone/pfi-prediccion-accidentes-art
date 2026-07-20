@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { IconInfo } from "../icons";
 
 type InfoHintProps = {
@@ -12,6 +12,8 @@ type InfoHintProps = {
 export function InfoHint({ title, body, footer, open, onToggle }: InfoHintProps) {
   const panelId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [alignEnd, setAlignEnd] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -31,8 +33,21 @@ export function InfoHint({ title, body, footer, open, onToggle }: InfoHintProps)
     };
   }, [open, onToggle]);
 
+  useLayoutEffect(() => {
+    if (!open || !rootRef.current || !panelRef.current) {
+      setAlignEnd(false);
+      return;
+    }
+    const rootRect = rootRef.current.getBoundingClientRect();
+    const panelWidth = panelRef.current.offsetWidth;
+    const margin = 12;
+    const overflowsRight = rootRect.left + panelWidth > window.innerWidth - margin;
+    const nearRightEdge = rootRect.right > window.innerWidth * 0.55;
+    setAlignEnd(overflowsRight || nearRightEdge);
+  }, [open, body, footer]);
+
   return (
-    <div className="info-hint" ref={rootRef}>
+    <div className={`info-hint${alignEnd ? " align-end" : ""}`} ref={rootRef}>
       <button
         type="button"
         className={`info-circle-btn${open ? " open" : ""}`}
@@ -45,7 +60,13 @@ export function InfoHint({ title, body, footer, open, onToggle }: InfoHintProps)
         <IconInfo size={14} />
       </button>
       {open && (
-        <div className="info-calc-panel" id={panelId} role="region" aria-label={`Cómo se calcula: ${title}`}>
+        <div
+          ref={panelRef}
+          className="info-calc-panel"
+          id={panelId}
+          role="region"
+          aria-label={`Cómo se calcula: ${title}`}
+        >
           <div className="info-calc-panel-head">¿Cómo se calcula?</div>
           <p>{body}</p>
           {footer ? <p className="muted info-calc-panel-footer">{footer}</p> : null}

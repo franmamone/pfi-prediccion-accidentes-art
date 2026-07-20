@@ -26,7 +26,7 @@ export function BarChart({ title, subtitle, data, maxBars = 12, valueFormatter }
         {subtitle && <p className="muted">{subtitle}</p>}
       </div>
       {rows.length === 0 ? (
-        <p className="muted">Sin datos</p>
+        <p className="muted empty-inline">Sin datos para este gráfico todavía</p>
       ) : (
         <div className="bar-list">
           {rows.map((row, idx) => (
@@ -36,11 +36,12 @@ export function BarChart({ title, subtitle, data, maxBars = 12, valueFormatter }
               </div>
               <div className="bar-track">
                 <div
-                  className="bar-fill"
+                  className="bar-fill animate-bar"
                   style={{
                     width: `${(Math.abs(row.valor) / max) * 100}%`,
                     background: row.color ?? PALETTE[idx % PALETTE.length],
                   }}
+                  title={`${row.clave}: ${fmt(row.valor)}`}
                 />
               </div>
               <div className="bar-value mono">{fmt(row.valor)}</div>

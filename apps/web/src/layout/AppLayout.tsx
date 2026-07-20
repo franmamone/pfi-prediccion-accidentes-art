@@ -1,6 +1,14 @@
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "../auth";
+import { ConfirmDialog } from "../components/ConfirmDialog";
+import { PageTransition } from "../components/PageTransition";
+import {
+  getFocusMode,
+  getSidebarCollapsed,
+  setFocusMode,
+  setSidebarCollapsed,
+} from "../prefs";
 import { useTheme } from "../theme";
 import {
   IconCalendar,
@@ -9,6 +17,7 @@ import {
   IconDownload,
   IconExpand,
   IconFlag,
+  IconFocus,
   IconHistory,
   IconHome,
   IconLogout,
@@ -73,10 +82,34 @@ export function AppLayout() {
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => getSidebarCollapsed());
+  const [focus, setFocus] = useState(() => getFocusMode());
+  const [confirmLogout, setConfirmLogout] = useState(false);
+
+  useEffect(() => {
+    setSidebarCollapsed(collapsed);
+  }, [collapsed]);
+
+  useEffect(() => {
+    setFocusMode(focus);
+  }, [focus]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && focus) setFocus(false);
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === ".") {
+        e.preventDefault();
+        setFocus((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [focus]);
 
   return (
-    <div className={`app-shell${collapsed ? " collapsed" : ""}`}>
+    <div
+      className={`app-shell${collapsed ? " collapsed" : ""}${focus ? " focus-mode" : ""}`}
+    >
       <aside className="sidebar">
         <div className="brand">
           <LogoMark className="brand-logo" size={34} />
@@ -128,6 +161,15 @@ export function AppLayout() {
           <div className="topbar-left" />
           <div className="topbar-right">
             <button
+              className={`icon-btn${focus ? " primary" : ""}`}
+              title={focus ? "Salir del modo enfoque (Esc)" : "Modo enfoque (Ctrl+.)"}
+              aria-label="Modo enfoque"
+              aria-pressed={focus}
+              onClick={() => setFocus((v) => !v)}
+            >
+              <IconFocus />
+            </button>
+            <button
               className="icon-btn"
               title={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
               aria-label="Cambiar tema"
@@ -150,19 +192,33 @@ export function AppLayout() {
               className="icon-btn"
               title="Salir"
               aria-label="Salir"
-              onClick={() => {
-                logout();
-                navigate("/login");
-              }}
+              onClick={() => setConfirmLogout(true)}
             >
               <IconLogout />
             </button>
           </div>
         </header>
         <main className="content">
-          <Outlet />
+          <PageTransition>
+            <Outlet />
+          </PageTransition>
         </main>
       </div>
+      {confirmLogout && (
+        <ConfirmDialog
+          title="Cerrar sesión"
+          detail="Vas a salir de Predictia. Podés volver a ingresar cuando quieras."
+          confirmLabel="Cerrar sesión"
+          cancelLabel="Seguir en la app"
+          danger
+          onClose={() => setConfirmLogout(false)}
+          onConfirm={() => {
+            setConfirmLogout(false);
+            logout();
+            navigate("/login");
+          }}
+        />
+      )}
     </div>
   );
 }

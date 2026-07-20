@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import { fetchEstadisticas, type Estadisticas, type Horizonte } from "../api";
+import { fetchEstadisticas, type Estadisticas } from "../api";
 import { BarChart, DivergingBarChart, DonutChart, TimeSeriesChart } from "../charts";
 import { ciiuDivisionLabel } from "../ciiu";
+import { AnimatedNumber, SkeletonPanel, SkeletonStats } from "../components/UiKit";
+import { useHorizonte } from "../hooks/useHorizonte";
 import { motivoLabel, riesgoLabel } from "../labels";
 
 const BANDA_COLORS: Record<string, string> = {
@@ -16,7 +18,7 @@ function fmtPct(v: number | null | undefined): string {
 }
 
 export function EstadisticasPage() {
-  const [horizonte, setHorizonte] = useState<Horizonte>("1m");
+  const [horizonte, setHorizonte] = useHorizonte();
   const [data, setData] = useState<Estadisticas | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -69,14 +71,24 @@ export function EstadisticasPage() {
       </div>
 
       {error && <div className="error">{error}</div>}
-      {loading && <p className="muted">Cargando estadísticas…</p>}
+      {loading && (
+        <>
+          <SkeletonStats />
+          <div className="charts-grid">
+            <SkeletonPanel lines={6} />
+            <SkeletonPanel lines={6} />
+          </div>
+        </>
+      )}
 
       {data && (
         <>
           <div className="stats">
             <div className="stat">
               <div className="label">Establecimientos</div>
-              <div className="value mono">{data.total}</div>
+              <div className="value mono">
+                <AnimatedNumber value={data.total} />
+              </div>
             </div>
             <div className="stat" title={a?.coberturaCohorte.nota}>
               <div className="label">Cobertura top-50</div>

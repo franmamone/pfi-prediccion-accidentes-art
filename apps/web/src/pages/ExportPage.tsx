@@ -1,18 +1,21 @@
 import { useEffect, useState } from "react";
-import { fetchRiesgo, type Horizonte } from "../api";
+import { fetchRiesgo } from "../api";
 import { ciiuDivisionName } from "../ciiu";
+import { useHorizonte } from "../hooks/useHorizonte";
 import { motivoLabel, riesgoLabel } from "../labels";
+import { useToast } from "../toast";
 
 export function ExportPage() {
-  const [horizonte, setHorizonte] = useState<Horizonte>("1m");
-  const [status, setStatus] = useState<string | null>(null);
+  const toast = useToast();
+  const [horizonte, setHorizonte] = useHorizonte();
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    setStatus(null);
+    setBusy(false);
   }, [horizonte]);
 
   async function exportCsv() {
-    setStatus("Generando…");
+    setBusy(true);
     try {
       const data = await fetchRiesgo({ horizonte, top: 225 });
       const header = [
@@ -49,9 +52,11 @@ export function ExportPage() {
       a.download = `lista_prioridad_${data.horizonte}_${data.periodo}.csv`;
       a.click();
       URL.revokeObjectURL(url);
-      setStatus(`Exportados ${data.items.length} registros (${data.periodo}).`);
+      toast.success("CSV listo", `${data.items.length} registros · período ${data.periodo}`);
     } catch (err) {
-      setStatus(err instanceof Error ? err.message : "Error al exportar");
+      toast.error("No se pudo exportar", err instanceof Error ? err.message : "Error al exportar");
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -68,10 +73,9 @@ export function ExportPage() {
             Trimestre
           </button>
         </div>
-        <button className="btn" onClick={exportCsv}>
-          Descargar CSV
+        <button className="btn" onClick={exportCsv} disabled={busy}>
+          {busy ? "Generando…" : "Descargar CSV"}
         </button>
-        {status && <span className="muted">{status}</span>}
       </div>
     </>
   );
