@@ -19,6 +19,8 @@
 
 % Cuerpo principal (además de los capítulos que siempre están en main.tex)
 \newif\ifdeliveryconclusion          % Conclusión
+\newif\ifdeliverydescripcion         % Cap. descripción / requerimientos / competencias (hito 50%)
+\newif\ifdeliverymetodologia         % Cap. metodología / arquitectura / demo (hito 50%)
 
 % Anexos (cada uno por separado)
 \newif\ifdeliveryannex               % Bloque de anexos (índice + contenido)
@@ -31,13 +33,16 @@
 \newif\ifdeliverylistoftables        % Lista de tablas
 
 % -----------------------------------------------------------------------------
-% ENTREGA ACTUAL: Introducción + Marco Teórico + Estado del Arte + Anexo Gantt
+% ENTREGA ACTUAL: Hito 50% — Intro + Marco + Estado del arte
+% + Descripción + Metodología/demo + Anexo Gantt
 % -----------------------------------------------------------------------------
 \delivery@setfalse{deliverytitle}
 \delivery@setfalse{deliveryacknowledgments}
 \delivery@setfalse{deliverysummary}
 \delivery@setfalse{deliveryabstract}
 \delivery@setfalse{deliveryconclusion}
+\delivery@settrue{deliverydescripcion}
+\delivery@settrue{deliverymetodologia}
 \delivery@settrue{deliveryannex}
 \delivery@settrue{deliveryannexschedule}
 \delivery@setfalse{deliveryannexsurveys}

@@ -1,0 +1,25 @@
+% Diagrama de casos de uso (simplificado)
+\begin{tikzpicture}[
+  font=\scriptsize\sffamily,
+  actor/.style={align=center},
+  uc/.style={ellipse, draw=blue!70, fill=blue!5, minimum width=2.6cm, minimum height=0.7cm, align=center},
+  system/.style={draw=blue!50, dashed, inner sep=8pt},
+  ]
+  \node[actor] (prev) at (-5.2,1.6) {Prevencionista};
+  \node[actor] (coord) at (-5.2,0) {Coordinador};
+  \node[actor] (admin) at (-5.2,-1.6) {Admin};
+
+  \node[uc] (login) at (-0.2,2.4) {Autenticarse};
+  \node[uc] (res) at (2.8,2.4) {Ver resumen};
+  \node[uc] (riesgo) at (-0.2,1.2) {Priorizar riesgo};
+  \node[uc] (det) at (2.8,1.2) {Ver detalle/SHAP};
+  \node[uc] (ag) at (-0.2,0) {Gestionar agenda};
+  \node[uc] (est) at (2.8,0) {Ver estad\'isticas};
+  \node[uc] (exp) at (-0.2,-1.2) {Exportar datos};
+  \node[uc] (cfg) at (2.8,-1.2) {Administrar usuarios};
+
+  \node[system, fit=(login)(res)(riesgo)(det)(ag)(est)(exp)(cfg), label={[blue!70]above:Sistema de prevenci\'on predictiva}] {};
+
+  \foreach \a/\u in {prev/login,prev/res,prev/riesgo,prev/det,prev/ag,coord/login,coord/res,coord/riesgo,coord/det,coord/ag,coord/est,coord/exp,admin/login,admin/cfg,admin/est,admin/exp}
+    \draw (\a) -- (\u);
+\end{tikzpicture}

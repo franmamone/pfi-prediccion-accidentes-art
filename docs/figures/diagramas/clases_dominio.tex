@@ -1,0 +1,27 @@
+% Diagrama de clases de dominio (simplificado)
+\begin{tikzpicture}[
+  font=\tiny\sffamily,
+  cls/.style={draw=blue!70, fill=blue!4, rectangle split, rectangle split parts=2, align=left, rounded corners=1pt},
+  ]
+  \node[cls] (u) at (0,2.2) {\textbf{Usuario}
+    \nodepart{second} Id\\Email\\Rol\\ZonaId};
+  \node[cls] (z) at (3.2,2.2) {\textbf{Zona}
+    \nodepart{second} Id\\Nombre};
+  \node[cls] (s) at (0,0) {\textbf{RankingSnapshot}
+    \nodepart{second} Periodo\\Horizonte\\EsVigente\\ArtifactHash};
+  \node[cls] (i) at (3.6,0) {\textbf{RankingItem}
+    \nodepart{second} Ranking\\ScoreRiesgo\\Banda\\Motivo};
+  \node[cls] (a) at (7.2,2.2) {\textbf{AgendaItem}
+    \nodepart{second} FechaPlanificada\\Estado\\MotivoVisita};
+  \node[cls] (v) at (7.2,0) {\textbf{VisitaApp}
+    \nodepart{second} FechaRealizada\\Resultado};
+  \node[cls] (c) at (3.6,-2.0) {\textbf{ContribucionSHAP}
+    \nodepart{second} Feature\\ShapValue\\Direccion};
+
+  \draw[-{Latex}, blue!60] (u) -- (z);
+  \draw[-{Latex}, blue!60] (s) -- (i);
+  \draw[-{Latex}, blue!60] (i) -- (c);
+  \draw[-{Latex}, blue!60] (u) -- (a);
+  \draw[-{Latex}, blue!60] (a) -- (v);
+  \draw[-{Latex}, blue!60] (s) -- (a);
+\end{tikzpicture}

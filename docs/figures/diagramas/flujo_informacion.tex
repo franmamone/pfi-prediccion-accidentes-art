@@ -1,0 +1,20 @@
+% Flujo de informaci\'on del sistema
+\begin{tikzpicture}[
+  font=\scriptsize\sffamily,
+  node distance=0.55cm and 0.7cm,
+  box/.style={draw=blue!70, fill=blue!6, rounded corners=2pt, align=center, minimum width=2.3cm, minimum height=0.85cm},
+  arr/.style={-{Latex}, thick, blue!60}
+  ]
+  \node[box] (core) {BD core\\ART (on-prem)};
+  \node[box, right=of core] (pipe) {Pipeline\\Python / XGBoost};
+  \node[box, right=of pipe] (rank) {Ranking\\JSON + SHAP};
+  \node[box, right=of rank] (appdb) {BD operativa\\app};
+  \node[box, below=1.1cm of appdb] (api) {API\\ASP.NET};
+  \node[box, left=of api] (web) {React\\Prevencionistas};
+
+  \draw[arr] (core) -- node[above, font=\tiny]{solo lectura} (pipe);
+  \draw[arr] (pipe) -- (rank);
+  \draw[arr] (rank) -- node[above, font=\tiny]{import} (appdb);
+  \draw[arr] (appdb) -- (api);
+  \draw[arr] (api) -- node[above, font=\tiny]{REST/JWT} (web);
+\end{tikzpicture}

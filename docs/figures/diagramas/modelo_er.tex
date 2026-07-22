@@ -1,0 +1,26 @@
+% Modelo entidad-relaci\'on (crow's foot simplificado)
+\begin{tikzpicture}[
+  font=\tiny\sffamily,
+  ent/.style={draw=blue!70, fill=blue!5, rounded corners=1pt, align=center, minimum width=2.1cm, minimum height=0.7cm},
+  ]
+  \node[ent] (zonas) at (0,3) {Zonas};
+  \node[ent] (usuarios) at (3,3) {Usuarios};
+  \node[ent] (snap) at (0,1.4) {RankingSnapshots};
+  \node[ent] (items) at (3.5,1.4) {RankingItems};
+  \node[ent] (shap) at (7,1.4) {Contribuciones};
+  \node[ent] (out) at (3.5,-0.2) {Outcomes};
+  \node[ent] (agenda) at (0,-0.2) {AgendaItems};
+  \node[ent] (visitas) at (0,-1.8) {VisitasApp};
+  \node[ent] (met) at (7,-0.2) {MetricasObs.};
+  \node[ent] (cob) at (7,-1.8) {Coberturas};
+
+  \draw[-{Latex}, blue!60] (usuarios) -- node[above, font=\tiny]{N:1} (zonas);
+  \draw[-{Latex}, blue!60] (items) -- node[above, font=\tiny]{N:1} (snap);
+  \draw[-{Latex}, blue!60] (shap) -- (items);
+  \draw[-{Latex}, blue!60] (out) -- (items);
+  \draw[-{Latex}, blue!60] (agenda) -- (usuarios);
+  \draw[-{Latex}, blue!60] (agenda) -- (snap);
+  \draw[-{Latex}, blue!60] (visitas) -- (agenda);
+  \draw[-{Latex}, blue!60] (met) -- (snap);
+  \draw[-{Latex}, blue!60] (cob) -- (snap);
+\end{tikzpicture}

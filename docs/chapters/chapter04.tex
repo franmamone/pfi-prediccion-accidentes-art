@@ -1,0 +1,140 @@
+\chapter{Metodolog\'ia de desarrollo e implementaci\'on}\label{ch:metodologia}
+
+\begin{contenidoNuevo}
+
+Este cap\'itulo documenta las decisiones tecnol\'ogicas, la arquitectura de datos, los diagramas de dise\~no y el avance funcional demostrado en el hito del 50\,\%. El texto nuevo se presenta en azul.
+
+\section{Metodolog\'ia}
+
+El desarrollo sigui\'o un enfoque iterativo:
+\begin{enumerate}
+	\item ingenier\'ia de datos sobre la BD core de la ART (vistas y panel establecimiento$\times$mes);
+	\item entrenamiento y evaluaci\'on de modelos XGBoost (horizontes 1m y 3m);
+	\item exportaci\'on de ranking explicable (SHAP) e importaci\'on a BD operativa;
+	\item construcci\'on de API REST + frontend React para uso por prevencionistas;
+	\item anal\'itica hist\'orica (snapshots, cobertura y precisi\'on observada).
+\end{enumerate}
+
+La validaci\'on del modelo usa split temporal: entrenamiento 2022--2023, calibraci\'on 2024 y holdout 2025.
+
+\section{Stack tecnol\'ogico y justificaci\'on}
+
+\begin{table}[htbp]
+	\centering
+	\caption{Stack tecnol\'ogico del prototipo y motivaci\'on de la elecci\'on.}
+	\label{tab:stack}
+	\begin{tabular}{@{}p{0.28\textwidth}p{0.66\textwidth}@{}}
+		\hline
+		\textbf{Componente} & \textbf{Elecci\'on y justificaci\'on} \\
+		\hline
+		Pipeline ML & Python + XGBoost + SHAP: adecuado a datos tabulares heterog\'eneos y a la necesidad de explicabilidad. \\
+		API & ASP.NET Core (C\#): encaje con ecosistemas ART/.NET, Minimal APIs y JWT. \\
+		Frontend & React + Vite + TypeScript: UI moderna, tipado y ciclo de desarrollo \'agil. \\
+		BD operativa & SQL Server Express (`PfiPrevencion`): modelo relacional de rankings, agenda y usuarios. \\
+		Auth & JWT Bearer + hash de contrase\~nas: simple para tesis y upgradeable. \\
+		Comunicaci\'on & HTTPS/HTTP + REST JSON: desacople cliente-servidor. \\
+		Cloud objetivo & AWS Free Tier (EC2 todo-en-uno + S3 + Budgets): bajo costo para demo posterior. \\
+		\hline
+	\end{tabular}
+\end{table}
+
+\subsection{Protocolos y arquitectura de red}
+
+\begin{itemize}
+	\item \textbf{REST/HTTP(S):} intercambio de recursos JSON entre React y la API.
+	\item \textbf{JWT Bearer:} autorizaci\'on por token en el encabezado \texttt{Authorization}.
+	\item \textbf{SQL/TDS:} persistencia en la BD operativa local (y futura en EC2).
+	\item \textbf{Separaci\'on de redes:} la BD core de la ART permanece on-prem; solo el pipeline (VPN/local) la consulta en solo lectura.
+\end{itemize}
+
+\section{Flujo de informaci\'on}
+
+\begin{figure}[htbp]
+	\centering
+	\input{figures/diagramas/flujo_informacion}
+	\caption{Flujo de informaci\'on: core ART $\rightarrow$ pipeline $\rightarrow$ ranking $\rightarrow$ BD app $\rightarrow$ API $\rightarrow$ React.}
+	\label{fig:flujo-info}
+\end{figure}
+
+\section{Arquitectura de componentes (desarrollo local)}
+
+La Figura~\ref{fig:componentes-local} muestra el despliegue usado para la demo del 50\,\%.
+
+\begin{figure}[htbp]
+	\centering
+	\input{figures/diagramas/componentes_local}
+	\caption{Componentes en entorno local de demostraci\'on.}
+	\label{fig:componentes-local}
+\end{figure}
+
+\section{Modelo de clases de dominio}
+
+\begin{figure}[htbp]
+	\centering
+	\input{figures/diagramas/clases_dominio}
+	\caption{Diagrama de clases simplificado del dominio de la aplicaci\'on.}
+	\label{fig:clases}
+\end{figure}
+
+\section{Modelo de datos (ER)}
+
+La BD operativa `PfiPrevencion` (schema \texttt{app}) almacena snapshots de ranking, \'items, contribuciones SHAP, outcomes, m\'etricas, coberturas, agenda y visitas. La Figura~\ref{fig:er} resume las entidades principales.
+
+\begin{figure}[htbp]
+	\centering
+	\input{figures/diagramas/modelo_er}
+	\caption{Diagrama entidad-relaci\'on simplificado de la BD operativa.}
+	\label{fig:er}
+\end{figure}
+
+Arquitectura de datasources:
+\begin{enumerate}
+	\item \textbf{BD core de la ART (on-prem):} siniestros, n\'omina, prevenci\'on, establecimientos. Solo la consume el pipeline.
+	\item \textbf{BD operativa de la app:} rankings importados y operaci\'on diaria.
+	\item \textbf{Artefactos ML:} modelos y reportes generados offline (no se cargan en cada request).
+\end{enumerate}
+
+\section{Arquitectura AWS Free Tier (objetivo)}
+
+Para el hito 50\,\% la demo es local. La Figura~\ref{fig:aws-ft} documenta el despliegue objetivo posterior, alineado a AWS Free Tier personal (hasta ~USD\,200 / 6 meses): una EC2 con Nginx + React + API + SQL Express, S3 opcional para rankings y Budgets para control de cr\'editos. La BD core de la ART no se expone a Internet; el dise\~no contempla multi-ART.
+
+\begin{figure}[htbp]
+	\centering
+	\input{figures/diagramas/arquitectura_aws_freetier}
+	\caption{Arquitectura objetivo en AWS Free Tier (EC2 todo-en-uno).}
+	\label{fig:aws-ft}
+\end{figure}
+
+\section{Avance de implementaci\'on (demo)}
+
+Al momento del hito 50\,\% se encuentra operativo un prototipo local con las pantallas de login, resumen, priorizaci\'on, detalle (explicaci\'on + SHAP), agenda, estad\'isticas, exportaciones y perfil. La API expone autenticaci\'on JWT y endpoints de riesgo, agenda y anal\'itica hist\'orica.
+
+\subsection{Resultados del modelo (referencia holdout 2025)}
+
+\begin{table}[htbp]
+	\centering
+	\caption{M\'etricas de referencia del modelo en holdout 2025.}
+	\label{tab:metricas-holdout}
+	\begin{tabular}{@{}lcc@{}}
+		\hline
+		\textbf{M\'etrica} & \textbf{1m} & \textbf{3m} \\
+		\hline
+		PR-AUC & 0,366 & 0,515 \\
+		Precision @ top-50 / mes & 76,4\,\% & 93,5\,\% \\
+		Precision @ top-225 / mes & 51,5\,\% & 79,0\,\% \\
+		Visitas reales @ mismo volumen & 10,3\,\% & 17,8\,\% \\
+		\hline
+	\end{tabular}
+\end{table}
+
+Las pantallas del prototipo (Figuras~\ref{fig:mock-login}--\ref{fig:mock-estadisticas} del Cap\'itulo~\ref{ch:descripcion}) constituyen la evidencia de avance funcional exigida por la r\'ubrica. El recorrido de demostraci\'on en vivo es: login $\rightarrow$ resumen $\rightarrow$ riesgo $\rightarrow$ detalle/SHAP $\rightarrow$ agenda $\rightarrow$ estad\'isticas.
+
+\section{Limitaciones del hito}
+
+\begin{itemize}
+	\item User research formal (encuestas/entrevistas) a\'un pendiente.
+	\item Despliegue cloud diferido a post-hito (misma arquitectura Free Tier documentada).
+	\item El score de riesgo no debe interpretarse como probabilidad calibrada de accidente.
+\end{itemize}
+
+\end{contenidoNuevo}

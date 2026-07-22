@@ -1,0 +1,15 @@
+% Componentes / despliegue local
+\begin{tikzpicture}[
+  font=\scriptsize\sffamily,
+  box/.style={draw=blue!70, fill=blue!6, rounded corners=2pt, align=center, minimum height=0.8cm},
+  host/.style={draw=blue!40, dashed, inner sep=10pt},
+  ]
+  \node[box, minimum width=3.2cm] (browser) at (0,2.4) {Navegador\\React :5173};
+  \node[box, minimum width=3.2cm] (api) at (0,1.0) {API .NET :5080};
+  \node[box, minimum width=3.2cm] (sql) at (0,-0.4) {SQL Server\\PfiPrevencion};
+  \node[box, minimum width=3.2cm] (ml) at (4.2,1.0) {Pipeline ML\\(offline)};
+  \node[host, fit=(browser)(api)(sql), label={[blue!70]above:Estaci\'on local de desarrollo}] {};
+  \draw[-{Latex}, thick, blue!60] (browser) -- node[right, font=\tiny]{/api proxy} (api);
+  \draw[-{Latex}, thick, blue!60] (api) -- (sql);
+  \draw[-{Latex}, thick, blue!60] (ml) -- node[above, font=\tiny]{import ranking} (sql);
+\end{tikzpicture}

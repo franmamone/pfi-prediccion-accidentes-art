@@ -1,0 +1,27 @@
+% Arquitectura AWS Free Tier objetivo (post-despliegue)
+\begin{tikzpicture}[
+  font=\scriptsize\sffamily,
+  box/.style={draw=blue!70, fill=blue!6, rounded corners=2pt, align=center, minimum height=0.75cm},
+  cloud/.style={draw=blue!45, dashed, inner sep=10pt},
+  ]
+  \node[box, minimum width=2.4cm] (user) at (0,3.2) {Usuario ART};
+  \node[box, minimum width=2.6cm] (sg) at (0,2.0) {SG :80/:443};
+  \node[box, minimum width=3.4cm] (nginx) at (-2.2,0.6) {Nginx\\React dist};
+  \node[box, minimum width=3.4cm] (api) at (2.2,0.6) {API .NET};
+  \node[box, minimum width=3.4cm] (sql) at (0,-0.8) {SQL Express\\(misma EC2)};
+  \node[box, minimum width=2.6cm] (s3) at (5.2,0.6) {S3\\rankings};
+  \node[box, minimum width=2.6cm] (bud) at (5.2,2.0) {Budgets};
+  \node[box, minimum width=2.8cm] (core) at (-5.0,0.6) {BD core ART\\(on-prem)};
+  \node[box, minimum width=2.8cm] (pipe) at (-5.0,-0.8) {Pipeline\\local/VPN};
+
+  \node[cloud, fit=(sg)(nginx)(api)(sql), label={[blue!70]above:EC2 Free Tier (t3.micro/small)}] {};
+
+  \draw[-{Latex}, thick, blue!60] (user) -- (sg);
+  \draw[-{Latex}, thick, blue!60] (sg) -- (nginx);
+  \draw[-{Latex}, thick, blue!60] (sg) -- (api);
+  \draw[-{Latex}, thick, blue!60] (api) -- (sql);
+  \draw[-{Latex}, thick, blue!60] (core) -- (pipe);
+  \draw[-{Latex}, thick, blue!60] (pipe) -- (s3);
+  \draw[-{Latex}, thick, blue!60] (s3) -- (api);
+  \draw[dashed, blue!50] (bud) -- (sg);
+\end{tikzpicture}
