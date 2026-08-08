@@ -1806,20 +1806,54 @@ static string BuildDossierPrompt(string dossierJson, string horizonte, string? b
     if (root.TryGetProperty("visitas", out var vis) && vis.ValueKind == JsonValueKind.Object)
     {
         sb.Append("VISITAS PREVENTIVAS PREVIAS");
-        if (vis.TryGetProperty("total", out var vt)) sb.Append(" (total: ").Append(vt.GetRawText()).Append(')');
+        if (vis.TryGetProperty("total", out var vt)) sb.Append(" (total realizadas: ").Append(vt.GetRawText()).Append(')');
         sb.AppendLine(":");
-        if (vis.TryGetProperty("recientes", out var vr) && vr.ValueKind == JsonValueKind.Array)
+
+        // Incumplimientos DISTINTOS agregados sobre todas las visitas, con la
+        // frecuencia (en cuántas visitas apareció) y la última fecha registrada.
+        if (vis.TryGetProperty("incumplimientos_frecuentes", out var inc) && inc.ValueKind == JsonValueKind.Array &&
+            inc.GetArrayLength() > 0)
+        {
+            sb.AppendLine("- Incumplimientos registrados (todos los distintos; \"n\" = en cuántas visitas apareció, mayor n = más persistente):");
+            foreach (var e in inc.EnumerateArray())
+            {
+                var k = e.TryGetProperty("k", out var kv) ? kv.GetString() : null;
+                if (string.IsNullOrWhiteSpace(k)) continue;
+                var n = e.TryGetProperty("n", out var nv) ? nv.GetRawText() : null;
+                var ultima = e.TryGetProperty("ultima", out var uv) && uv.ValueKind == JsonValueKind.String ? uv.GetString() : null;
+                sb.Append("  * ").Append(k);
+                if (n is not null) sb.Append(" (n=").Append(n);
+                if (!string.IsNullOrWhiteSpace(ultima)) sb.Append(", última ").Append(ultima);
+                if (n is not null) sb.Append(')');
+                sb.AppendLine();
+            }
+        }
+
+        if (vis.TryGetProperty("observaciones", out var obs) && obs.ValueKind == JsonValueKind.Array &&
+            obs.GetArrayLength() > 0)
+        {
+            sb.AppendLine("- Observaciones del preventor en visitas previas:");
+            foreach (var o in obs.EnumerateArray())
+            {
+                var texto = o.GetString();
+                if (!string.IsNullOrWhiteSpace(texto)) sb.Append("  * ").AppendLine(texto);
+            }
+        }
+
+        // Respaldo: si no hubiera agregación, usar las notas recientes.
+        if ((!vis.TryGetProperty("incumplimientos_frecuentes", out var incChk) || incChk.GetArrayLength() == 0) &&
+            vis.TryGetProperty("recientes", out var vr) && vr.ValueKind == JsonValueKind.Array)
         {
             foreach (var r in vr.EnumerateArray())
             {
                 var fecha = r.TryGetProperty("fecha", out var f) ? f.GetString() : null;
                 var resultado = r.TryGetProperty("resultado", out var re) ? re.GetString() : null;
-                var obs = r.TryGetProperty("observaciones", out var o) ? o.GetString() : null;
-                var inc = r.TryGetProperty("incumplimientos", out var i) ? i.GetString() : null;
+                var obsTxt = r.TryGetProperty("observaciones", out var o2) ? o2.GetString() : null;
+                var incTxt = r.TryGetProperty("incumplimientos", out var i2) ? i2.GetString() : null;
                 sb.Append("  * [").Append(fecha).Append("] ");
                 if (!string.IsNullOrWhiteSpace(resultado)) sb.Append(resultado).Append(". ");
-                if (!string.IsNullOrWhiteSpace(obs)) sb.Append("Obs: ").Append(obs).Append(". ");
-                if (!string.IsNullOrWhiteSpace(inc)) sb.Append("Incumplimientos: ").Append(inc);
+                if (!string.IsNullOrWhiteSpace(obsTxt)) sb.Append("Obs: ").Append(obsTxt).Append(". ");
+                if (!string.IsNullOrWhiteSpace(incTxt)) sb.Append("Incumplimientos: ").Append(incTxt);
                 sb.AppendLine();
             }
         }

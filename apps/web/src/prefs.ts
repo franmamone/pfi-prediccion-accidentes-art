@@ -4,7 +4,7 @@ const KEYS = {
   sidebarCollapsed: "pfi_sidebar_collapsed",
   focusMode: "pfi_focus_mode",
   horizonte: "pfi_horizonte",
-  detalleSections: "pfi_detalle_sections",
+  detalleSections: "pfi_detalle_sections_v2",
   riesgoScroll: "pfi_riesgo_scroll",
 } as const;
 
@@ -62,9 +62,7 @@ export function setHorizontePref(value: HorizontePref) {
 }
 
 export type DetalleSectionKey =
-  | "acierto"
   | "ficha"
-  | "explicacion"
   | "historial"
   | "visitas"
   | "resumenIa"
@@ -72,13 +70,11 @@ export type DetalleSectionKey =
 
 export function getDetalleSections(): Record<DetalleSectionKey, boolean> {
   const defaults: Record<DetalleSectionKey, boolean> = {
-    acierto: true,
-    ficha: true,
-    explicacion: true,
-    historial: true,
-    visitas: true,
     resumenIa: true,
-    shap: true,
+    historial: true,
+    visitas: false,
+    ficha: false,
+    shap: false,
   };
   try {
     const raw = localStorage.getItem(KEYS.detalleSections);
