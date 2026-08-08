@@ -24,7 +24,6 @@ import {
   IconMoon,
   IconSun,
   IconUser,
-  LogoMark,
 } from "../icons";
 
 type NavItem = {
@@ -112,9 +111,8 @@ export function AppLayout() {
     >
       <aside className="sidebar">
         <div className="brand">
-          <LogoMark className="brand-logo" size={34} />
+          <img className="brand-logo" src="/logo-mark.png" alt="Prevex" width={34} height={34} />
           <div className="brand-text">
-            <strong>Predictia</strong>
             <span>Prioridad de visitas</span>
           </div>
         </div>
@@ -207,7 +205,7 @@ export function AppLayout() {
       {confirmLogout && (
         <ConfirmDialog
           title="Cerrar sesión"
-          detail="Vas a salir de Predictia. Podés volver a ingresar cuando quieras."
+          detail="Vas a salir de Prevex. Podés volver a ingresar cuando quieras."
           confirmLabel="Cerrar sesión"
           cancelLabel="Seguir en la app"
           danger

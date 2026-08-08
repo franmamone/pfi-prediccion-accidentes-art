@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth";
 import { LoginWaveField } from "../components/LoginWaveField";
-import { IconEye, IconEyeOff, IconMoon, IconSun, LogoMark } from "../icons";
+import { IconEye, IconEyeOff, IconMoon, IconSun } from "../icons";
 import { useTheme } from "../theme";
 
 export function LoginPage() {
@@ -43,13 +43,8 @@ export function LoginPage() {
       </button>
       <form className="login-card" onSubmit={onSubmit}>
         <div className="login-brand">
-          <LogoMark size={44} />
-          <div>
-            <h1>Predictia</h1>
-            <p style={{ margin: 0 }}>Priorización de visitas</p>
-          </div>
+          <img className="login-logo" src="/logo.png" alt="Prevex" />
         </div>
-        <p>Acceso al tablero de priorización de visitas ART.</p>
         {error && <div className="error">{error}</div>}
         <div className="field">
           <label htmlFor="email">Email</label>
@@ -77,9 +72,6 @@ export function LoginPage() {
         <button className="btn" type="submit" disabled={loading}>
           {loading ? "Ingresando…" : "Ingresar"}
         </button>
-        <p className="muted" style={{ marginTop: 14 }}>
-          Demo: admin@pfi.local / Admin123!
-        </p>
       </form>
     </div>
   );

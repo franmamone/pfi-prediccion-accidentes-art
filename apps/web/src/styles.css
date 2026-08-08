@@ -173,10 +173,9 @@ button {
 .brand-logo {
   width: 34px;
   height: 34px;
-  border-radius: 10px;
   flex: 0 0 auto;
   display: block;
-  overflow: hidden;
+  object-fit: contain;
   box-shadow: none;
   border: 0;
 }
@@ -689,16 +688,17 @@ table.data tr:hover td {
 .login-brand {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 12px;
-  margin-bottom: 14px;
+  margin-bottom: 22px;
 }
 
-.login-brand svg {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+.login-logo {
+  width: auto;
+  height: 96px;
+  max-width: 100%;
   display: block;
-  flex: 0 0 auto;
+  object-fit: contain;
 }
 
 .login-card h1 {

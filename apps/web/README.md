@@ -1,4 +1,4 @@
-# Web — Predictia
+# Web — Prevex
 
 React + Vite + TypeScript. Tema claro/oscuro. Consume la API en `http://localhost:5080`.
 
