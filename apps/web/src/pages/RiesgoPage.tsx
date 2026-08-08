@@ -5,10 +5,10 @@ import { ciiuDivisionLabel } from "../ciiu";
 import {
   help,
   tipCapitas,
+  tipEfectividad,
   tipMotivo,
   tipRanking,
   tipRiesgo,
-  tipScore,
   tipUltimaVisita,
   tipVisitaReciente,
   VISITA_RECIENTE_MESES,
@@ -311,7 +311,7 @@ export function RiesgoPage() {
             <tr>
               <Th id="ranking"> </Th>
               <Th id="establecimiento">Establecimiento</Th>
-              <Th id="score">Puntaje</Th>
+              <Th id="efectividad">Efectividad histórica</Th>
               <Th id="banda">Riesgo</Th>
               <Th id="motivo">Motivo</Th>
               <Th id="ciiu">Actividad</Th>
@@ -352,13 +352,19 @@ export function RiesgoPage() {
                 >
                   {shortId(item.idEstablecimiento)}
                 </td>
-                <td title={tipScore(item.scoreRiesgo)}>
-                  <div className="score-cell">
-                    <span className="mono">{item.scoreRiesgo.toFixed(3)}</span>
-                    <div className="score-bar">
-                      <span style={{ width: `${Math.min(100, item.scoreRiesgo * 100)}%` }} />
+                <td title={tipEfectividad(item.efectividadHistorica, item.efectividadTopK)}>
+                  {item.efectividadHistorica != null ? (
+                    <div className="score-cell">
+                      <span className="mono">{item.efectividadHistorica.toFixed(1)}%</span>
+                      <div className="score-bar">
+                        <span style={{ width: `${Math.min(100, item.efectividadHistorica)}%` }} />
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <span className="muted" title={tipEfectividad(null, null)}>
+                      —
+                    </span>
+                  )}
                 </td>
                 <td>
                   <span className={`badge ${item.banda}`} title={tipRiesgo(item.banda, item.ranking)}>

@@ -101,6 +101,8 @@ export type RankingItem = {
   idEmpleador: string | null;
   ranking: number;
   scoreRiesgo: number;
+  efectividadHistorica: number | null;
+  efectividadTopK: number | null;
   banda: "critico" | "alto" | "medio" | string;
   motivo: string | null;
   obligacionPrs: boolean;

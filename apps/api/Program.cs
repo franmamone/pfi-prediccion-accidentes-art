@@ -416,6 +416,7 @@ app.MapGet("/api/riesgo", async (
         visitaByEst.TryGetValue(i.IdEstablecimiento, out var visitaApp);
         var enCooldownApp = visitaApp is not null || i.EnCooldown;
         var estado = ResolveEstadoOperativo(agenda, visitaApp is not null);
+        var efectividad = AciertoHistoricoLookup(snapshot.Horizonte, i.Ranking);
         return new
         {
             i.Id,
@@ -423,6 +424,8 @@ app.MapGet("/api/riesgo", async (
             i.IdEmpleador,
             i.Ranking,
             i.ScoreRiesgo,
+            efectividadHistorica = efectividad?.Pct,
+            efectividadTopK = efectividad?.TopK,
             i.Banda,
             i.Motivo,
             i.ObligacionPrs,
@@ -1556,9 +1559,9 @@ static List<object> BuildExplicacion(
 /// Precisión histórica del holdout 2025 (media por mes) según posición en la lista.
 /// Fuente: reports/modelo/evaluation_metrics_{1m|3m}.json → top_k_per_month.
 /// </summary>
-static object BuildAciertoHistorico(string horizonte, int ranking)
+// Tabla vigente del holdout 2025 (mean_precision_at_k_per_month) por tramo top-K.
+static (double Pct, int TopK)? AciertoHistoricoLookup(string horizonte, int ranking)
 {
-    // Valores vigents del holdout 2025 (mean_precision_at_k_per_month).
     var tabla = horizonte == "3m"
         ? new (int K, double Precision)[]
         {
@@ -1578,6 +1581,17 @@ static object BuildAciertoHistorico(string horizonte, int ranking)
     var fila = tabla.FirstOrDefault(t => ranking <= t.K);
     if (fila.K == 0)
     {
+        return null;
+    }
+
+    return (Math.Round(fila.Precision * 100, 1), fila.K);
+}
+
+static object BuildAciertoHistorico(string horizonte, int ranking)
+{
+    var lookup = AciertoHistoricoLookup(horizonte, ranking);
+    if (lookup is null)
+    {
         return new
         {
             disponible = false,
@@ -1592,16 +1606,16 @@ static object BuildAciertoHistorico(string horizonte, int ranking)
         };
     }
 
-    var pct = Math.Round(fila.Precision * 100, 1);
+    var (pct, topK) = lookup.Value;
     return new
     {
         disponible = true,
         porcentaje = pct,
-        referenciaTopK = fila.K,
-        etiqueta = $"Acierto histórico top {fila.K}",
+        referenciaTopK = topK,
+        etiqueta = $"Acierto histórico top {topK}",
         detalle =
             $"En la evaluación con datos de 2025 (horizonte {(horizonte == "3m" ? "trimestral" : "mensual")}), " +
-            $"el {pct:0.#}% de los establecimientos ubicados entre los primeros {fila.K} del ranking " +
+            $"el {pct:0.#}% de los establecimientos ubicados entre los primeros {topK} del ranking " +
             "registró al menos un accidente en el horizonte. Es una referencia grupal del modelo, " +
             "no una probabilidad individual de este establecimiento.",
         holdoutAnio = 2025,

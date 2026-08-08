@@ -11,6 +11,8 @@ export const COLUMN_HELP: Record<string, string> = {
     "Identificador anonimizado del establecimiento (hash). Se muestra abreviado en la grilla; el valor completo está en el detalle y en el export.",
   score:
     "Puntaje del modelo (0–1): prioriza a quién visitar primero. No es una probabilidad calibrada de accidente. Más alto = más prioritario.",
+  efectividad:
+    "Efectividad histórica (holdout 2025): entre los establecimientos que el modelo ubicó en el mismo tramo del ranking (top 50/100/200/225), qué porcentaje registró al menos un accidente en el horizonte. Es una referencia grupal por tramo, no una probabilidad individual del establecimiento.",
   banda:
     `Nivel de riesgo operativo según la posición: Crítico (#1–${RIESGO_CRITICO_HASTA}, capacidad inmediata), Alto (#${RIESGO_CRITICO_HASTA + 1}–${RIESGO_ALTO_HASTA}, capacidad mensual) o Medio (fuera del cupo operativo, referencia).`,
   motivo:
@@ -45,6 +47,16 @@ export function tipRanking(ranking: number): string {
 
 export function tipScore(score: number): string {
   return `Puntaje ${score.toFixed(4)}. ${help("score")}`;
+}
+
+export function tipEfectividad(pct: number | null, topK: number | null): string {
+  if (pct == null || topK == null) {
+    return `Sin referencia de efectividad para esta posición. ${help("efectividad")}`;
+  }
+  return (
+    `${pct.toLocaleString("es-AR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}% de acierto histórico en el tramo top ${topK} (holdout 2025). ` +
+    `${help("efectividad")}`
+  );
 }
 
 export function tipRiesgo(banda: string, ranking: number): string {
