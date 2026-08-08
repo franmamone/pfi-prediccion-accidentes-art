@@ -59,6 +59,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       <div className="toast-stack" aria-live="polite" aria-relevant="additions">
         {items.map((t) => (
           <div key={t.id} className={`toast toast-${t.kind}`} role="status">
+            <span className="toast-icon" aria-hidden="true" />
             <div className="toast-body">
               <strong>{t.title}</strong>
               {t.detail ? <p>{t.detail}</p> : null}
@@ -71,6 +72,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             >
               ×
             </button>
+            <span className="toast-progress" aria-hidden="true" />
           </div>
         ))}
       </div>
