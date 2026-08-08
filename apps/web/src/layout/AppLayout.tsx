@@ -113,7 +113,7 @@ export function AppLayout() {
         <div className="brand">
           <img className="brand-logo" src="/logo-mark.png" alt="Prevex" width={34} height={34} />
           <div className="brand-text">
-            <span>Prioridad de visitas</span>
+            <strong>PREVEX</strong>
           </div>
         </div>
 
