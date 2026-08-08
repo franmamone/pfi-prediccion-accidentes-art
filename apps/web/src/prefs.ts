@@ -61,13 +61,23 @@ export function setHorizontePref(value: HorizontePref) {
   }
 }
 
-export type DetalleSectionKey = "acierto" | "ficha" | "explicacion" | "shap";
+export type DetalleSectionKey =
+  | "acierto"
+  | "ficha"
+  | "explicacion"
+  | "historial"
+  | "visitas"
+  | "resumenIa"
+  | "shap";
 
 export function getDetalleSections(): Record<DetalleSectionKey, boolean> {
   const defaults: Record<DetalleSectionKey, boolean> = {
     acierto: true,
     ficha: true,
     explicacion: true,
+    historial: true,
+    visitas: true,
+    resumenIa: true,
     shap: true,
   };
   try {

@@ -17,6 +17,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<AgendaItem> AgendaItems => Set<AgendaItem>();
     public DbSet<VisitaApp> VisitasApp => Set<VisitaApp>();
     public DbSet<AgendaEvento> AgendaEventos => Set<AgendaEvento>();
+    public DbSet<EstablecimientoDossier> EstablecimientoDossiers => Set<EstablecimientoDossier>();
+    public DbSet<ResumenIaEstablecimiento> ResumenesIaEstablecimiento => Set<ResumenIaEstablecimiento>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -139,6 +141,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         modelBuilder.Entity<AgendaEvento>()
             .HasIndex(e => e.OperacionId)
+            .IsUnique();
+
+        modelBuilder.Entity<ResumenIaEstablecimiento>()
+            .HasIndex(r => new { r.IdEstablecimiento, r.Horizonte })
             .IsUnique();
     }
 }

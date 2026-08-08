@@ -1734,6 +1734,145 @@ table.data tbody tr:hover td {
   width: 100%;
 }
 
+/* Dossier del preventor: historial de accidentes y visitas previas */
+.anio-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.anio-bar {
+  display: grid;
+  grid-template-columns: 48px 1fr 44px;
+  align-items: center;
+  gap: 8px;
+}
+
+.anio-bar-label {
+  font-size: 12px;
+  color: var(--muted, #94a3b8);
+}
+
+.anio-bar-track {
+  height: 10px;
+  background: rgba(148, 163, 184, 0.16);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.anio-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #38bdf8, #6366f1);
+  border-radius: 999px;
+  transition: width 0.5s ease;
+}
+
+.anio-bar-val {
+  font-size: 12px;
+  text-align: right;
+}
+
+.cat-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.cat-group h4 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: var(--muted, #94a3b8);
+  font-weight: 600;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.chip b {
+  color: #6366f1;
+}
+
+.relato-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.relato-list li {
+  border-left: 3px solid rgba(56, 189, 248, 0.5);
+  padding: 4px 0 4px 12px;
+}
+
+.relato-meta {
+  font-size: 12px;
+  color: var(--muted, #94a3b8);
+  margin-bottom: 2px;
+}
+
+.relato-list p {
+  margin: 2px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.ia-resumen {
+  line-height: 1.6;
+  font-size: 14px;
+  background: rgba(56, 189, 248, 0.06);
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+
+.ia-resumen .ia-heading {
+  margin: 14px 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--accent, #38bdf8);
+}
+
+.ia-resumen .ia-heading:first-child {
+  margin-top: 0;
+}
+
+.ia-resumen .ia-list {
+  margin: 0 0 10px;
+  padding-left: 20px;
+}
+
+.ia-resumen .ia-list li {
+  margin: 3px 0;
+}
+
+.ia-resumen .ia-par {
+  margin: 0 0 10px;
+}
+
+.ia-resumen > *:last-child {
+  margin-bottom: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .page-transition,
   .reveal,

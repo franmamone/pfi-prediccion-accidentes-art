@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using PfiPrevencion.Api.Data;
+using PfiPrevencion.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,6 +40,10 @@ builder.Services.AddCors(options =>
         policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
 });
 builder.Services.AddOpenApi();
+builder.Services.AddHttpClient<GeminiClient>(c =>
+{
+    c.Timeout = TimeSpan.FromSeconds(60);
+});
 
 var app = builder.Build();
 
@@ -571,6 +576,131 @@ app.MapGet("/api/establecimientos/{id}", async (string id, AppDbContext db, stri
                 ultimaVisitaApp.Tipo,
                 ultimaVisitaApp.Resultado,
             },
+    });
+}).RequireAuthorization();
+
+app.MapGet("/api/establecimientos/{id}/dossier", async (string id, AppDbContext db, string? horizonte) =>
+{
+    horizonte = NormalizeHorizonte(horizonte);
+    var dossier = await db.EstablecimientoDossiers.AsNoTracking()
+        .FirstOrDefaultAsync(d => d.IdEstablecimiento == id);
+    if (dossier is null)
+    {
+        return Results.Ok(new
+        {
+            disponible = false,
+            nota = "No hay historial de accidentes ni visitas cargado para este establecimiento.",
+        });
+    }
+
+    var contenido = JsonSerializer.Deserialize<JsonElement>(dossier.DossierJson);
+    var resumenIa = await db.ResumenesIaEstablecimiento.AsNoTracking()
+        .FirstOrDefaultAsync(r => r.IdEstablecimiento == id && r.Horizonte == horizonte);
+
+    return Results.Ok(new
+    {
+        disponible = true,
+        idEstablecimiento = id,
+        referencia = dossier.Referencia,
+        fuente = dossier.Fuente,
+        generadoEn = dossier.GeneradoEn,
+        accidentes = contenido.TryGetProperty("accidentes", out var acc) && acc.ValueKind != JsonValueKind.Null
+            ? (object)acc
+            : null,
+        visitas = contenido.TryGetProperty("visitas", out var vis) && vis.ValueKind != JsonValueKind.Null
+            ? (object)vis
+            : null,
+        resumenIa = resumenIa is null
+            ? null
+            : new
+            {
+                Resumen = LimpiarResumenIa(resumenIa.Resumen),
+                resumenIa.Modelo,
+                resumenIa.GeneradoEn,
+                resumenIa.Horizonte,
+            },
+    });
+}).RequireAuthorization();
+
+app.MapPost("/api/establecimientos/{id}/resumen-ia", async (
+    string id,
+    AppDbContext db,
+    GeminiClient gemini,
+    ClaimsPrincipal principal,
+    string? horizonte,
+    bool? refrescar) =>
+{
+    var user = await GetCurrentUserAsync(principal, db);
+    if (user is null) return Results.Unauthorized();
+
+    horizonte = NormalizeHorizonte(horizonte);
+    var dossier = await db.EstablecimientoDossiers.AsNoTracking()
+        .FirstOrDefaultAsync(d => d.IdEstablecimiento == id);
+    if (dossier is null)
+    {
+        return Results.NotFound(new { error = "No hay historial cargado para este establecimiento." });
+    }
+
+    var forzar = (refrescar ?? false) && CanAssignAny(user);
+    var cache = await db.ResumenesIaEstablecimiento
+        .FirstOrDefaultAsync(r => r.IdEstablecimiento == id && r.Horizonte == horizonte);
+    if (cache is not null && !forzar)
+    {
+        return Results.Ok(new
+        {
+            Resumen = LimpiarResumenIa(cache.Resumen),
+            cache.Modelo,
+            cache.GeneradoEn,
+            cache.Horizonte,
+            desdeCache = true,
+        });
+    }
+
+    // Contexto del ranking (banda/posición) para orientar el resumen; opcional.
+    var snapshot = await GetVigenteAsync(db, horizonte);
+    var item = snapshot is null
+        ? null
+        : await db.RankingItems.AsNoTracking()
+            .FirstOrDefaultAsync(i => i.SnapshotId == snapshot.Id && i.IdEstablecimiento == id);
+
+    var prompt = BuildDossierPrompt(dossier.DossierJson, horizonte, item?.Banda, item?.Ranking);
+    var promptHash = Convert.ToHexString(
+        System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(prompt)));
+
+    GeminiResult resultado;
+    try
+    {
+        resultado = await gemini.GenerarAsync(prompt);
+    }
+    catch (GeminiException ex)
+    {
+        return Results.Json(new { error = ex.Message }, statusCode: 502);
+    }
+
+    if (cache is null)
+    {
+        cache = new ResumenIaEstablecimiento
+        {
+            IdEstablecimiento = id,
+            Horizonte = horizonte,
+        };
+        db.ResumenesIaEstablecimiento.Add(cache);
+    }
+    cache.Modelo = gemini.Model;
+    cache.PromptHash = promptHash;
+    cache.Resumen = LimpiarResumenIa(resultado.Texto);
+    cache.TokensPrompt = resultado.TokensPrompt;
+    cache.TokensSalida = resultado.TokensSalida;
+    cache.GeneradoEn = DateTime.UtcNow;
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new
+    {
+        cache.Resumen,
+        cache.Modelo,
+        cache.GeneradoEn,
+        cache.Horizonte,
+        desdeCache = false,
     });
 }).RequireAuthorization();
 
@@ -1621,6 +1751,191 @@ static object BuildAciertoHistorico(string horizonte, int ranking)
         holdoutAnio = 2025,
         horizonte,
     };
+}
+
+// Arma un prompt ANONIMIZADO (sin hash ni identificadores) para el resumen del preventor.
+static string BuildDossierPrompt(string dossierJson, string horizonte, string? banda, int? ranking)
+{
+    using var doc = JsonDocument.Parse(dossierJson);
+    var root = doc.RootElement;
+    var sb = new StringBuilder();
+
+    // Los datos van PRIMERO y las instrucciones AL FINAL: los modelos siguen
+    // mejor la última instrucción y así evitamos que "razonen en voz alta".
+    sb.AppendLine("=== DATOS HISTÓRICOS ANONIMIZADOS DE UN ESTABLECIMIENTO ===");
+    var horizonteTxt = horizonte == "3m" ? "trimestral" : "mensual";
+    sb.Append("Contexto del modelo predictivo: horizonte ").Append(horizonteTxt).Append('.');
+    if (!string.IsNullOrWhiteSpace(banda)) sb.Append(" Banda de riesgo: ").Append(banda).Append('.');
+    if (ranking is not null) sb.Append(" Posición en la priorización: #").Append(ranking).Append('.');
+    sb.AppendLine();
+    sb.AppendLine();
+
+    if (root.TryGetProperty("accidentes", out var acc) && acc.ValueKind == JsonValueKind.Object)
+    {
+        sb.AppendLine("ACCIDENTES HISTÓRICOS:");
+        if (acc.TryGetProperty("total", out var tot)) sb.Append("- Total período: ").Append(tot.GetRawText());
+        if (acc.TryGetProperty("ultimos_12m", out var u12)) sb.Append("; últimos 12 meses: ").Append(u12.GetRawText());
+        sb.AppendLine();
+        if (acc.TryGetProperty("por_anio", out var anio) && anio.ValueKind == JsonValueKind.Object)
+        {
+            sb.Append("- Por año:");
+            foreach (var p in anio.EnumerateObject()) sb.Append(' ').Append(p.Name).Append(':').Append(p.Value.GetRawText());
+            sb.AppendLine();
+        }
+        AppendTop(sb, acc, "top_forma", "- Formas más frecuentes");
+        AppendTop(sb, acc, "top_zona", "- Zonas del cuerpo afectadas");
+        AppendTop(sb, acc, "top_naturaleza", "- Naturaleza de la lesión");
+        AppendTop(sb, acc, "top_gravedad", "- Gravedad");
+        if (acc.TryGetProperty("recientes", out var recientes) && recientes.ValueKind == JsonValueKind.Array)
+        {
+            sb.AppendLine("- Relatos recientes:");
+            foreach (var r in recientes.EnumerateArray())
+            {
+                var fecha = r.TryGetProperty("fecha", out var f) ? f.GetString() : null;
+                var forma = r.TryGetProperty("forma", out var fo) ? fo.GetString() : null;
+                var relato = r.TryGetProperty("relato", out var re) ? re.GetString() : null;
+                if (string.IsNullOrWhiteSpace(relato)) continue;
+                sb.Append("  * [").Append(fecha).Append("] ");
+                if (!string.IsNullOrWhiteSpace(forma)) sb.Append(forma).Append(": ");
+                sb.AppendLine(relato);
+            }
+        }
+        sb.AppendLine();
+    }
+
+    if (root.TryGetProperty("visitas", out var vis) && vis.ValueKind == JsonValueKind.Object)
+    {
+        sb.Append("VISITAS PREVENTIVAS PREVIAS");
+        if (vis.TryGetProperty("total", out var vt)) sb.Append(" (total: ").Append(vt.GetRawText()).Append(')');
+        sb.AppendLine(":");
+        if (vis.TryGetProperty("recientes", out var vr) && vr.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var r in vr.EnumerateArray())
+            {
+                var fecha = r.TryGetProperty("fecha", out var f) ? f.GetString() : null;
+                var resultado = r.TryGetProperty("resultado", out var re) ? re.GetString() : null;
+                var obs = r.TryGetProperty("observaciones", out var o) ? o.GetString() : null;
+                var inc = r.TryGetProperty("incumplimientos", out var i) ? i.GetString() : null;
+                sb.Append("  * [").Append(fecha).Append("] ");
+                if (!string.IsNullOrWhiteSpace(resultado)) sb.Append(resultado).Append(". ");
+                if (!string.IsNullOrWhiteSpace(obs)) sb.Append("Obs: ").Append(obs).Append(". ");
+                if (!string.IsNullOrWhiteSpace(inc)) sb.Append("Incumplimientos: ").Append(inc);
+                sb.AppendLine();
+            }
+        }
+    }
+
+    sb.AppendLine();
+    sb.AppendLine("=== TAREA ===");
+    sb.AppendLine(
+        "Sos un asistente para un preventor de riesgos del trabajo de una ART (Argentina). " +
+        "Con los datos de arriba, redactá una guía accionable para la próxima visita preventiva.");
+    sb.AppendLine();
+    sb.AppendLine("REGLAS ESTRICTAS DE SALIDA:");
+    sb.AppendLine("- Empezá tu respuesta con una línea que diga exactamente: ===GUÍA=== y no escribas absolutamente nada antes de esa línea.");
+    sb.AppendLine("- Respondé ÚNICAMENTE la guía final. NO muestres tu razonamiento, NO repitas estas instrucciones ni vuelquen los datos crudos, NO escribas nada en inglés.");
+    sb.AppendLine("- Todo en español rioplatense, claro y concreto. No inventes datos que no figuren en el bloque de arriba. No uses el nombre de la empresa (no lo tenés).");
+    sb.AppendLine("- ANCLÁ cada punto a la evidencia: cuando cites un foco, indicá entre paréntesis el dato que lo respalda (p. ej. cantidad de accidentes, forma más frecuente, incumplimiento previo).");
+    sb.AppendLine("- Ordená los focos por criticidad (frecuencia y gravedad), del más importante al menos.");
+    sb.AppendLine("- Para las medidas de control/EPP sugeridas por buenas prácticas (no figuran en los datos), aclaralo con \"sugerencia:\".");
+    sb.AppendLine("- Máximo ~260 palabras en total.");
+    sb.AppendLine("- Usá EXACTAMENTE este formato (títulos en negrita y viñetas con \"- \"):");
+    sb.AppendLine();
+    sb.AppendLine("**Resumen ejecutivo**");
+    sb.AppendLine("- (una sola frase: banda de riesgo, tendencia y los 2 focos principales)");
+    sb.AppendLine();
+    sb.AppendLine("**1. Perfil de riesgo**");
+    sb.AppendLine("- (2-3 viñetas con números y tendencia temporal si la hay: formas, zonas y naturaleza predominantes)");
+    sb.AppendLine();
+    sb.AppendLine("**2. Incumplimientos previos a verificar**");
+    sb.AppendLine("- (incumplimientos u observaciones de visitas anteriores; marcá los que se repiten como \"recurrente / pendiente de subsanar\". Si no hay datos de visitas, escribí: \"Sin registros de visitas previas.\")");
+    sb.AppendLine();
+    sb.AppendLine("**3. Focos priorizados para la próxima visita**");
+    sb.AppendLine("- Foco (evidencia): acción concreta. EPP/control sugerido cuando aplique.");
+    sb.AppendLine("- (2-4 viñetas con este patrón dato→acción)");
+    sb.AppendLine();
+    sb.AppendLine("**4. Verificar, registrar y documentación a solicitar**");
+    sb.AppendLine("- (2-4 viñetas: qué medir/observar, qué preguntar al empleador y qué documentación pedir —capacitaciones, estudios ergonómicos, servicio de Medicina Laboral e HyS—)");
+
+    return sb.ToString();
+}
+
+/// <summary>
+/// Los modelos Gemma tienden a "pensar en voz alta" antes de la respuesta final.
+/// Nos quedamos desde la última aparición del primer título y normalizamos viñetas.
+/// </summary>
+static string LimpiarResumenIa(string? texto)
+{
+    if (string.IsNullOrWhiteSpace(texto)) return texto ?? string.Empty;
+    var t = texto.Replace("\r\n", "\n").Replace("\r", "\n");
+
+    // El modelo debe abrir la guía con el marcador "===GUÍA===". Tomamos todo lo
+    // que sigue a la ÚLTIMA aparición del marcador (así descartamos el razonamiento
+    // previo, aunque el modelo lo haya mencionado antes).
+    var markerIdx = t.LastIndexOf("===GU", StringComparison.OrdinalIgnoreCase);
+    if (markerIdx >= 0)
+    {
+        var nl = t.IndexOf('\n', markerIdx);
+        t = nl >= 0 ? t[(nl + 1)..] : string.Empty;
+    }
+    else
+    {
+        // Respaldo: si no está el marcador, cortamos desde el primer título conocido.
+        var idx = t.IndexOf("Resumen ejecutivo", StringComparison.OrdinalIgnoreCase);
+        if (idx < 0) idx = t.IndexOf("Perfil de riesgo", StringComparison.OrdinalIgnoreCase);
+        if (idx >= 0)
+        {
+            var lineStart = t.LastIndexOf('\n', Math.Min(idx, t.Length - 1)) + 1;
+            t = t[lineStart..];
+        }
+    }
+    // Quitar restos del marcador si quedaron pegados.
+    t = t.Replace("===GUÍA===", "").Replace("===GUIA===", "");
+
+    var outLines = new List<string>();
+    foreach (var raw in t.Split('\n'))
+    {
+        var line = raw.TrimEnd();
+        var trimmed = line.TrimStart();
+        if (trimmed.StartsWith("* ") || trimmed.StartsWith("*\t"))
+            line = "- " + trimmed[1..].TrimStart();
+        else if (trimmed.StartsWith("•"))
+            line = "- " + trimmed[1..].TrimStart();
+        outLines.Add(line);
+    }
+
+    // Colapsar líneas en blanco consecutivas.
+    var sb = new StringBuilder();
+    var blank = false;
+    foreach (var l in outLines)
+    {
+        if (l.Length == 0)
+        {
+            if (!blank) sb.AppendLine();
+            blank = true;
+        }
+        else
+        {
+            sb.AppendLine(l);
+            blank = false;
+        }
+    }
+    return sb.ToString().Trim();
+}
+
+static void AppendTop(StringBuilder sb, JsonElement acc, string prop, string label)
+{
+    if (!acc.TryGetProperty(prop, out var arr) || arr.ValueKind != JsonValueKind.Array || arr.GetArrayLength() == 0)
+        return;
+    sb.Append(label).Append(": ");
+    var parts = new List<string>();
+    foreach (var e in arr.EnumerateArray())
+    {
+        var k = e.TryGetProperty("k", out var kv) ? kv.GetString() : null;
+        var n = e.TryGetProperty("n", out var nv) ? nv.GetRawText() : null;
+        if (!string.IsNullOrWhiteSpace(k)) parts.Add(n is null ? k : $"{k} ({n})");
+    }
+    sb.AppendLine(string.Join("; ", parts));
 }
 
 static double Median(List<double> values)

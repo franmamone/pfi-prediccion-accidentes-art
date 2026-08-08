@@ -225,6 +225,33 @@ public class AgendaEvento
     public Guid OperacionId { get; set; }
 }
 
+[Table("EstablecimientoDossier", Schema = "app")]
+public class EstablecimientoDossier
+{
+    [Key, MaxLength(64)] public string IdEstablecimiento { get; set; } = "";
+    [MaxLength(10)] public string? Referencia { get; set; }
+    [MaxLength(200)] public string? Fuente { get; set; }
+    public int? AccidentesTotal { get; set; }
+    public int? AccidentesUlt12m { get; set; }
+    public int? VisitasTotal { get; set; }
+    public string DossierJson { get; set; } = "";
+    public DateTime GeneradoEn { get; set; }
+}
+
+[Table("ResumenIaEstablecimiento", Schema = "app")]
+public class ResumenIaEstablecimiento
+{
+    public int Id { get; set; }
+    [MaxLength(64)] public string IdEstablecimiento { get; set; } = "";
+    [MaxLength(2)] public string Horizonte { get; set; } = "1m";
+    [MaxLength(80)] public string Modelo { get; set; } = "";
+    [MaxLength(64)] public string? PromptHash { get; set; }
+    public string Resumen { get; set; } = "";
+    public int? TokensPrompt { get; set; }
+    public int? TokensSalida { get; set; }
+    public DateTime GeneradoEn { get; set; }
+}
+
 [Table("VisitasApp", Schema = "app")]
 public class VisitaApp
 {

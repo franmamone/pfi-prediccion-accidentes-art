@@ -209,6 +209,65 @@ export type DetalleEstablecimiento = {
   } | null;
 };
 
+export type TopCategoria = { k: string; n: number };
+
+export type DossierAccidentes = {
+  total: number;
+  ultimos_12m: number;
+  por_anio: Record<string, number>;
+  top_forma: TopCategoria[];
+  top_zona: TopCategoria[];
+  top_naturaleza: TopCategoria[];
+  top_gravedad: TopCategoria[];
+  recientes: { fecha: string | null; forma: string | null; relato: string | null }[];
+};
+
+export type DossierVisitas = {
+  total: number;
+  ultima_fecha: string | null;
+  recientes: {
+    fecha: string | null;
+    resultado: string | null;
+    observaciones: string | null;
+    incumplimientos: string | null;
+  }[];
+};
+
+export type ResumenIa = {
+  resumen: string;
+  modelo: string;
+  generadoEn: string;
+  horizonte: Horizonte;
+  desdeCache?: boolean;
+};
+
+export type DossierEstablecimiento = {
+  disponible: boolean;
+  nota?: string;
+  idEstablecimiento?: string;
+  referencia?: string | null;
+  fuente?: string | null;
+  generadoEn?: string;
+  accidentes?: DossierAccidentes | null;
+  visitas?: DossierVisitas | null;
+  resumenIa?: ResumenIa | null;
+};
+
+export function fetchDossier(id: string, horizonte: Horizonte) {
+  return request<DossierEstablecimiento>(
+    `/api/establecimientos/${encodeURIComponent(id)}/dossier?horizonte=${horizonte}`,
+  );
+}
+
+export function generarResumenIa(id: string, horizonte: Horizonte, refrescar = false) {
+  const qs = new URLSearchParams({ horizonte });
+  if (refrescar) qs.set("refrescar", "true");
+  return request<ResumenIa>(
+    `/api/establecimientos/${encodeURIComponent(id)}/resumen-ia?${qs.toString()}`,
+    { method: "POST" },
+  );
+}
+
 export type Serie = { clave: string; valor: number; scorePromedio?: number };
 
 export type ShapAgregadoFactor = {
