@@ -126,7 +126,24 @@ El dise\~no previo se document\'o mediante wireframes de layout y mapa de pantal
 
 \section{User research}\label{sec:user-research}
 
-El proyecto tiene usuarios finales identificables (prevencionistas, coordinadores y perfiles vinculados a la operaci\'on ART). Por ello se incorpora \emph{user research} emp\'{\i}rico para validar necesidades y no basar el dise\~no solo en supuestos. Las t\'ecnicas previstas son encuestas (alcance cuantitativo), entrevistas semiestructuradas (profundidad cualitativa) y \emph{user personas} (s\'{\i}ntesis arquet\'{\i}pica). Al momento del hito 50\,\% se documenta la primera entrevista en profundidad; las restantes y el an\'alisis consolidado de la encuesta se completan en paralelo a esta entrega.
+El proyecto tiene usuarios finales identificables (prevencionistas, coordinadores y perfiles vinculados a la operaci\'on ART). Por ello se incorpora \emph{user research} emp\'{\i}rico para validar necesidades y no basar el dise\~no solo en supuestos. Las t\'ecnicas utilizadas son encuestas (alcance cuantitativo), entrevistas semiestructuradas (profundidad cualitativa) y, en una etapa siguiente, \emph{user personas} (s\'{\i}ntesis arquet\'{\i}pica). En este hito se presentan los resultados de la encuesta ($n=81$) y la primera entrevista en profundidad; restan dos entrevistas.
+
+\subsection{Encuesta --- percepci\'on de prevenci\'on y respuesta post-accidente}
+
+Se aplic\'o un formulario en l\'{\i}nea (julio 2026) a trabajadores de distintos sectores y tama\~nos de establecimiento.
+Tras eliminar duplicados exactos del export, quedaron $n=81$ respuestas \'unicas.
+El detalle por pregunta, con gr\'aficos, figura en el Anexo~\ref{anexo:encuesta}.
+
+Hallazgos que avalan la tesis:
+
+\begin{enumerate}
+	\item \textbf{La ART/prevenci\'on es poco visible:} 79\,\% no conoce su ART o nunca vio auditor\'{\i}as; solo 21\,\% reporta auditor\'{\i}as regulares (Figura~\ref{fig:enc-p3}).
+	\item \textbf{Predomina lo reactivo:} 44\,\% ubica capacitaciones/medidas despu\'es del incidente y 31\,\% solo en la inducci\'on; 25\,\% describe un enfoque proactivo anual (Figura~\ref{fig:enc-p4}).
+	\item \textbf{Baja anticipaci\'on percibida:} media 2,44 en escala 1--5; 57\,\% elige 1 o 2 (Figura~\ref{fig:enc-p5}).
+	\item \textbf{Accidente frecuente, aprendizaje d\'ebil:} 57\,\% reporta episodio propio o de un compa\~nero (Figura~\ref{fig:enc-p6}); entre ellos, 63\,\% percibi\'o ausencia de cambios o solo medidas m\'{\i}nimas, frente a 35\,\% con redise\~no profundo (Figura~\ref{fig:enc-p7}).
+\end{enumerate}
+
+Estos resultados sostienen el problema de investigaci\'on: hace falta priorizar intervenciones \emph{antes} del evento y cerrar el ciclo operativo, en lugar de depender de calendarios gen\'ericos o de reacciones superficiales post-siniestro.
 
 \subsection{Entrevista 1 --- perfil operativo y funcional ART}
 
@@ -155,7 +172,7 @@ La transcripci\'on depurada integra el Anexo~\ref{anexo:entrevista-adrian-elias}
 	Notificar al empleador puntos d\'ebiles predichos puede ser contraproducente. El producto debe tratar el score y el detalle como informaci\'on operativa interna de la ART, con divulgaci\'on controlada.
 \end{enumerate}
 
-Estos hallazgos refuerzan las historias HU-03 a HU-06 (priorizaci\'on, detalle explicable, agenda) y los requerimientos RF-03, RF-04 y RF-05. Las entrevistas pendientes y los resultados de la encuesta permitir\'an ajustar \emph{user personas} y validar la generalizaci\'on de estos hallazgos.
+Estos hallazgos cualitativos convergen con la encuesta (baja percepci\'on de prevenci\'on proactiva; valor del historial; necesidad de priorizar capacidad limitada) y refuerzan las historias HU-03 a HU-06 y los requerimientos RF-03, RF-04 y RF-05. Las dos entrevistas pendientes y las \emph{user personas} cerrar\'an el bloque de user research.
 
 \section{An\'alisis de competencias}
 
@@ -174,7 +191,7 @@ Estos hallazgos refuerzan las historias HU-03 a HU-06 (priorizaci\'on, detalle e
 		\hline
 		\textbf{Debilidades} & \textbf{Amenazas} \\
 		\hline
-		User research en curso (1/3 entrevistas documentadas; encuesta y personas pendientes de cierre); dependencia de calidad/completitud de datos hist\'oricos; prototipo a\'un no desplegado en nube. &
+		User research en curso (encuesta $n=81$ documentada; 1/3 entrevistas; personas pendientes); dependencia de calidad/completitud de datos hist\'oricos; prototipo a\'un no desplegado en nube. &
 		Resistencia a modelos ``caja negra''; competencia de BI gen\'erico; cambios regulatorios; riesgo de malinterpretar el score como probabilidad; mal uso de alertas predictivas si se divulgan sin control. \\
 		\hline
 	\end{tabular}

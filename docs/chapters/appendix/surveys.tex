@@ -1,3 +1,153 @@
-\anexo{Resultados de la encuesta}
+\begin{contenidoNuevo}
 
-Procurar que las encuestas sean representativas. Al menos 120 encuestados en una muestra homogénea. La encuesta, claramente, debe favorecer el por qué de la tesis. Si se realiza por Google Forms, se pueden adjuntar capturas en formato de figuras, o escribir un listado con el scope \emph{enumerate} o el scope \emph{itemize}.
+\anexo{Resultados de la encuesta de user research}\label{anexo:encuesta}
+
+\subsection*{Ficha t\'ecnica}
+
+\begin{description}[style=nextline, leftmargin=3.4cm, labelwidth=3.0cm]
+	\item[Instrumento] Formulario en l\'{\i}nea (Google Forms) sobre prevenci\'on y seguridad laboral.
+	\item[Per\'{\i}odo] Respuestas recolectadas en julio de 2026.
+	\item[Muestra] $n=81$ respuestas \'unicas (el export original conten\'{\i}a 162 filas; se eliminaron 81 duplicados exactos antes del an\'alisis).
+	\item[Poblaci\'on] Trabajadores de distintos sectores y tama\~nos de establecimiento en Argentina (muestra de conveniencia, no probabil\'{\i}stica).
+	\item[Objetivo] Estimar el conocimiento percibido sobre la ART/prevenci\'on, el car\'acter reactivo o proactivo de las medidas de seguridad y el grado de acci\'on posterior a un accidente, como evidencia de la brecha que motiva el sistema predictivo del PFI.
+\end{description}
+
+\noindent\textit{Nota.}
+Los gr\'aficos se generaron de forma reproducible con el script \texttt{scripts/build\_encuesta\_figures.py} a partir del Excel de respuestas.
+Los porcentajes se redondean al entero m\'as cercano salvo indicaci\'on contraria.
+
+\subsection*{S\'{\i}ntesis interpretativa (aval de la tesis)}
+
+Los resultados refuerzan la necesidad de un sistema de priorizaci\'on predictiva con foco en la ART y el preventor:
+
+\begin{enumerate}
+	\item \textbf{Baja visibilidad de la prevenci\'on de la ART.}
+	El 79\,\% de los encuestados o bien no conoce su ART ni si hace prevenci\'on, o conoce la ART pero \emph{nunca} vio auditor\'{\i}as/inspecciones.
+	Solo el 21\,\% reporta auditor\'{\i}as regulares.
+	Esto sugiere que, desde la \'orbita del trabajador, la prevenci\'on aseguradora es poco perceptible.
+	\item \textbf{Predominio de la reactividad.}
+	El 44\,\% indica que capacitaciones o medidas se implementan \emph{reci\'en despu\'es} de un incidente; otro 31\,\% las limita a la inducci\'on de ingreso.
+	Solo un 25\,\% describe un enfoque proactivo y planificado a lo largo del a\~no.
+	\item \textbf{Baja preparaci\'on percibida para anticipar accidentes.}
+	En la escala 1--5, la media es 2,44; el 57\,\% elige 1 o 2 (poco o nada preparada).
+	Apenas el 5\,\% elige el m\'aximo (5).
+	\item \textbf{Alta prevalencia de episodios y d\'ebil aprendizaje organizacional.}
+	El 57\,\% ($n=46$) reporta accidente propio o de un compa\~nero en el trabajo actual.
+	Entre ellos, solo el 35\,\% percibi\'o un redise\~no profundo de procesos; el 63\,\% ($n=29$) indica que todo sigui\'o igual o que hubo medidas m\'{\i}nimas (charla/cartel).
+\end{enumerate}
+
+En conjunto, la encuesta aporta evidencia emp\'{\i}rica de un entorno donde el accidente es frecuente en la experiencia de los trabajadores, pero la respuesta preventiva posterior y la anticipaci\'on sistem\'atica son d\'ebiles.
+Eso alinea con el problema planteado por el PFI: la ART necesita herramientas para \emph{priorizar visitas y acciones antes del evento}, con trazabilidad y explicabilidad, en lugar de depender solo de calendarios de p\'oliza o de reacciones post-siniestro.
+
+\subsection*{P1 --- Sector laboral}
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.92\textwidth]{figures/encuesta/p1_sector.png}
+	\caption{Distribuci\'on por sector (categor\'{\i}as libres agrupadas en ``Otros''). $n=81$.}
+	\label{fig:enc-p1}
+\end{figure}
+
+La muestra se concentra en comercio/oficinas/tecnolog\'{\i}a (35\,\%) y salud/educaci\'on (20\,\%), con presencia de construcci\'on, industria/log\'{\i}stica y agro/miner\'{\i}a/petr\'oleo.
+La categor\'{\i}a ``Otros'' re\'une oficios y respuestas abiertas de baja frecuencia.
+No se pretende representatividad sectorial nacional, sino diversidad suficiente para indagar percepciones transversales.
+
+\subsection*{P2 --- Tama\~no del establecimiento}
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.92\textwidth]{figures/encuesta/p2_tamanio.png}
+	\caption{Tama\~no aproximado de la empresa o establecimiento. $n=81$ (incluye sin dato).}
+	\label{fig:enc-p2}
+\end{figure}
+
+Hay representaci\'on de micro, peque\~na, mediana y gran empresa.
+Un 10\,\% no inform\'o tama\~no (pregunta agregada o no respondida en parte del formulario).
+La heterogeneidad de tama\~nos sugiere que la baja percepci\'on de prevenci\'on no se limita a un \'unico estrato.
+
+\subsection*{P3 --- Conocimiento de la ART y auditor\'{\i}as}
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.92\textwidth]{figures/encuesta/p3_art.png}
+	\caption{Conocimiento de la ART y visibilidad de auditor\'{\i}as preventivas. $n=81$.}
+	\label{fig:enc-p3}
+\end{figure}
+
+\begin{itemize}
+	\item 42\,\%: no tiene idea de qu\'e ART lo cubre ni si hay prevenci\'on.
+	\item 37\,\%: conoce la ART pero nunca vio auditor\'{\i}as o inspecciones.
+	\item 21\,\%: conoce la ART y reporta auditor\'{\i}as regulares.
+\end{itemize}
+
+Este resultado es cr\'{\i}tico para el PFI: si el trabajador no percibe la acci\'on preventiva de la ART, el valor de un ranking explicable y de visitas mejor priorizadas reside primero en la eficiencia interna del \'area de prevenci\'on, y en segundo lugar en la comunicaci\'on controlada de resultados (coherente con el hallazgo de confidencialidad de la entrevista a Adri\'an El\'{\i}as).
+
+\subsection*{P4 --- Capacitaciones y medidas de seguridad}
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.92\textwidth]{figures/encuesta/p4_capacitaciones.png}
+	\caption{Momento predominante de implementaci\'on de capacitaciones o medidas. $n=81$.}
+	\label{fig:enc-p4}
+\end{figure}
+
+Casi tres de cada cuatro respuestas (75\,\%) ubican las medidas en la inducci\'on de ingreso o en la reacci\'on post-incidente.
+Solo un cuarto describe prevenci\'on proactiva continua.
+El prototipo busca precisamente sostener un ciclo operativo (priorizaci\'on $\rightarrow$ visita $\rightarrow$ seguimiento) que anticipe, no que espere al siniestro.
+
+\subsection*{P5 --- Preparaci\'on percibida (escala 1--5)}
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.92\textwidth]{figures/encuesta/p5_preparacion.png}
+	\caption{Autoevaluaci\'on de preparaci\'on de la empresa para anticipar un accidente. $n=81$.}
+	\label{fig:enc-p5}
+\end{figure}
+
+La distribuci\'on est\'a sesgada hacia valores bajos (media 2,44; mediana 2).
+Ello no mide la capacidad real de la ART, sino la percepci\'on del trabajador sobre su establecimiento: el mensaje es que la anticipaci\'on no se siente instalada en el d\'{\i}a a d\'{\i}a.
+
+\subsection*{P6 --- Experiencia de accidente o enfermedad profesional}
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.88\textwidth]{figures/encuesta/p6_accidente.png}
+	\caption{Experiencia de accidente laboral o enfermedad profesional (propio o de un compa\~nero). $n=81$.}
+	\label{fig:enc-p6}
+\end{figure}
+
+M\'as de la mitad de la muestra (57\,\%) reporta al menos un episodio en el trabajo actual.
+Aunque la pregunta no distingue gravedad ni denuncia formal, evidencia que el fen\'omeno no es marginal en la experiencia laboral de los encuestados.
+
+\subsection*{P7 --- Cambios operativos tras el accidente}
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.92\textwidth]{figures/encuesta/p7_cambios.png}
+	\caption{Cambios percibidos tras el accidente (submuestra P6~=~S\'{\i}, $n=45$ v\'alidas tras excluir un ``No aplica'' residual).}
+	\label{fig:enc-p7}
+\end{figure}
+
+Entre quienes tuvieron episodio:
+
+\begin{itemize}
+	\item 35\,\% percibi\'o redise\~no de procesos y mejora de seguridad.
+	\item 33\,\% indica que todo sigui\'o igual.
+	\item 30\,\% solo medidas m\'{\i}nimas (charla o cartel).
+\end{itemize}
+
+Es decir, en aproximadamente dos de cada tres casos con antecedente de accidente, el aprendizaje organizacional percibido fue nulo o superficial.
+Esa brecha ---ocurrencia sin transformaci\'on profunda--- es el espacio donde un sistema que prioriza visitas con historial y explicabilidad puede aportar valor a la ART: concentrar capacidad preventiva donde el riesgo relativo es mayor y documentar intervenciones antes del pr\'oximo evento.
+
+\subsection*{Limitaciones de la encuesta}
+
+\begin{itemize}
+	\item Muestra de conveniencia (no marco muestral ART/SRT).
+	\item Autoreporte perceptivo (no auditor\'{\i}a objetiva de visitas).
+	\item Sesgo posible por redes de difusi\'on del formulario.
+	\item Duplicados en el export: se documenta el criterio de limpieza ($n=81$).
+\end{itemize}
+
+Aun con esas limitaciones, los patrones son consistentes entre s\'{\i} (baja visibilidad ART, reactividad, poca anticipaci\'on, d\'ebil respuesta post-accidente) y convergen con la evidencia cualitativa de la entrevista del Anexo~\ref{anexo:entrevista-adrian-elias}.
+
+\end{contenidoNuevo}
