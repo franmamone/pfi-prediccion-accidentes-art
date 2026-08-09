@@ -12,9 +12,11 @@ import {
   IconExpand,
   IconFlag,
   IconLogout,
+  IconMenu,
   IconMoon,
   IconSun,
   IconUser,
+  IconX,
 } from "../icons";
 
 type NavItem = {
@@ -58,20 +60,52 @@ export function AppLayout() {
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(() => getSidebarCollapsed());
   const [confirmLogout, setConfirmLogout] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const nav = buildNav(user?.rol);
 
   useEffect(() => {
     setSidebarCollapsed(collapsed);
   }, [collapsed]);
 
+  // Cerrar el menú móvil al navegar a otra ruta.
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [location.pathname]);
+
+  // Bloquear el scroll del fondo mientras el drawer móvil está abierto.
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [mobileNavOpen]);
+
   return (
-    <div className={`app-shell${collapsed ? " collapsed" : ""}`}>
+    <div className={`app-shell${collapsed ? " collapsed" : ""}${mobileNavOpen ? " nav-open" : ""}`}>
+      {mobileNavOpen && (
+        <button
+          type="button"
+          className="nav-overlay"
+          aria-label="Cerrar menú"
+          onClick={() => setMobileNavOpen(false)}
+        />
+      )}
       <aside className="sidebar">
         <div className="brand">
           <img className="brand-logo" src="/logo-mark.png" alt="Prevex" width={34} height={34} />
           <div className="brand-text">
             <strong>PREVEX</strong>
           </div>
+          <button
+            type="button"
+            className="icon-btn nav-close"
+            aria-label="Cerrar menú"
+            onClick={() => setMobileNavOpen(false)}
+          >
+            <IconX />
+          </button>
         </div>
 
         {nav.map((section) => (
@@ -113,7 +147,21 @@ export function AppLayout() {
 
       <div className={`main${location.pathname === "/riesgo" ? " main-fill" : ""}`}>
         <header className="topbar">
-          <div className="topbar-left" />
+          <div className="topbar-left">
+            <button
+              type="button"
+              className="icon-btn nav-toggle"
+              aria-label="Abrir menú"
+              aria-expanded={mobileNavOpen}
+              onClick={() => setMobileNavOpen((v) => !v)}
+            >
+              <IconMenu />
+            </button>
+            <div className="topbar-brand">
+              <img src="/logo-mark.png" alt="Prevex" width={26} height={26} />
+              <strong>PREVEX</strong>
+            </div>
+          </div>
           <div className="topbar-right">
             <button
               className="icon-btn"

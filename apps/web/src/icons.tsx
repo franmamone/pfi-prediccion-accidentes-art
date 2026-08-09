@@ -56,6 +56,16 @@ export function IconGrid(p: IconProps) {
   );
 }
 
+export function IconMenu(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M4 6h16" />
+      <path d="M4 12h16" />
+      <path d="M4 18h16" />
+    </Svg>
+  );
+}
+
 export function IconChart(p: IconProps) {
   return (
     <Svg {...p}>
