@@ -4,17 +4,51 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <SpaRoot>..\web</SpaRoot>
+    <SpaProxyLaunchCommand>npm run dev</SpaProxyLaunchCommand>
+    <SpaProxyServerUrl>http://localhost:5173</SpaProxyServerUrl>
+    <!-- Evita fingerprint/compresión de static web assets que choca con el build de Vite. -->
+    <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />
+    <PackageReference Include="Microsoft.AspNetCore.SpaProxy" Version="10.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.10" />
   </ItemGroup>
+
+  <!--
+    Incluye el dist de Vite en wwwroot del publish.
+    Si falta dist, corre npm run build acá.
+  -->
+  <Target Name="IncludeSpaInPublish" AfterTargets="ComputeFilesToPublish" Condition="'$(DesignTimeBuild)' != 'true'">
+    <PropertyGroup>
+      <_SpaDistIndex>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\$(SpaRoot)\dist\index.html'))</_SpaDistIndex>
+      <_SpaRootFull>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\$(SpaRoot)'))</_SpaRootFull>
+    </PropertyGroup>
+    <Message Importance="high" Text="SPA root: $(_SpaRootFull)" />
+    <Exec
+      WorkingDirectory="$(_SpaRootFull)"
+      Command="npm run build"
+      Condition="!Exists('$(_SpaDistIndex)')" />
+    <Error
+      Condition="!Exists('$(_SpaDistIndex)')"
+      Text="No se encontró apps/web/dist/index.html después de npm run build." />
+    <Message Importance="high" Text="Including SPA from $(_SpaRootFull)\dist into publish wwwroot..." />
+    <ItemGroup>
+      <_SpaDistFiles Include="$(_SpaRootFull)\dist\**\*.*" />
+      <ResolvedFileToPublish Include="@(_SpaDistFiles)">
+        <RelativePath>wwwroot\%(RecursiveDir)%(Filename)%(Extension)</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
 
 </Project>

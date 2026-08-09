@@ -61,6 +61,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors();
+
+// SPA: archivos estáticos del build de Vite (wwwroot) en el mismo origen que /api.
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -1420,6 +1425,9 @@ app.MapGet("/api/auditoria/agenda", async (
         items = rows.Select(ToAgendaEventoDto).ToList(),
     });
 }).RequireAuthorization();
+
+// Deep links del React Router → index.html (producción / publish).
+app.MapFallbackToFile("/index.html");
 
 app.Run();
 

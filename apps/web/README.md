@@ -1,17 +1,18 @@
 # Web — Prevex
 
-React + Vite + TypeScript. Tema claro/oscuro. Consume la API en `http://localhost:5080`.
+React + Vite + TypeScript. Tema claro/oscuro.
 
-## Arranque
+Consume la API por rutas relativas **`/api/...`** (mismo origen). No hardcodea host ni puerto.
 
-Terminal 1 — API:
+## Arranque unificado (recomendado)
 
-```powershell
-cd apps/api
-dotnet run --urls http://localhost:5080
-```
+Ver [`../api/README.md`](../api/README.md): un solo `dotnet run` levanta API + Vite vía SpaProxy.
 
-Terminal 2 — Web:
+Abrí `http://localhost:5011`.
+
+## Arranque solo frontend
+
+Si la API ya corre en `5011`:
 
 ```powershell
 cd apps/web
@@ -19,37 +20,23 @@ npm install
 npm run dev
 ```
 
-Abrir `http://localhost:5173`  
+Vite en `http://localhost:5173` proxifica `/api` → `http://localhost:5011`.
+
 Login: `admin@pfi.local` / `Admin123!`  
 Prevencionista demo: `prevencionista@pfi.local` / `Prev123!`
 
-El proxy de Vite reenvía `/api` → `localhost:5080`.
+## Build
 
-Atajos: `Ctrl+.` modo enfoque · `Esc` cierra paneles.
+```powershell
+npm run build
+```
+
+Salida en `dist/`. En publish, la API la incluye en `wwwroot`.
 
 ## Pantallas
 
-- Login (ojito de contraseña + tema)
-- Resumen (estados operativos exclusivos + cobertura top 50/225)
-- Priorización (filtros, tooltips, acción **Programar visita**)
-- Agenda (bandejas Programadas / Realizadas / Canceladas + cronología de auditoría)
-- Auditoría (bitácora append-only del ciclo de visitas)
-- Estadísticas (KPIs, cobertura/precisión históricas, SHAP agregado top 50/225, distribuciones del ranking vigente)
-- Detalle (contexto operativo + factores SHAP individuales + programar visita)
-- Exportaciones CSV
-- Perfil (nombre y cambio de contraseña)
-
-### Nota SHAP
-
-Las contribuciones SHAP del detalle son aportes en la escala interna del modelo (margen).  
-No se muestran como probabilidad, causalidad ni “porcentaje del puntaje”.  
-En Estadísticas, el SHAP **agregado** promedia la matriz completa de la cohorte (top 50 / top 225), no los cinco factores truncados del detalle.
-
-### Nota metodológica (Estadísticas)
-
-- **Cobertura:** cohorte desde la activación del snapshot en la app (ventana 1m/3m operativa). El mes del ranking de datos no es el mes de cobertura.
-- **Precisión observada:** solo con outcome `maduro` (fuente completa hasta el fin de la ventana). Pendientes se muestran como “—” / estado pendiente, nunca como 0%.
-- Holdout de referencia y operación real se etiquetan por separado.
+- Login · Priorización · Agenda (calendario) · Estadísticas · Detalle · Perfil
+- Responsive: drawer móvil para preventor/admin desde el celular
 
 ## Nota corporativa
 
