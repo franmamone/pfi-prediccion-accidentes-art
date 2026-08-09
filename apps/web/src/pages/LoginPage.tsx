@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth";
+import { landingFor } from "../roles";
 import { LoginWaveField } from "../components/LoginWaveField";
 import { IconEye, IconEyeOff, IconMoon, IconSun } from "../icons";
 import { useTheme } from "../theme";
@@ -15,15 +16,15 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  if (user) return <Navigate to="/" replace />;
+  if (user) return <Navigate to={landingFor(user.rol)} replace />;
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
     try {
-      await login(email, password);
-      navigate("/");
+      const loggedIn = await login(email, password);
+      navigate(landingFor(loggedIn.rol));
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo iniciar sesión");
     } finally {

@@ -11,6 +11,17 @@ public sealed class GeminiOptions
     public string BaseUrl { get; set; } = "https://generativelanguage.googleapis.com/v1beta";
     public double Temperature { get; set; } = 0.4;
     public int MaxOutputTokens { get; set; } = 900;
+
+    /// <summary>Timeout de la llamada HTTP al modelo. Modelos grandes (p. ej. gemma 31B) pueden tardar &gt;60s.</summary>
+    public int TimeoutSeconds { get; set; } = 180;
+
+    /// <summary>
+    /// Presupuesto de "thinking" para modelos Gemini (2.5/3.x). Estos vienen con
+    /// razonamiento activado por defecto, que consume el presupuesto de salida y
+    /// deja la respuesta visible cortada. 0 lo desactiva (respuesta directa y rápida).
+    /// -1 lo deja en automático. No aplica a modelos Gemma.
+    /// </summary>
+    public int ThinkingBudget { get; set; } = 0;
 }
 
 public sealed record GeminiResult(string Texto, int? TokensPrompt, int? TokensSalida);
@@ -51,17 +62,27 @@ public sealed class GeminiClient(HttpClient http, IConfiguration config)
         //  - Tokens OAuth2 de acceso ("ya29.…"): van como "Authorization: Bearer".
         var esOAuthToken = _opt.ApiKey.StartsWith("ya29.", StringComparison.Ordinal);
         var url = $"{_opt.BaseUrl.TrimEnd('/')}/models/{_opt.Model}:generateContent";
+
+        var generationConfig = new Dictionary<string, object?>
+        {
+            ["temperature"] = _opt.Temperature,
+            ["maxOutputTokens"] = _opt.MaxOutputTokens,
+        };
+        // Solo los modelos Gemini soportan thinkingConfig; Gemma lo rechaza.
+        // Con thinkingBudget=0 la respuesta no se "come" el presupuesto de salida.
+        var esGemini = _opt.Model.Contains("gemini", StringComparison.OrdinalIgnoreCase);
+        if (esGemini && _opt.ThinkingBudget >= 0)
+        {
+            generationConfig["thinkingConfig"] = new { thinkingBudget = _opt.ThinkingBudget };
+        }
+
         var body = new
         {
             contents = new[]
             {
                 new { role = "user", parts = new[] { new { text = prompt } } },
             },
-            generationConfig = new
-            {
-                temperature = _opt.Temperature,
-                maxOutputTokens = _opt.MaxOutputTokens,
-            },
+            generationConfig,
         };
 
         using var req = new HttpRequestMessage(HttpMethod.Post, url)

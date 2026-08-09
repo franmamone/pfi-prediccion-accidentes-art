@@ -5,8 +5,33 @@ const KEYS = {
   focusMode: "pfi_focus_mode",
   horizonte: "pfi_horizonte",
   detalleSections: "pfi_detalle_sections_v2",
+  detalleTab: "pfi_detalle_tab_v1",
+  estadisticasSections: "pfi_estadisticas_sections_v1",
   riesgoScroll: "pfi_riesgo_scroll",
+  agendaVista: "pfi_agenda_vista",
 } as const;
+
+export type AgendaVista = "mes" | "semana" | "dia";
+const AGENDA_VISTAS: AgendaVista[] = ["mes", "semana", "dia"];
+
+export function getAgendaVista(): AgendaVista {
+  try {
+    const v = localStorage.getItem(KEYS.agendaVista) as AgendaVista | null;
+    if (v && AGENDA_VISTAS.includes(v)) return v;
+  } catch {
+    /* ignore */
+  }
+  return "semana";
+}
+
+export function setAgendaVista(v: AgendaVista): AgendaVista {
+  try {
+    localStorage.setItem(KEYS.agendaVista, v);
+  } catch {
+    /* ignore */
+  }
+  return v;
+}
 
 function readBool(key: string, fallback = false): boolean {
   try {
@@ -66,7 +91,8 @@ export type DetalleSectionKey =
   | "historial"
   | "visitas"
   | "resumenIa"
-  | "shap";
+  | "shap"
+  | "movimientos";
 
 export function getDetalleSections(): Record<DetalleSectionKey, boolean> {
   const defaults: Record<DetalleSectionKey, boolean> = {
@@ -75,6 +101,7 @@ export function getDetalleSections(): Record<DetalleSectionKey, boolean> {
     visitas: false,
     ficha: false,
     shap: false,
+    movimientos: false,
   };
   try {
     const raw = localStorage.getItem(KEYS.detalleSections);
@@ -94,6 +121,70 @@ export function setDetalleSection(key: DetalleSectionKey, open: boolean) {
     /* ignore */
   }
   return next;
+}
+
+const DETALLE_TABS: DetalleSectionKey[] = [
+  "ficha",
+  "historial",
+  "visitas",
+  "resumenIa",
+  "shap",
+  "movimientos",
+];
+
+export function getDetalleTab(): DetalleSectionKey {
+  try {
+    const raw = localStorage.getItem(KEYS.detalleTab);
+    if (raw && (DETALLE_TABS as string[]).includes(raw)) {
+      return raw as DetalleSectionKey;
+    }
+  } catch {
+    /* ignore */
+  }
+  return "resumenIa";
+}
+
+export function setDetalleTab(key: DetalleSectionKey) {
+  try {
+    localStorage.setItem(KEYS.detalleTab, key);
+  } catch {
+    /* ignore */
+  }
+  return key;
+}
+
+export type EstadisticasSectionKey =
+  | "operativa"
+  | "shap"
+  | "composicion"
+  | "sectores";
+
+const ESTADISTICAS_TABS: EstadisticasSectionKey[] = [
+  "operativa",
+  "shap",
+  "composicion",
+  "sectores",
+];
+
+export function getEstadisticasTab(): EstadisticasSectionKey {
+  try {
+    const raw = localStorage.getItem(KEYS.estadisticasSections);
+    if (raw && (ESTADISTICAS_TABS as string[]).includes(raw)) {
+      return raw as EstadisticasSectionKey;
+    }
+  } catch {
+    /* ignore */
+  }
+  return "operativa";
+}
+
+export function setEstadisticasTab(key: EstadisticasSectionKey) {
+  try {
+    localStorage.setItem(KEYS.estadisticasSections, key);
+  } catch {
+    /* ignore */
+  }
+  return key;
 }
 
 export function saveRiesgoScroll(y: number) {

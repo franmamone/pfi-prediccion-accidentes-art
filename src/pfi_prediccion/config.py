@@ -91,7 +91,9 @@ CALIBRATION_YEAR = 2024
 HOLDOUT_YEAR = 2025
 TEST_YEAR = HOLDOUT_YEAR  # alias usado en explain.py
 
-# Capacidad operativa de referencia (visitas ART observadas ~225/mes).
+# Capacidad operativa de referencia. La ART realiza ~7.500 visitas/año
+# (verificado en ART_CORE 2022-2024): campaña anual concentrada en Q1 (miles)
+# y régimen estable ~270-330/mes el resto del año. 225/mes ≈ ritmo estable.
 CAPACITY_CRITICAL = 50
 CAPACITY_MONTHLY = 225
 CAPACITY_QUARTERLY = 675
@@ -99,6 +101,77 @@ VISIT_COOLDOWN_MONTHS = 3
 
 HORIZON_1M = "1m"
 HORIZON_3M = "3m"
+
+# Curva de acierto histórico (precision@K, media por mes en holdout 2025).
+# Fuente: reports/modelo/evaluation_metrics_{1m|3m}.json → top_k_per_month.
+# Debe mantenerse en sync con AciertoHistoricoLookup en apps/api/Program.cs.
+PRECISION_AT_K = {
+    HORIZON_3M: [
+        (50, 0.935),
+        (100, 0.881),
+        (200, 0.807),
+        (225, 0.790),
+        (300, 0.735),
+        (400, 0.681),
+        (500, 0.637),
+        (675, 0.575),
+        (1000, 0.495),
+    ],
+    HORIZON_1M: [
+        (50, 0.764),
+        (100, 0.671),
+        (200, 0.540),
+        (225, 0.515),
+        (300, 0.453),
+        (400, 0.394),
+        (500, 0.354),
+        (675, 0.302),
+        (1000, 0.243),
+    ],
+}
+
+# Umbrales de banda por acierto histórico (precision@K del tramo).
+# Criterio: la criticidad depende de cuánto acierta el modelo en ese tramo.
+# Escala única (independiente del horizonte):
+#   Crítico ≥80% · Alto ≥60% · Medio ≥30% · Bajo <30%.
+# Nota: en el horizonte mensual el mejor tramo (top-50) alcanza ~76%, por lo
+# que puede no haber "crítico" en 1m; sí los hay en el trimestral (≥80%).
+BAND_ACCURACY_THRESHOLDS = {
+    HORIZON_3M: {"critico": 0.80, "alto": 0.60, "medio": 0.30},
+    HORIZON_1M: {"critico": 0.80, "alto": 0.60, "medio": 0.30},
+}
+
+
+def precision_at_rank(rank: int, horizon: str = HORIZON_1M) -> float | None:
+    """Acierto histórico (precision@K) del tramo al que pertenece ``rank``.
+
+    Devuelve la precisión del primer tramo cuyo tope K es >= rank; None si
+    ``rank`` cae fuera del último tramo evaluado (top-1000).
+    """
+    tabla = PRECISION_AT_K.get(horizon, PRECISION_AT_K[HORIZON_1M])
+    for k, prec in tabla:
+        if rank <= k:
+            return prec
+    return None
+
+
+def banda_por_acierto(rank: int, horizon: str = HORIZON_1M) -> str:
+    """Banda operativa según el acierto histórico del tramo de ``rank``.
+
+    critico/alto/medio/bajo por umbrales de precisión (ver
+    ``BAND_ACCURACY_THRESHOLDS``). Fuera del top-1000 evaluado → 'bajo'.
+    """
+    prec = precision_at_rank(rank, horizon)
+    if prec is None:
+        return "bajo"
+    th = BAND_ACCURACY_THRESHOLDS.get(horizon, BAND_ACCURACY_THRESHOLDS[HORIZON_1M])
+    if prec >= th["critico"]:
+        return "critico"
+    if prec >= th["alto"]:
+        return "alto"
+    if prec >= th["medio"]:
+        return "medio"
+    return "bajo"
 
 # Cortes trimestrales no solapados: features al cierre del mes indicado.
 QUARTERLY_CUTOFFS = ("03", "06", "09", "12")

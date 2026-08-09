@@ -186,7 +186,7 @@ def update_outcomes_from_panel(
             continue
         ventana_ini = outcomes[0][3]
         ventana_fin = outcomes[0][4]
-        for top_k in (CAPACITY_CRITICAL, CAPACITY_MONTHLY):
+        for top_k in (CAPACITY_CRITICAL, CAPACITY_MONTHLY, 1000):
             cohort = [r for r in outcomes if int(r[1]) <= top_k]
             denom = len(cohort)
             estados = {r[0] for r in cohort}
@@ -274,7 +274,7 @@ def update_coverage(conn: pyodbc.Connection) -> dict:
         if existing and existing[0] == "cerrada" and estado == "cerrada":
             continue
 
-        for top_k in (CAPACITY_CRITICAL, CAPACITY_MONTHLY):
+        for top_k in (CAPACITY_CRITICAL, CAPACITY_MONTHLY, 1000):
             cur.execute(
                 """
                 SELECT IdEstablecimiento
@@ -431,7 +431,11 @@ def seed_holdout_metrics(conn: pyodbc.Connection, fuente: str) -> dict:
                 )
                 snapshot_id = int(cur.fetchone()[0])
 
-            for top_k, key in ((50, "precision_at_50"), (225, "precision_at_225")):
+            for top_k, key in (
+                (50, "precision_at_50"),
+                (225, "precision_at_225"),
+                (1000, "precision_at_1000"),
+            ):
                 precision = month.get(key)
                 if precision is None:
                     continue

@@ -1,20 +1,22 @@
 /** Textos de ayuda (tooltips) para columnas, filtros y celdas de la grilla. */
 
 export const VISITA_RECIENTE_MESES = 3;
-export const RIESGO_CRITICO_HASTA = 50;
-export const RIESGO_ALTO_HASTA = 225;
+// Escala de riesgo por acierto histórico (precision@K del tramo), holdout 2025.
+export const RIESGO_ACIERTO_CRITICO = 80;
+export const RIESGO_ACIERTO_ALTO = 60;
+export const RIESGO_ACIERTO_MEDIO = 30;
 
 export const COLUMN_HELP: Record<string, string> = {
   ranking:
     "Posición en la lista de prioridad del período vigente. #1 = máxima prioridad de visita para el horizonte elegido (mensual o trimestral).",
   establecimiento:
-    "Identificador anonimizado del establecimiento (hash). Se muestra abreviado en la grilla; el valor completo está en el detalle y en el export.",
+    "Identificador anonimizado del establecimiento (hash). Se muestra abreviado en la grilla; el valor completo está en el detalle.",
   score:
     "Puntaje del modelo (0–1): prioriza a quién visitar primero. No es una probabilidad calibrada de accidente. Más alto = más prioritario.",
   efectividad:
-    "Efectividad histórica (holdout 2025): entre los establecimientos que el modelo ubicó en el mismo tramo del ranking (top 50/100/200/225), qué porcentaje registró al menos un accidente en el horizonte. Es una referencia grupal por tramo, no una probabilidad individual del establecimiento.",
+    "Efectividad histórica (holdout 2025): entre los establecimientos que el modelo ubicó en el mismo tramo del ranking (top 50/100/200/300/500/675/1000), qué porcentaje registró al menos un accidente en el horizonte. Es una referencia grupal por tramo, no una probabilidad individual del establecimiento.",
   banda:
-    `Nivel de riesgo operativo según la posición: Crítico (#1–${RIESGO_CRITICO_HASTA}, capacidad inmediata), Alto (#${RIESGO_CRITICO_HASTA + 1}–${RIESGO_ALTO_HASTA}, capacidad mensual) o Medio (fuera del cupo operativo, referencia).`,
+    "Nivel de riesgo según el acierto histórico (precision@K) del tramo del ranking, medido en holdout 2025: Crítico ≥80%, Alto ≥60%, Medio ≥30% y Bajo <30% de acierto. En el horizonte mensual el mejor tramo ronda 76%, por lo que puede no haber Crítico; en el trimestral sí (≥80%).",
   motivo:
     "Por qué entra en la lista: Predictivo = solo el modelo ML; Predictivo + PRS = modelo y además obligación de Plan de Reducción de Siniestralidad; PRS = regla regulatoria.",
   ciiu:
@@ -62,11 +64,13 @@ export function tipEfectividad(pct: number | null, topK: number | null): string 
 export function tipRiesgo(banda: string, ranking: number): string {
   const nivel =
     banda === "critico"
-      ? `Crítico: posiciones 1–${RIESGO_CRITICO_HASTA} (capacidad inmediata).`
+      ? `Crítico: acierto histórico ≥${RIESGO_ACIERTO_CRITICO}% en su tramo (holdout 2025).`
       : banda === "alto"
-        ? `Alto: posiciones ${RIESGO_CRITICO_HASTA + 1}–${RIESGO_ALTO_HASTA} (capacidad mensual).`
-        : `Medio: posición > ${RIESGO_ALTO_HASTA} (fuera del cupo operativo principal).`;
-  return `Posición #${ranking}. ${nivel}`;
+        ? `Alto: acierto histórico ≥${RIESGO_ACIERTO_ALTO}% y <${RIESGO_ACIERTO_CRITICO}%.`
+        : banda === "medio"
+          ? `Medio: acierto histórico ≥${RIESGO_ACIERTO_MEDIO}% y <${RIESGO_ACIERTO_ALTO}%.`
+          : `Bajo: acierto histórico <${RIESGO_ACIERTO_MEDIO}% (cola de la lista).`;
+  return `Posición #${ranking}. ${nivel} Escala: Crítico ≥${RIESGO_ACIERTO_CRITICO}%, Alto ≥${RIESGO_ACIERTO_ALTO}%, Medio ≥${RIESGO_ACIERTO_MEDIO}%, Bajo <${RIESGO_ACIERTO_MEDIO}%.`;
 }
 
 export function tipMotivo(motivo: string | null): string {

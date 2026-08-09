@@ -14,7 +14,7 @@ from pfi_prediccion.ranking_policy import export_ranking_contract
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Exporta ranking operativo con SHAP top-225")
+    parser = argparse.ArgumentParser(description="Exporta ranking operativo con SHAP individual")
     parser.add_argument("--periodo", default="2025-11", help="Período YYYY-MM")
     parser.add_argument(
         "--horizonte",
@@ -22,14 +22,25 @@ def main() -> None:
         default="ambos",
         help="Horizonte a exportar",
     )
+    parser.add_argument(
+        "--top",
+        type=int,
+        default=225,
+        help="Cantidad de establecimientos a exportar con SHAP (default 225; usar 1000 para ver medios)",
+    )
     args = parser.parse_args()
 
     panel = pd.read_parquet(PANEL_PARQUET)
     horizons = [HORIZON_1M, HORIZON_3M] if args.horizonte == "ambos" else [args.horizonte]
     results = []
     for horizon in horizons:
-        print(f"[export] ranking+SHAP horizonte={horizon} periodo={args.periodo}...", flush=True)
-        result = export_ranking_contract(panel, horizon=horizon, periodo=args.periodo)
+        print(
+            f"[export] ranking+SHAP horizonte={horizon} periodo={args.periodo} top={args.top}...",
+            flush=True,
+        )
+        result = export_ranking_contract(
+            panel, horizon=horizon, periodo=args.periodo, export_n=args.top
+        )
         results.append(result)
         print(json.dumps(result, ensure_ascii=False, indent=2), flush=True)
 

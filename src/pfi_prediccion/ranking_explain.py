@@ -241,7 +241,7 @@ def explain_ranking_items(
     pipeline_path=None,
 ) -> tuple[dict[str, dict], dict[str, list[dict]]]:
     """
-    Calcula contribuciones SHAP individuales y agregados exactos top-50/top-225.
+    Calcula contribuciones SHAP individuales y agregados exactos top-50/225/1000.
 
     Returns:
         (por_establecimiento, shap_agregados_por_topk)
@@ -259,7 +259,7 @@ def explain_ranking_items(
 
     ranked = panel_month.sort_values("score_riesgo", ascending=False).head(top_n).copy()
     if ranked.empty:
-        return {}, {"50": [], "225": []}
+        return {}, {"50": [], "225": [], "1000": []}
 
     explainers: dict[str, shap.TreeExplainer] = {}
 
@@ -319,5 +319,6 @@ def explain_ranking_items(
     shap_agregados = {
         "50": aggregate_shap_cohort(feature_shap_rows, top_k=50),
         "225": aggregate_shap_cohort(feature_shap_rows, top_k=225),
+        "1000": aggregate_shap_cohort(feature_shap_rows, top_k=1000),
     }
     return results, shap_agregados

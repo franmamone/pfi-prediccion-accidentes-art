@@ -42,7 +42,9 @@ builder.Services.AddCors(options =>
 builder.Services.AddOpenApi();
 builder.Services.AddHttpClient<GeminiClient>(c =>
 {
-    c.Timeout = TimeSpan.FromSeconds(60);
+    var timeoutSeconds = builder.Configuration.GetValue<int?>("Gemini:TimeoutSeconds") ?? 180;
+    if (timeoutSeconds < 30) timeoutSeconds = 30;
+    c.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
 });
 
 var app = builder.Build();
@@ -753,6 +755,15 @@ app.MapGet("/api/estadisticas", async (AppDbContext db, string? horizonte) =>
         new { clave = "0.95–1.00", valor = items.Count(i => i.ScoreRiesgo >= 0.95) },
     };
 
+    // Distribución por acierto histórico (precision@K del tramo de cada ítem).
+    var aciertoBuckets = items
+        .Select(i => AciertoHistoricoLookup(snapshot.Horizonte, i.Ranking)?.Pct)
+        .Where(p => p is not null)
+        .GroupBy(p => p!.Value)
+        .OrderByDescending(g => g.Key)
+        .Select(g => new { clave = $"{g.Key:0.#}%", valor = g.Count() })
+        .ToList();
+
     var visitasBuckets = new[]
     {
         new { clave = "0–1 m", valor = items.Count(i => i.UltimaVisitaHaceMeses is >= 0 and < 2) },
@@ -786,6 +797,7 @@ app.MapGet("/api/estadisticas", async (AppDbContext db, string? horizonte) =>
         byCiiu,
         bySector,
         scoreBuckets,
+        aciertoBuckets,
         visitasBuckets,
         flags,
         analitica,
@@ -1123,9 +1135,9 @@ app.MapPut("/api/agenda/{id:int}", async (
     {
         return Results.BadRequest(new { error = "Solo se pueden reprogramar visitas en estado programada." });
     }
-    if (!CanManageAgenda(user, agenda))
+    if (!CanAssignAny(user))
     {
-        return Results.Json(new { error = "No tenés permiso para modificar esta visita." }, statusCode: 403);
+        return Results.Json(new { error = "El preventor no puede reprogramar; solo marcar la visita como realizada o cancelada." }, statusCode: 403);
     }
 
     var antes = SnapshotAgendaDatos(agenda);
@@ -1699,6 +1711,11 @@ static (double Pct, int TopK)? AciertoHistoricoLookup(string horizonte, int rank
             (100, 0.881),
             (200, 0.807),
             (225, 0.790),
+            (300, 0.735),
+            (400, 0.681),
+            (500, 0.637),
+            (675, 0.575),
+            (1000, 0.495),
         }
         : new (int K, double Precision)[]
         {
@@ -1706,6 +1723,11 @@ static (double Pct, int TopK)? AciertoHistoricoLookup(string horizonte, int rank
             (100, 0.671),
             (200, 0.540),
             (225, 0.515),
+            (300, 0.453),
+            (400, 0.394),
+            (500, 0.354),
+            (675, 0.302),
+            (1000, 0.243),
         };
 
     var fila = tabla.FirstOrDefault(t => ranking <= t.K);
@@ -1729,7 +1751,7 @@ static object BuildAciertoHistorico(string horizonte, int ranking)
             referenciaTopK = (int?)null,
             etiqueta = "Fuera de capacidad operativa",
             detalle =
-                $"La posición #{ranking} está fuera del top 225 evaluado para capacidad operativa. " +
+                $"La posición #{ranking} está fuera del top 1000 evaluado. " +
                 "No se reporta acierto histórico comparable; el puntaje sigue sirviendo para orden relativo.",
             holdoutAnio = 2025,
             horizonte,
@@ -1737,20 +1759,32 @@ static object BuildAciertoHistorico(string horizonte, int ranking)
     }
 
     var (pct, topK) = lookup.Value;
+    var banda = BandaPorAcierto(pct);
     return new
     {
         disponible = true,
         porcentaje = pct,
         referenciaTopK = topK,
-        etiqueta = $"Acierto histórico top {topK}",
+        etiqueta = "Acierto histórico",
         detalle =
             $"En la evaluación con datos de 2025 (horizonte {(horizonte == "3m" ? "trimestral" : "mensual")}), " +
-            $"el {pct:0.#}% de los establecimientos ubicados entre los primeros {topK} del ranking " +
-            "registró al menos un accidente en el horizonte. Es una referencia grupal del modelo, " +
-            "no una probabilidad individual de este establecimiento.",
+            $"el {pct:0.#}% de los establecimientos que el modelo ubicó en el mismo tramo de prioridad que este " +
+            $"(primeros {topK} del ranking) registró al menos un accidente en el horizonte. " +
+            $"Escala de riesgo por acierto: Crítico ≥80%, Alto ≥60%, Medio ≥30%, Bajo <30% → este caso queda en «{banda}». " +
+            "Es una referencia grupal del modelo para ese tramo, no una probabilidad individual de este establecimiento.",
         holdoutAnio = 2025,
         horizonte,
     };
+}
+
+// Escala única de banda por acierto histórico (precision@K del tramo).
+// Debe mantenerse en sync con BAND_ACCURACY_THRESHOLDS en src/pfi_prediccion/config.py.
+static string BandaPorAcierto(double pct)
+{
+    if (pct >= 80) return "Crítico";
+    if (pct >= 60) return "Alto";
+    if (pct >= 30) return "Medio";
+    return "Bajo";
 }
 
 // Arma un prompt ANONIMIZADO (sin hash ni identificadores) para el resumen del preventor.
@@ -2030,6 +2064,24 @@ static async Task<object> BuildAnaliticaAsync(AppDbContext db, RankingSnapshot s
         })
         .ToListAsync();
 
+    var shap1000 = await db.SnapshotShapAgregados.AsNoTracking()
+        .Where(s => s.SnapshotId == snapshot.Id && s.TopK == 1000)
+        .OrderBy(s => s.OrdenImportancia)
+        .Take(12)
+        .Select(s => new
+        {
+            s.Feature,
+            s.Tema,
+            s.Etiqueta,
+            s.OrdenImportancia,
+            s.MeanAbsShap,
+            s.MeanShap,
+            s.PctAumenta,
+            s.ItemsCohorte,
+            s.Metodo,
+        })
+        .ToListAsync();
+
     var coberturas = await (
         from c in db.SnapshotCoberturas.AsNoTracking()
         join s in db.RankingSnapshots.AsNoTracking() on c.SnapshotId equals s.Id
@@ -2072,8 +2124,10 @@ static async Task<object> BuildAnaliticaAsync(AppDbContext db, RankingSnapshot s
 
     var cobVigente50 = coberturas.FirstOrDefault(c => c.snapshotId == snapshot.Id && c.topK == 50);
     var cobVigente225 = coberturas.FirstOrDefault(c => c.snapshotId == snapshot.Id && c.topK == 225);
+    var cobVigente1000 = coberturas.FirstOrDefault(c => c.snapshotId == snapshot.Id && c.topK == 1000);
     var precVigente50 = precisiones.FirstOrDefault(p => p.snapshotId == snapshot.Id && p.topK == 50);
     var precVigente225 = precisiones.FirstOrDefault(p => p.snapshotId == snapshot.Id && p.topK == 225);
+    var precVigente1000 = precisiones.FirstOrDefault(p => p.snapshotId == snapshot.Id && p.topK == 1000);
 
     return new
     {
@@ -2084,9 +2138,10 @@ static async Task<object> BuildAnaliticaAsync(AppDbContext db, RankingSnapshot s
         activadoEn = snapshot.ActivadoEn ?? snapshot.ImportadoEn,
         shapAgregado = new
         {
-            disponible = shap50.Count + shap225.Count > 0,
+            disponible = shap50.Count + shap225.Count + shap1000.Count > 0,
             top50 = shap50,
             top225 = shap225,
+            top1000 = shap1000,
             advertencia =
                 "Importancia media absoluta y aporte firmado calculados sobre la matriz SHAP completa del top-K. " +
                 "No es probabilidad, causalidad ni porcentaje del puntaje.",
@@ -2095,8 +2150,10 @@ static async Task<object> BuildAnaliticaAsync(AppDbContext db, RankingSnapshot s
         {
             top50 = cobVigente50,
             top225 = cobVigente225,
+            top1000 = cobVigente1000,
             serieTop50 = coberturas.Where(c => c.topK == 50).ToList(),
             serieTop225 = coberturas.Where(c => c.topK == 225).ToList(),
+            serieTop1000 = coberturas.Where(c => c.topK == 1000).ToList(),
             nota =
                 "La cobertura mide la cohorte desde la activación del ranking en la app (reloj operativo), " +
                 "no el mes del período de datos del modelo.",
@@ -2105,9 +2162,12 @@ static async Task<object> BuildAnaliticaAsync(AppDbContext db, RankingSnapshot s
         {
             top50 = precVigente50,
             top225 = precVigente225,
+            top1000 = precVigente1000,
             serieTop50 = precisiones.Where(p => p.topK == 50).ToList(),
             serieTop225 = precisiones.Where(p => p.topK == 225).ToList(),
+            serieTop1000 = precisiones.Where(p => p.topK == 1000).ToList(),
             holdoutReferenciaTop225Pct = snapshot.Horizonte == "3m" ? 79.0 : 51.5,
+            holdoutReferenciaTop1000Pct = snapshot.Horizonte == "3m" ? 49.5 : 24.3,
             nota =
                 "Precisión observada del período de decisión T con outcome en T+1 (1m) o T+1..T+3 (3m). " +
                 "Solo madura si la fuente está completa. Los puntos holdout_metrics son evaluación histórica sin cohorte operativa.",

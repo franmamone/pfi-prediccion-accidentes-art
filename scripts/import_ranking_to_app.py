@@ -245,7 +245,7 @@ def import_ranking(path: Path, conn: pyodbc.Connection) -> dict:
             top_k = int(top_key)
         except (TypeError, ValueError):
             continue
-        if top_k not in {50, 225}:
+        if top_k not in {50, 225, 1000}:
             continue
         for factor in factors or []:
             shap_agg_rows.append(

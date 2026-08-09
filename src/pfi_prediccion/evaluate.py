@@ -32,7 +32,7 @@ from .inference import predict_blended_batched
 
 
 TOP_K_VALUES = [50, 100, 200, 225, 500, 675, 1000, 2000]
-TOP_K_PER_MONTH = [50, 100, 200, 225]
+TOP_K_PER_MONTH = [50, 100, 200, 225, 500, 675, 1000]
 
 
 def recall_at_top_k(y_true: np.ndarray, y_prob: np.ndarray, k: int) -> dict:

@@ -1,5 +1,5 @@
-import { Fragment, useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   fetchAgenda,
   fetchAgendaEventos,
@@ -13,182 +13,240 @@ import {
 } from "../api";
 import { useAuth } from "../auth";
 import { CancelarVisitaDialog } from "../components/CancelarVisitaDialog";
+import { DateField } from "../components/DateField";
 import { RealizarVisitaDialog } from "../components/RealizarVisitaDialog";
-import { EmptyState, SkeletonTable } from "../components/UiKit";
+import { Select } from "../components/Select";
+import { EmptyState } from "../components/UiKit";
 import { motivoLabel, riesgoLabel } from "../labels";
+import { getAgendaVista, setAgendaVista, type AgendaVista } from "../prefs";
+import { puedeGestionar } from "../roles";
 import { useToast } from "../toast";
 
-const TABS: { id: EstadoAgenda; label: string }[] = [
+type FiltroEstado = EstadoAgenda | "todas";
+
+const WEEKDAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+
+const ESTADO_FILTROS: { id: FiltroEstado; label: string }[] = [
   { id: "programada", label: "Programadas" },
   { id: "realizada", label: "Realizadas" },
   { id: "cancelada", label: "Canceladas" },
+  { id: "todas", label: "Todas" },
 ];
 
-function todayIso(): string {
-  const d = new Date();
+function toIso(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function formatDate(iso: string): string {
-  if (!iso) return "—";
-  const d = iso.slice(0, 10);
-  const [y, m, day] = d.split("-");
-  return `${day}/${m}/${y}`;
+function todayIso(): string {
+  return toIso(new Date());
+}
+
+function addDays(d: Date, n: number): Date {
+  const r = new Date(d);
+  r.setDate(r.getDate() + n);
+  return r;
+}
+
+function startOfWeek(d: Date): Date {
+  const r = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const dow = (r.getDay() + 6) % 7; // lunes = 0
+  return addDays(r, -dow);
+}
+
+function startOfMonth(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), 1);
+}
+
+function monthMatrix(cursor: Date): Date[] {
+  const start = startOfWeek(startOfMonth(cursor));
+  return Array.from({ length: 42 }, (_, i) => addDays(start, i));
+}
+
+function weekDays(cursor: Date): Date[] {
+  const start = startOfWeek(cursor);
+  return Array.from({ length: 7 }, (_, i) => addDays(start, i));
+}
+
+function formatLong(d: Date): string {
+  return d.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 }
 
 function formatDateTime(iso: string): string {
   try {
-    return new Date(iso).toLocaleString("es-AR", {
-      dateStyle: "short",
-      timeStyle: "short",
-    });
+    return new Date(iso).toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" });
   } catch {
     return iso;
   }
 }
 
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 export function AgendaPage() {
   const toast = useToast();
   const { user } = useAuth();
-  const canAssign = user?.rol === "Admin" || user?.rol === "Coordinador";
-  const [params, setParams] = useSearchParams();
-  const tabFromUrl = (params.get("estado") as EstadoAgenda | null) || "programada";
-  const initialTab: EstadoAgenda =
-    tabFromUrl === "realizada" || tabFromUrl === "cancelada" || tabFromUrl === "programada"
-      ? tabFromUrl
-      : "programada";
-  const [tab, setTab] = useState<EstadoAgenda>(initialTab);
-  const [items, setItems] = useState<AgendaItem[]>([]);
-  const [usuarios, setUsuarios] = useState<UsuarioAsignable[]>([]);
+  const canAssign = puedeGestionar(user?.rol);
+
+  const [vista, setVista] = useState<AgendaVista>(() => getAgendaVista());
+  const [cursor, setCursor] = useState<Date>(() => new Date());
+  const [filtro, setFiltro] = useState<FiltroEstado>("programada");
   const [usuarioId, setUsuarioId] = useState("");
-  const [desde, setDesde] = useState("");
-  const [hasta, setHasta] = useState("");
+  const [usuarios, setUsuarios] = useState<UsuarioAsignable[]>([]);
+
+  const [items, setItems] = useState<AgendaItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [busyId, setBusyId] = useState<number | null>(null);
-  const [editId, setEditId] = useState<number | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [realizarItem, setRealizarItem] = useState<AgendaItem | null>(null);
+  const [cancelarItem, setCancelarItem] = useState<AgendaItem | null>(null);
+
+  // Reprogramación (solo gestión)
+  const [editando, setEditando] = useState(false);
   const [editFecha, setEditFecha] = useState("");
   const [editUsuario, setEditUsuario] = useState(0);
   const [editNotas, setEditNotas] = useState("");
-  const [cancelarItem, setCancelarItem] = useState<AgendaItem | null>(null);
-  const [realizarItem, setRealizarItem] = useState<AgendaItem | null>(null);
-  const [timelineId, setTimelineId] = useState<number | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  // Cronología
   const [timeline, setTimeline] = useState<AgendaEvento[]>([]);
   const [timelineLoading, setTimelineLoading] = useState(false);
   const [timelineNota, setTimelineNota] = useState<string | null>(null);
+  const [verTimeline, setVerTimeline] = useState(false);
+
+  const rango = useMemo(() => {
+    if (vista === "mes") {
+      const m = monthMatrix(cursor);
+      return { desde: m[0], hasta: m[41] };
+    }
+    if (vista === "semana") {
+      const w = weekDays(cursor);
+      return { desde: w[0], hasta: w[6] };
+    }
+    const dia = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate());
+    return { desde: dia, hasta: dia };
+  }, [vista, cursor]);
 
   useEffect(() => {
-    const fromUrl = params.get("estado");
-    if (fromUrl === "programada" || fromUrl === "realizada" || fromUrl === "cancelada") {
-      setTab(fromUrl);
-    }
-  }, [params]);
-
-  const load = () => {
     setLoading(true);
     setError(null);
     fetchAgenda({
-      estado: tab,
-      desde: desde || undefined,
-      hasta: hasta || undefined,
+      estado: filtro === "todas" ? undefined : filtro,
+      desde: toIso(rango.desde),
+      hasta: toIso(rango.hasta),
       usuarioId: usuarioId || undefined,
     })
       .then((res) => setItems(res.items))
-      .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : "No se pudo cargar la agenda");
-      })
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : "No se pudo cargar la agenda"))
       .finally(() => setLoading(false));
-  };
-
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, desde, hasta, usuarioId]);
+  }, [rango, filtro, usuarioId, reloadKey]);
 
   useEffect(() => {
     if (!canAssign) return;
-    fetchUsuariosAsignables()
-      .then(setUsuarios)
-      .catch(() => undefined);
+    fetchUsuariosAsignables().then(setUsuarios).catch(() => undefined);
   }, [canAssign]);
 
-  const emptyHint = useMemo(() => {
-    if (tab === "programada") return "No hay visitas programadas. Programalas desde Priorización.";
-    if (tab === "realizada") return "Todavía no hay visitas realizadas.";
-    return "No hay visitas canceladas.";
-  }, [tab]);
+  const porDia = useMemo(() => {
+    const map = new Map<string, AgendaItem[]>();
+    for (const it of items) {
+      const key = it.fechaPlanificada.slice(0, 10);
+      const arr = map.get(key);
+      if (arr) arr.push(it);
+      else map.set(key, [it]);
+    }
+    return map;
+  }, [items]);
+
+  const selected = useMemo(
+    () => items.find((i) => i.id === selectedId) ?? null,
+    [items, selectedId],
+  );
+
+  useEffect(() => {
+    // Al cambiar de ítem seleccionado, resetear edición/cronología.
+    setEditando(false);
+    setVerTimeline(false);
+    setTimeline([]);
+    setTimelineNota(null);
+  }, [selectedId]);
+
+  function periodoLabel(): string {
+    if (vista === "mes") return capitalize(cursor.toLocaleDateString("es-AR", { month: "long", year: "numeric" }));
+    if (vista === "semana") {
+      const w = weekDays(cursor);
+      const a = w[0];
+      const b = w[6];
+      const fmt = (d: Date) => d.toLocaleDateString("es-AR", { day: "numeric", month: "short" });
+      return `${fmt(a)} – ${fmt(b)} ${b.getFullYear()}`;
+    }
+    return capitalize(formatLong(cursor));
+  }
+
+  function step(dir: number) {
+    if (vista === "mes") setCursor((c) => new Date(c.getFullYear(), c.getMonth() + dir, 1));
+    else if (vista === "semana") setCursor((c) => addDays(c, 7 * dir));
+    else setCursor((c) => addDays(c, dir));
+  }
+
+  function cambiarVista(v: AgendaVista) {
+    setVista(v);
+    setAgendaVista(v);
+  }
+
+  function abrirDia(d: Date) {
+    setCursor(d);
+    cambiarVista("dia");
+  }
 
   function startEdit(item: AgendaItem) {
-    setEditId(item.id);
+    setEditando(true);
     setEditFecha(item.fechaPlanificada.slice(0, 10));
     setEditUsuario(item.usuarioId);
     setEditNotas(item.notas ?? "");
-    setError(null);
   }
 
-  async function toggleTimeline(id: number) {
-    if (timelineId === id) {
-      setTimelineId(null);
-      setTimeline([]);
-      setTimelineNota(null);
+  async function guardarReprogramacion(item: AgendaItem) {
+    setBusy(true);
+    try {
+      await reprogramarVisita(item.id, {
+        fechaPlanificada: editFecha,
+        usuarioId: canAssign ? editUsuario : undefined,
+        notas: editNotas,
+      });
+      toast.success("Visita reprogramada");
+      setEditando(false);
+      setReloadKey((k) => k + 1);
+    } catch (err: unknown) {
+      toast.error("No se pudo reprogramar", err instanceof Error ? err.message : undefined);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function toggleTimeline(item: AgendaItem) {
+    if (verTimeline) {
+      setVerTimeline(false);
       return;
     }
-    setTimelineId(id);
+    setVerTimeline(true);
     setTimelineLoading(true);
-    setTimelineNota(null);
     try {
-      const res = await fetchAgendaEventos(id);
+      const res = await fetchAgendaEventos(item.id);
       setTimeline(res.items);
       setTimelineNota(res.nota);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "No se pudo cargar la cronología");
-      setTimelineId(null);
+    } catch {
+      setTimelineNota("No se pudo cargar la cronología.");
     } finally {
       setTimelineLoading(false);
     }
   }
 
-  async function saveEdit(id: number) {
-    setBusyId(id);
-    setError(null);
-    try {
-      await reprogramarVisita(id, {
-        fechaPlanificada: editFecha,
-        usuarioId: canAssign ? editUsuario : undefined,
-        notas: editNotas,
-      });
-      setEditId(null);
-      toast.success("Visita reprogramada");
-      load();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "No se pudo reprogramar");
-    } finally {
-      setBusyId(null);
-    }
-  }
+  const totalRango = items.length;
 
   return (
-    <>
-      <div>
-        <h1 className="page-title">Agenda de visitas</h1>
-        <p className="page-sub">
-          Flujo operativo: programar desde la priorización, realizar o cancelar. El ranking no se
-          modifica.
-        </p>
-      </div>
-
-      {cancelarItem && (
-        <CancelarVisitaDialog
-          item={cancelarItem}
-          onClose={() => setCancelarItem(null)}
-          onDone={() => {
-            setCancelarItem(null);
-            toast.success("Visita cancelada", "El establecimiento vuelve a Priorización.");
-            load();
-          }}
-        />
-      )}
-
+    <div className="agenda-layout">
       {realizarItem && (
         <RealizarVisitaDialog
           item={realizarItem}
@@ -196,283 +254,437 @@ export function AgendaPage() {
           onDone={() => {
             setRealizarItem(null);
             toast.success("Visita realizada");
-            load();
+            setReloadKey((k) => k + 1);
+          }}
+        />
+      )}
+      {cancelarItem && (
+        <CancelarVisitaDialog
+          item={cancelarItem}
+          onClose={() => setCancelarItem(null)}
+          onDone={() => {
+            setCancelarItem(null);
+            toast.success("Visita cancelada");
+            setReloadKey((k) => k + 1);
           }}
         />
       )}
 
-      <div className="horizon-toggle" style={{ marginBottom: 12 }}>
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            className={tab === t.id ? "active" : ""}
-            onClick={() => {
-              setTab(t.id);
-              setEditId(null);
-              setCancelarItem(null);
-              setRealizarItem(null);
-              const next = new URLSearchParams(params);
-              next.set("estado", t.id);
-              setParams(next, { replace: true });
-            }}
-          >
-            {t.label}
-          </button>
-        ))}
+      <div className="agenda-topbar">
+        <div>
+          <h1 className="page-title" style={{ marginBottom: 2 }}>
+            {canAssign ? "Agenda de visitas" : "Mi agenda"}
+          </h1>
+          <p className="muted" style={{ margin: 0, fontSize: 13 }}>
+            {totalRango} visita{totalRango === 1 ? "" : "s"} en el período visible
+          </p>
+        </div>
+        <div className="agenda-view-toggle">
+          {(["dia", "semana", "mes"] as AgendaVista[]).map((v) => (
+            <button
+              key={v}
+              type="button"
+              className={vista === v ? "active" : ""}
+              onClick={() => cambiarVista(v)}
+            >
+              {v === "dia" ? "Día" : v === "semana" ? "Semana" : "Mes"}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="panel filters">
-        <div className="field" style={{ minWidth: 150 }}>
-          <label>Desde</label>
-          <input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} />
+      <div className="agenda-controls">
+        <div className="agenda-nav">
+          <button type="button" className="icon-btn" onClick={() => step(-1)} aria-label="Anterior">
+            ‹
+          </button>
+          <button type="button" className="ghost-btn" onClick={() => setCursor(new Date())}>
+            Hoy
+          </button>
+          <button type="button" className="icon-btn" onClick={() => step(1)} aria-label="Siguiente">
+            ›
+          </button>
+          <strong className="agenda-period">{periodoLabel()}</strong>
         </div>
-        <div className="field" style={{ minWidth: 150 }}>
-          <label>Hasta</label>
-          <input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} />
-        </div>
-        {canAssign && (
-          <div className="field" style={{ minWidth: 200 }}>
-            <label>Responsable</label>
-            <select value={usuarioId} onChange={(e) => setUsuarioId(e.target.value)}>
-              <option value="">Todos</option>
-              {usuarios.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.nombre}
-                </option>
-              ))}
-            </select>
+
+        <div className="agenda-filtros">
+          <div className="agenda-estado-chips">
+            {ESTADO_FILTROS.map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                className={`chip${filtro === f.id ? " active" : ""}`}
+                onClick={() => setFiltro(f.id)}
+              >
+                {f.label}
+              </button>
+            ))}
           </div>
-        )}
-        <button
-          type="button"
-          className="ghost-btn"
-          onClick={() => {
-            setDesde("");
-            setHasta("");
-            setUsuarioId("");
-          }}
-        >
-          Limpiar
-        </button>
+          {canAssign && (
+            <div style={{ minWidth: 220 }}>
+              <Select
+                value={usuarioId}
+                onChange={setUsuarioId}
+                ariaLabel="Filtrar por responsable"
+                options={[
+                  { value: "", label: "Todos los responsables" },
+                  ...usuarios.map((u) => ({ value: String(u.id), label: u.nombre })),
+                ]}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       {error && <div className="error">{error}</div>}
-      {loading && <SkeletonTable rows={6} />}
 
-      {!loading && items.length === 0 && (
-        <div className="panel">
+      <div className="agenda-body">
+        <div className={`agenda-calendar${loading ? " is-loading" : ""}`}>
+          {vista === "mes" && (
+            <MonthGrid
+              cursor={cursor}
+              porDia={porDia}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              onOpenDay={abrirDia}
+            />
+          )}
+          {vista === "semana" && (
+            <WeekView
+              cursor={cursor}
+              porDia={porDia}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              onOpenDay={abrirDia}
+            />
+          )}
+          {vista === "dia" && (
+            <DayView cursor={cursor} porDia={porDia} selectedId={selectedId} onSelect={setSelectedId} />
+          )}
+        </div>
+
+        {selected && (
+          <aside className="agenda-drawer panel">
+            <div className="agenda-drawer-head">
+              <div>
+                <span className={`badge ${selected.bandaOrigen ?? "medio"}`}>
+                  {riesgoLabel(selected.bandaOrigen ?? "medio")}
+                </span>
+                <h3 style={{ margin: "8px 0 2px" }}>{shortId(selected.idEstablecimiento)}</h3>
+                <p className="muted" style={{ margin: 0, fontSize: 12 }} title={selected.idEstablecimiento}>
+                  {selected.idEstablecimiento}
+                </p>
+              </div>
+              <button type="button" className="icon-btn" onClick={() => setSelectedId(null)} aria-label="Cerrar">
+                ×
+              </button>
+            </div>
+
+            <dl className="agenda-drawer-kv">
+              <div>
+                <dt>Fecha planificada</dt>
+                <dd>{selected.fechaPlanificada.slice(0, 10)}</dd>
+              </div>
+              <div>
+                <dt>Motivo</dt>
+                <dd>{motivoLabel(selected.motivoOrigen ?? selected.motivoVisita)}</dd>
+              </div>
+              <div>
+                <dt>Estado</dt>
+                <dd>
+                  <span className={`cal-dot ${selected.estado}`} /> {capitalize(selected.estado)}
+                </dd>
+              </div>
+              {selected.rankingOrigen != null && (
+                <div>
+                  <dt>Ranking origen</dt>
+                  <dd>#{selected.rankingOrigen}</dd>
+                </div>
+              )}
+              {selected.responsable && (
+                <div>
+                  <dt>Responsable</dt>
+                  <dd>{selected.responsable.nombre}</dd>
+                </div>
+              )}
+            </dl>
+
+            {selected.notas && (
+              <p className="agenda-notas">
+                <span className="muted">Notas:</span> {selected.notas}
+              </p>
+            )}
+
+            {selected.estado === "realizada" && selected.visita && (
+              <div className="agenda-resultado ok">
+                Realizada el {formatDateTime(selected.visita.fechaHoraReal)}
+                {selected.visita.hallazgos ? ` · ${selected.visita.hallazgos}` : ""}
+              </div>
+            )}
+            {selected.estado === "cancelada" && (
+              <div className="agenda-resultado bad">
+                Cancelada{selected.motivoCancelacion ? `: ${selected.motivoCancelacion}` : ""}
+              </div>
+            )}
+
+            {selected.estado === "programada" && editando && canAssign ? (
+              <div className="agenda-reprogramar">
+                <div className="field">
+                  <label>Nueva fecha</label>
+                  <DateField
+                    ariaLabel="Nueva fecha"
+                    min={todayIso()}
+                    value={editFecha}
+                    onChange={setEditFecha}
+                  />
+                </div>
+                <div className="field">
+                  <label>Responsable</label>
+                  <Select
+                    value={String(editUsuario)}
+                    onChange={(v) => setEditUsuario(Number(v))}
+                    ariaLabel="Responsable"
+                    options={usuarios.map((u) => ({ value: String(u.id), label: u.nombre }))}
+                  />
+                </div>
+                <div className="field">
+                  <label>Notas</label>
+                  <textarea rows={2} value={editNotas} onChange={(e) => setEditNotas(e.target.value)} />
+                </div>
+                <div className="row-actions">
+                  <button type="button" className="btn" disabled={busy} onClick={() => guardarReprogramacion(selected)}>
+                    Guardar
+                  </button>
+                  <button type="button" className="ghost-btn" onClick={() => setEditando(false)}>
+                    Descartar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              selected.estado === "programada" && (
+                <div className="agenda-drawer-actions">
+                  <button type="button" className="btn" onClick={() => setRealizarItem(selected)}>
+                    Marcar realizada
+                  </button>
+                  <button type="button" className="ghost-btn danger" onClick={() => setCancelarItem(selected)}>
+                    Cancelar
+                  </button>
+                  {canAssign && (
+                    <button type="button" className="ghost-btn" onClick={() => startEdit(selected)}>
+                      Reprogramar
+                    </button>
+                  )}
+                </div>
+              )
+            )}
+
+            <div className="agenda-drawer-links">
+              <Link className="btn ghost-btn" to={`/establecimientos/${selected.idEstablecimiento}?horizonte=${selected.horizonte}`}>
+                Ver ficha del establecimiento
+              </Link>
+              <button type="button" className="ghost-btn" onClick={() => toggleTimeline(selected)}>
+                {verTimeline ? "Ocultar cronología" : "Ver cronología"}
+              </button>
+            </div>
+
+            {verTimeline && (
+              <div className="agenda-timeline">
+                {timelineLoading ? (
+                  <p className="muted">Cargando…</p>
+                ) : timeline.length === 0 ? (
+                  <p className="muted" style={{ margin: 0 }}>
+                    {timelineNota ?? "Sin eventos registrados."}
+                  </p>
+                ) : (
+                  timeline.map((ev) => (
+                    <div key={ev.id} className="timeline-item">
+                      <strong>{ev.tipo}</strong>{" "}
+                      <span className="mono muted">{formatDateTime(ev.ocurridoEn)}</span>
+                      <div className="muted" style={{ fontSize: 12 }}>
+                        {ev.actor ? `${ev.actor.nombre} (${ev.actor.rol})` : "sin actor"}
+                        {" · "}
+                        {(ev.estadoAnterior ?? "—") + " → " + (ev.estadoNuevo ?? "—")}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </aside>
+        )}
+      </div>
+
+      {!loading && totalRango === 0 && (
+        <div className="panel" style={{ marginTop: 12 }}>
           <EmptyState
-            title={emptyHint}
-            detail={tab === "programada" ? "Podés programar visitas desde la lista de priorización." : undefined}
-            action={
-              tab === "programada" ? (
-                <Link className="btn" to="/riesgo">
-                  Ir a priorización
-                </Link>
-              ) : undefined
+            title="Sin visitas en este período"
+            detail={
+              filtro === "programada"
+                ? canAssign
+                  ? "Programá visitas desde Priorización o cambiá el período."
+                  : "No tenés visitas programadas en este período."
+                : "Cambiá el filtro de estado o el período."
             }
           />
         </div>
       )}
+    </div>
+  );
+}
 
-      {items.length > 0 && (
-        <div className="table-wrap panel table-sticky" style={{ padding: 0 }}>
-          <table className="data">
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Establecimiento</th>
-                <th>Riesgo origen</th>
-                <th>Motivo</th>
-                <th>Responsable</th>
-                <th>Estado / detalle</th>
-                <th>Historial</th>
-                {tab === "programada" && <th>Acciones</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item) => (
-                <Fragment key={item.id}>
-                  <tr>
-                    <td className="mono">
-                      {editId === item.id ? (
-                        <input
-                          type="date"
-                          min={todayIso()}
-                          value={editFecha}
-                          onChange={(e) => setEditFecha(e.target.value)}
-                        />
-                      ) : (
-                        formatDate(item.fechaPlanificada)
-                      )}
-                    </td>
-                    <td className="mono" title={item.idEstablecimiento}>
-                      <Link to={`/establecimientos/${item.idEstablecimiento}?horizonte=${item.horizonte}`}>
-                        {shortId(item.idEstablecimiento)}
-                      </Link>
-                      {item.rankingOrigen != null && (
-                        <div className="muted" style={{ fontSize: 11 }}>
-                          origen #{item.rankingOrigen}
-                        </div>
-                      )}
-                    </td>
-                    <td>
-                      {item.bandaOrigen ? (
-                        <span className={`badge ${item.bandaOrigen}`}>{riesgoLabel(item.bandaOrigen)}</span>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td>{motivoLabel(item.motivoOrigen ?? item.motivoVisita)}</td>
-                    <td>
-                      {editId === item.id && canAssign ? (
-                        <select
-                          value={editUsuario}
-                          onChange={(e) => setEditUsuario(Number(e.target.value))}
-                        >
-                          {usuarios.map((u) => (
-                            <option key={u.id} value={u.id}>
-                              {u.nombre}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        item.responsable?.nombre ?? "—"
-                      )}
-                    </td>
-                    <td>
-                      {item.estado === "realizada" && item.visita && (
-                        <span title={item.visita.hallazgos ?? undefined}>
-                          Realizada {formatDateTime(item.visita.fechaHoraReal)}
-                        </span>
-                      )}
-                      {item.estado === "cancelada" && (
-                        <span title={item.motivoCancelacion ?? undefined}>
-                          Cancelada
-                          {item.motivoCancelacion ? `: ${item.motivoCancelacion}` : ""}
-                        </span>
-                      )}
-                      {item.estado === "programada" && (
-                        editId === item.id ? (
-                          <textarea
-                            rows={2}
-                            value={editNotas}
-                            onChange={(e) => setEditNotas(e.target.value)}
-                            placeholder="Notas…"
-                          />
-                        ) : (
-                          <span className="badge motivo-predictivo">Programada</span>
-                        )
-                      )}
-                    </td>
-                    <td>
-                      <button
-                        type="button"
-                        className="ghost-btn"
-                        onClick={() => toggleTimeline(item.id)}
-                        title="Ver cronología de auditoría"
-                      >
-                        {timelineId === item.id ? "Ocultar" : "Cronología"}
-                      </button>
-                    </td>
-                    {tab === "programada" && (
-                      <td>
-                        <div className="row-actions">
-                          {editId === item.id ? (
-                            <>
-                              <button
-                                type="button"
-                                className="btn"
-                                disabled={busyId === item.id}
-                                onClick={() => saveEdit(item.id)}
-                              >
-                                Guardar
-                              </button>
-                              <button
-                                type="button"
-                                className="ghost-btn"
-                                onClick={() => setEditId(null)}
-                              >
-                                Descartar
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              <button
-                                type="button"
-                                className="btn"
-                                disabled={busyId === item.id}
-                                onClick={() => {
-                                  setRealizarItem(item);
-                                }}
-                                title="Marcar visita como realizada"
-                              >
-                                Realizada
-                              </button>
-                              <button
-                                type="button"
-                                className="ghost-btn"
-                                disabled={busyId === item.id}
-                                onClick={() => startEdit(item)}
-                                title="Reprogramar fecha o responsable"
-                              >
-                                Reprogramar
-                              </button>
-                              <button
-                                type="button"
-                                className="ghost-btn danger"
-                                disabled={busyId === item.id}
-                                onClick={() => {
-                                  setCancelarItem(item);
-                                }}
-                                title="Cancelar y devolver a priorización"
-                              >
-                                Cancelar
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    )}
-                  </tr>
-                  {timelineId === item.id && (
-                    <tr>
-                      <td colSpan={tab === "programada" ? 8 : 7}>
-                        {timelineLoading ? (
-                          <p className="muted">Cargando cronología…</p>
-                        ) : timeline.length === 0 ? (
-                          <p className="muted" style={{ margin: 0 }}>
-                            {timelineNota ??
-                              "Sin eventos de auditoría para esta visita (posible registro anterior a la bitácora)."}
-                          </p>
-                        ) : (
-                          <div className="timeline">
-                            {timeline.map((ev) => (
-                              <div key={ev.id} className="timeline-item">
-                                <strong>{ev.tipo}</strong>{" "}
-                                <span className="mono muted">{formatDateTime(ev.ocurridoEn)}</span>
-                                <div className="muted" style={{ fontSize: 12 }}>
-                                  Actor:{" "}
-                                  {ev.actor
-                                    ? `${ev.actor.nombre} (${ev.actor.rol})`
-                                    : "sin actor (legado)"}
-                                  {" · "}
-                                  {(ev.estadoAnterior ?? "—") + " → " + (ev.estadoNuevo ?? "—")}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  )}
-                </Fragment>
-              ))}
-            </tbody>
-          </table>
-        </div>
+function EventChip({
+  item,
+  selected,
+  onSelect,
+}: {
+  item: AgendaItem;
+  selected: boolean;
+  onSelect: (id: number) => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={`cal-event ${item.estado}${selected ? " selected" : ""}`}
+      title={`${shortId(item.idEstablecimiento)} · ${item.estado}`}
+      onClick={() => onSelect(item.id)}
+    >
+      <span className={`cal-dot ${item.estado}`} />
+      <span className="cal-event-label">{shortId(item.idEstablecimiento)}</span>
+    </button>
+  );
+}
+
+function MonthGrid({
+  cursor,
+  porDia,
+  selectedId,
+  onSelect,
+  onOpenDay,
+}: {
+  cursor: Date;
+  porDia: Map<string, AgendaItem[]>;
+  selectedId: number | null;
+  onSelect: (id: number) => void;
+  onOpenDay: (d: Date) => void;
+}) {
+  const dias = monthMatrix(cursor);
+  const mesActual = cursor.getMonth();
+  const hoy = toIso(new Date());
+  return (
+    <div className="cal-month">
+      <div className="cal-weekhead">
+        {WEEKDAYS.map((w) => (
+          <div key={w}>{w}</div>
+        ))}
+      </div>
+      <div className="cal-grid">
+        {dias.map((d) => {
+          const iso = toIso(d);
+          const eventos = porDia.get(iso) ?? [];
+          const visibles = eventos.slice(0, 3);
+          const resto = eventos.length - visibles.length;
+          return (
+            <div
+              key={iso}
+              className={`cal-cell${d.getMonth() === mesActual ? "" : " otro-mes"}${iso === hoy ? " hoy" : ""}`}
+            >
+              <button type="button" className="cal-daynum" onClick={() => onOpenDay(d)}>
+                {d.getDate()}
+              </button>
+              <div className="cal-events">
+                {visibles.map((it) => (
+                  <EventChip key={it.id} item={it} selected={it.id === selectedId} onSelect={onSelect} />
+                ))}
+                {resto > 0 && (
+                  <button type="button" className="cal-more" onClick={() => onOpenDay(d)}>
+                    +{resto} más
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function WeekView({
+  cursor,
+  porDia,
+  selectedId,
+  onSelect,
+  onOpenDay,
+}: {
+  cursor: Date;
+  porDia: Map<string, AgendaItem[]>;
+  selectedId: number | null;
+  onSelect: (id: number) => void;
+  onOpenDay: (d: Date) => void;
+}) {
+  const dias = weekDays(cursor);
+  const hoy = toIso(new Date());
+  return (
+    <div className="cal-week">
+      {dias.map((d) => {
+        const iso = toIso(d);
+        const eventos = porDia.get(iso) ?? [];
+        return (
+          <div key={iso} className={`cal-weekcol${iso === hoy ? " hoy" : ""}`}>
+            <button type="button" className="cal-weekhead-day" onClick={() => onOpenDay(d)}>
+              <span className="cal-weekhead-dow">{WEEKDAYS[(d.getDay() + 6) % 7]}</span>
+              <span className="cal-weekhead-num">{d.getDate()}</span>
+            </button>
+            <div className="cal-weekcol-events">
+              {eventos.length === 0 ? (
+                <span className="muted cal-empty">—</span>
+              ) : (
+                eventos.map((it) => (
+                  <EventChip key={it.id} item={it} selected={it.id === selectedId} onSelect={onSelect} />
+                ))
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function DayView({
+  cursor,
+  porDia,
+  selectedId,
+  onSelect,
+}: {
+  cursor: Date;
+  porDia: Map<string, AgendaItem[]>;
+  selectedId: number | null;
+  onSelect: (id: number) => void;
+}) {
+  const iso = toIso(cursor);
+  const eventos = porDia.get(iso) ?? [];
+  return (
+    <div className="cal-day">
+      {eventos.length === 0 ? (
+        <p className="muted" style={{ padding: 16 }}>
+          No hay visitas para este día.
+        </p>
+      ) : (
+        eventos.map((it) => (
+          <button
+            key={it.id}
+            type="button"
+            className={`cal-day-row${it.id === selectedId ? " selected" : ""}`}
+            onClick={() => onSelect(it.id)}
+          >
+            <span className={`cal-dot ${it.estado}`} />
+            <span className="cal-day-est">{shortId(it.idEstablecimiento)}</span>
+            <span className="muted">{motivoLabel(it.motivoOrigen ?? it.motivoVisita)}</span>
+            <span className={`badge ${it.bandaOrigen ?? "medio"}`}>{riesgoLabel(it.bandaOrigen ?? "medio")}</span>
+          </button>
+        ))
       )}
-    </>
+    </div>
   );
 }

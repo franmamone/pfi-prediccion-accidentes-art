@@ -318,21 +318,27 @@ export type AnaliticaEstadisticas = {
     disponible: boolean;
     top50: ShapAgregadoFactor[];
     top225: ShapAgregadoFactor[];
+    top1000: ShapAgregadoFactor[];
     advertencia: string;
   };
   coberturaCohorte: {
     top50: CoberturaSeriePunto | null;
     top225: CoberturaSeriePunto | null;
+    top1000: CoberturaSeriePunto | null;
     serieTop50: CoberturaSeriePunto[];
     serieTop225: CoberturaSeriePunto[];
+    serieTop1000: CoberturaSeriePunto[];
     nota: string;
   };
   precisionObservada: {
     top50: PrecisionSeriePunto | null;
     top225: PrecisionSeriePunto | null;
+    top1000: PrecisionSeriePunto | null;
     serieTop50: PrecisionSeriePunto[];
     serieTop225: PrecisionSeriePunto[];
+    serieTop1000: PrecisionSeriePunto[];
     holdoutReferenciaTop225Pct: number;
+    holdoutReferenciaTop1000Pct: number;
     nota: string;
   };
   metodologia: {
@@ -354,6 +360,7 @@ export type Estadisticas = {
   byCiiu: Serie[];
   bySector: Serie[];
   scoreBuckets: Serie[];
+  aciertoBuckets: Serie[];
   visitasBuckets: Serie[];
   flags: {
     enCooldown: number;

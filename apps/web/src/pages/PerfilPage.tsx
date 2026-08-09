@@ -59,44 +59,70 @@ export function PerfilPage() {
     }
   }
 
+  const iniciales = (user?.nombre ?? user?.email ?? "?")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("") || "?";
+
   return (
     <div className="profile-page">
       <div className="profile-page-inner">
-        <h1 className="page-title">Perfil</h1>
-        <p className="page-sub">Administrá tu cuenta y preferencias de acceso.</p>
+        <div className="panel profile-hero">
+          <div className="profile-avatar" aria-hidden="true">
+            {iniciales}
+          </div>
+          <div className="profile-hero-info">
+            <h1 className="page-title" style={{ margin: 0 }}>
+              {user?.nombre ?? "Mi perfil"}
+            </h1>
+            <div className="profile-hero-meta">
+              <span className={`profile-role ${(user?.rol ?? "").toLowerCase()}`}>{user?.rol}</span>
+              <span className="muted">{user?.email}</span>
+            </div>
+          </div>
+        </div>
 
         {msg && <div className="success">{msg}</div>}
         {err && <div className="error">{err}</div>}
 
-        <div className="panel">
-          <h2 className="page-title" style={{ fontSize: 16, marginBottom: 12 }}>
-            Datos de la cuenta
-          </h2>
-          <form onSubmit={onSaveProfile}>
-            <div className="field" style={{ marginBottom: 12 }}>
-              <label>Email</label>
-              <input value={user?.email ?? ""} disabled />
-            </div>
-            <div className="field" style={{ marginBottom: 12 }}>
-              <label>Rol</label>
-              <input value={user?.rol ?? ""} disabled />
-            </div>
-            <div className="field" style={{ marginBottom: 12 }}>
-              <label>Nombre visible</label>
-              <input value={nombre} onChange={(e) => setNombre(e.target.value)} required minLength={2} />
-            </div>
-            <button className="btn" type="submit" disabled={savingProfile}>
-              {savingProfile ? "Guardando…" : "Guardar perfil"}
-            </button>
-          </form>
-        </div>
+        <div className="profile-grid">
+          <div className="panel">
+            <h2 className="page-title" style={{ fontSize: 16, marginBottom: 4 }}>
+              Datos de la cuenta
+            </h2>
+            <p className="muted" style={{ marginTop: 0, marginBottom: 14, fontSize: 13 }}>
+              Email y rol son gestionados por administración.
+            </p>
+            <form onSubmit={onSaveProfile} className="form-stack">
+              <div className="field">
+                <label>Email</label>
+                <input value={user?.email ?? ""} disabled />
+              </div>
+              <div className="field">
+                <label>Rol</label>
+                <input value={user?.rol ?? ""} disabled />
+              </div>
+              <div className="field">
+                <label>Nombre visible</label>
+                <input value={nombre} onChange={(e) => setNombre(e.target.value)} required minLength={2} />
+              </div>
+              <button className="btn" type="submit" disabled={savingProfile}>
+                {savingProfile ? "Guardando…" : "Guardar perfil"}
+              </button>
+            </form>
+          </div>
 
-        <div className="panel">
-          <h2 className="page-title" style={{ fontSize: 16, marginBottom: 12 }}>
-            Cambiar contraseña
-          </h2>
-          <form onSubmit={onChangePassword}>
-            <div className="field password-field" style={{ marginBottom: 12 }}>
+          <div className="panel">
+            <h2 className="page-title" style={{ fontSize: 16, marginBottom: 4 }}>
+              Cambiar contraseña
+            </h2>
+            <p className="muted" style={{ marginTop: 0, marginBottom: 14, fontSize: 13 }}>
+              Mínimo 8 caracteres. Vas a seguir con la sesión abierta.
+            </p>
+            <form onSubmit={onChangePassword} className="form-stack">
+            <div className="field password-field">
               <label>Contraseña actual</label>
               <input
                 type={showActual ? "text" : "password"}
@@ -114,7 +140,7 @@ export function PerfilPage() {
                 {showActual ? <IconEyeOff size={16} /> : <IconEye size={16} />}
               </button>
             </div>
-            <div className="field password-field" style={{ marginBottom: 12 }}>
+            <div className="field password-field">
               <label>Nueva contraseña</label>
               <input
                 type={showNueva ? "text" : "password"}
@@ -133,7 +159,7 @@ export function PerfilPage() {
                 {showNueva ? <IconEyeOff size={16} /> : <IconEye size={16} />}
               </button>
             </div>
-            <div className="field" style={{ marginBottom: 12 }}>
+            <div className="field">
               <label>Confirmar nueva</label>
               <input
                 type="password"
@@ -148,6 +174,7 @@ export function PerfilPage() {
               {savingPass ? "Actualizando…" : "Actualizar contraseña"}
             </button>
           </form>
+          </div>
         </div>
       </div>
     </div>

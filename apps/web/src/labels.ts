@@ -4,6 +4,7 @@ const RIESGO_LABEL: Record<string, string> = {
   critico: "Crítico",
   alto: "Alto",
   medio: "Medio",
+  bajo: "Bajo",
 };
 
 const MOTIVO_LABEL: Record<string, string> = {

@@ -1,9 +1,11 @@
 import { useEffect, useState, type ReactElement } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import {
+  fetchAuditoriaAgenda,
   fetchDossier,
   fetchEstablecimiento,
   generarResumenIa,
+  type AgendaEvento,
   type DetalleEstablecimiento,
   type DossierEstablecimiento,
   type Horizonte,
@@ -12,15 +14,14 @@ import {
 import { useAuth } from "../auth";
 import { ciiuDivisionLabel } from "../ciiu";
 import { help, tipMotivo, tipRiesgo } from "../columnHelp";
-import { CollapsiblePanel } from "../components/CollapsiblePanel";
 import { InfoHint } from "../components/InfoHint";
 import { ProgramarVisitaDialog } from "../components/ProgramarVisitaDialog";
 import { Reveal, SkeletonPanel, SkeletonStats } from "../components/UiKit";
 import { IconArrowLeft, IconCalendar } from "../icons";
 import { motivoBadgeClass, motivoLabel, riesgoLabel } from "../labels";
 import {
-  getDetalleSections,
-  setDetalleSection,
+  getDetalleTab,
+  setDetalleTab,
   type DetalleSectionKey,
 } from "../prefs";
 import { useToast } from "../toast";
@@ -31,6 +32,7 @@ export function DetallePage() {
   const toast = useToast();
   const { user } = useAuth();
   const puedeRegenerar = user?.rol === "Admin" || user?.rol === "Coordinador";
+  const esPreventor = user?.rol === "Prevencionista";
   const { id = "" } = useParams();
   const [params] = useSearchParams();
   const horizonte = (params.get("horizonte") as Horizonte) || "1m";
@@ -40,11 +42,27 @@ export function DetallePage() {
   const [showProgramar, setShowProgramar] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const [openInfo, setOpenInfo] = useState<InfoKey>(null);
-  const [sections, setSections] = useState(() => getDetalleSections());
+  const [tab, setTab] = useState<DetalleSectionKey>(() => getDetalleTab());
   const [dossier, setDossier] = useState<DossierEstablecimiento | null>(null);
   const [ia, setIa] = useState<ResumenIa | null>(null);
   const [iaLoading, setIaLoading] = useState(false);
   const [iaError, setIaError] = useState<string | null>(null);
+  const [movimientos, setMovimientos] = useState<AgendaEvento[]>([]);
+
+  useEffect(() => {
+    let alive = true;
+    setMovimientos([]);
+    fetchAuditoriaAgenda({ idEstablecimiento: id, pageSize: 100 })
+      .then((res) => {
+        if (alive) setMovimientos(res.items);
+      })
+      .catch(() => {
+        if (alive) setMovimientos([]);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [id, reloadKey]);
 
   useEffect(() => {
     let alive = true;
@@ -105,11 +123,25 @@ export function DetallePage() {
     setOpenInfo((current) => (current === key ? null : key));
   };
 
-  function toggleSection(key: DetalleSectionKey) {
-    setSections((prev) => {
-      const next = setDetalleSection(key, !prev[key]);
-      return next;
-    });
+  const tabs: { key: DetalleSectionKey; label: string; count?: number }[] = [];
+  if (dossier?.disponible && dossier.accidentes) {
+    tabs.push({ key: "historial", label: "Historial de accidentes", count: dossier.accidentes.total });
+  }
+  if (dossier?.disponible && (dossier.accidentes || dossier.visitas)) {
+    tabs.push({ key: "resumenIa", label: "Resumen IA" });
+  }
+  tabs.push({ key: "ficha", label: "Ficha operativa" });
+  if (data?.factoresShap) {
+    tabs.push({ key: "shap", label: "Factores de priorización" });
+  }
+  tabs.push({ key: "movimientos", label: "Historial de cambios", count: movimientos.length });
+  const activeTab: DetalleSectionKey = tabs.some((t) => t.key === tab)
+    ? tab
+    : tabs[0]?.key ?? "ficha";
+
+  function selectTab(key: DetalleSectionKey) {
+    setTab(key);
+    setDetalleTab(key);
   }
 
   return (
@@ -191,15 +223,17 @@ export function DetallePage() {
                   Programada · {data.agendaActiva.fechaPlanificada.slice(0, 10)}
                 </Link>
               ) : (
-                <button
-                  type="button"
-                  className="btn"
-                  style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-                  onClick={() => setShowProgramar(true)}
-                >
-                  <IconCalendar size={16} />
-                  Programar visita
-                </button>
+                !esPreventor && (
+                  <button
+                    type="button"
+                    className="btn"
+                    style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+                    onClick={() => setShowProgramar(true)}
+                  >
+                    <IconCalendar size={16} />
+                    Programar visita
+                  </button>
+                )
               )}
             </div>
             {data.visitaAppReciente && (
@@ -211,15 +245,25 @@ export function DetallePage() {
             )}
           </div>
 
-          <div className="detail-sections">
-            {dossier?.disponible && dossier.accidentes && (
-              <CollapsiblePanel
-                id="historial-title"
-                title="Historial de accidentes"
-                className="detail-accidentes"
-                open={sections.historial}
-                onToggle={() => toggleSection("historial")}
+          <div className="stats-tabs" role="tablist" aria-label="Secciones del establecimiento">
+            {tabs.map((t) => (
+              <button
+                key={t.key}
+                role="tab"
+                type="button"
+                aria-selected={activeTab === t.key}
+                className={`stats-tab${activeTab === t.key ? " active" : ""}`}
+                onClick={() => selectTab(t.key)}
               >
+                {t.label}
+                {t.count != null ? <span className="stats-tab-count"> ({t.count})</span> : null}
+              </button>
+            ))}
+          </div>
+
+          <div className="panel detail-tab-panel">
+            {activeTab === "historial" && dossier?.disponible && dossier.accidentes && (
+              <>
                 <div className="stats" style={{ marginBottom: 12 }}>
                   <div className="stat">
                     <div className="label">Accidentes (total)</div>
@@ -271,17 +315,11 @@ export function DetallePage() {
                       </div>
                     ))}
                 </div>
-              </CollapsiblePanel>
+              </>
             )}
 
-            {dossier?.disponible && (dossier.accidentes || dossier.visitas) && (
-              <CollapsiblePanel
-                id="resumen-ia-title"
-                title="Resumen IA para la próxima visita"
-                className="detail-ia"
-                open={sections.resumenIa}
-                onToggle={() => toggleSection("resumenIa")}
-              >
+            {activeTab === "resumenIa" && (
+              <>
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 10 }}>
                   {(!ia || puedeRegenerar) && (
                     <button
@@ -295,24 +333,11 @@ export function DetallePage() {
                   )}
                 </div>
                 {iaError && <div className="error" style={{ marginBottom: 10 }}>{iaError}</div>}
-                {ia ? (
-                  <ResumenIaContenido texto={ia.resumen} />
-                ) : (
-                  <p className="muted" style={{ marginBottom: 0 }}>
-                    Resumen accionable a partir del historial de accidentes y las visitas previas
-                    (datos anonimizados: sin nombre ni identificador del establecimiento).
-                  </p>
-                )}
-              </CollapsiblePanel>
+                {ia && <ResumenIaContenido texto={ia.resumen} />}
+              </>
             )}
 
-            <CollapsiblePanel
-              id="ficha-title"
-              title="Ficha operativa"
-              className="detail-operational"
-              open={sections.ficha}
-              onToggle={() => toggleSection("ficha")}
-            >
+            {activeTab === "ficha" && (
               <div className="detail-grid">
                 <div className="kv" title={help("sector")}>
                   <div className="k">Actividad económica</div>
@@ -345,26 +370,20 @@ export function DetallePage() {
                   <div className="v">{item.alertaUmbral ? "Sí" : "No"}</div>
                 </div>
               </div>
-            </CollapsiblePanel>
+            )}
 
-            {data.factoresShap && (
-              <CollapsiblePanel
-                id="shap-title"
-                title="Factores de priorización"
-                className="detail-shap"
-                open={sections.shap}
-                onToggle={() => toggleSection("shap")}
-                trailing={
-                  data.comoSeCalcula.shap ? (
+            {activeTab === "shap" && data.factoresShap && (
+              <>
+                {data.comoSeCalcula.shap && (
+                  <div className="detail-tab-head">
                     <InfoHint
                       title="Factores de priorización"
                       body={data.comoSeCalcula.shap}
                       open={openInfo === "shap"}
                       onToggle={() => toggleInfo("shap")}
                     />
-                  ) : null
-                }
-              >
+                  </div>
+                )}
                 {!data.factoresShap.disponible ? (
                   <p className="muted" style={{ marginBottom: 0 }}>
                     Todavía no hay contribuciones SHAP importadas para este ítem.
@@ -422,13 +441,72 @@ export function DetallePage() {
                     )}
                   </Reveal>
                 )}
-              </CollapsiblePanel>
+              </>
+            )}
+
+            {activeTab === "movimientos" && (
+              movimientos.length === 0 ? (
+                <p className="muted" style={{ margin: 0 }}>
+                  Sin movimientos registrados para este establecimiento. Las visitas creadas antes
+                  de habilitar la bitácora no generan historial.
+                </p>
+              ) : (
+                <ul className="mov-list">
+                  {movimientos.map((ev) => (
+                    <li key={ev.id} className="mov-item">
+                      <div className="mov-head">
+                        <span className={`badge mov-${ev.tipo}`}>{movTipoLabel(ev.tipo)}</span>
+                        <span className="mono muted">{formatMovDateTime(ev.ocurridoEn)}</span>
+                      </div>
+                      <div className="mov-meta">
+                        {ev.actor ? (
+                          <span title={ev.actor.email ?? undefined}>
+                            {ev.actor.nombre}
+                            <span className="muted"> · {ev.actor.rol}</span>
+                          </span>
+                        ) : (
+                          <span className="muted">Sin actor atribuido</span>
+                        )}
+                        <span className="muted">
+                          {(ev.estadoAnterior ?? "—") + " → " + (ev.estadoNuevo ?? "—")}
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )
             )}
           </div>
         </>
       )}
     </>
   );
+}
+
+function formatMovDateTime(iso: string): string {
+  try {
+    return new Date(iso).toLocaleString("es-AR", {
+      dateStyle: "short",
+      timeStyle: "short",
+    });
+  } catch {
+    return iso;
+  }
+}
+
+function movTipoLabel(tipo: string): string {
+  switch (tipo) {
+    case "programada":
+      return "Programada";
+    case "reprogramada":
+      return "Reprogramada";
+    case "realizada":
+      return "Realizada";
+    case "cancelada":
+      return "Cancelada";
+    default:
+      return tipo;
+  }
 }
 
 function renderInline(text: string): (string | ReactElement)[] {

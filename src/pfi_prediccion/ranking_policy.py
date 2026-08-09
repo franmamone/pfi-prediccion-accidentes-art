@@ -10,6 +10,7 @@ import joblib
 import pandas as pd
 
 from .config import (
+    BAND_ACCURACY_THRESHOLDS,
     CAPACITY_CRITICAL,
     CAPACITY_MONTHLY,
     CAPACITY_QUARTERLY,
@@ -19,65 +20,23 @@ from .config import (
     PROCESSED_DIR,
     REPORTS_RANKING_DIR,
     VISIT_COOLDOWN_MONTHS,
+    banda_por_acierto,
     ensure_dirs,
     model_pipeline_path,
     target_column_for_horizon,
 )
-from .features import ciiu_seccion
+from .features import ciiu_seccion, sector_label
 from .inference import predict_blended_batched
 from .ranking_explain import explain_ranking_items
 
 
-# Agrupación por división CIIU Rev.3 (2 dígitos), coherente con el panel.
-SECTOR_LABELS = {
-    "45": "Construcción",
-    "15": "Industria",
-    "16": "Industria",
-    "17": "Industria",
-    "18": "Industria",
-    "19": "Industria",
-    "20": "Industria",
-    "21": "Industria",
-    "22": "Industria",
-    "23": "Industria",
-    "24": "Industria",
-    "25": "Industria",
-    "26": "Industria",
-    "27": "Industria",
-    "28": "Industria",
-    "29": "Industria",
-    "30": "Industria",
-    "31": "Industria",
-    "32": "Industria",
-    "33": "Industria",
-    "34": "Industria",
-    "35": "Industria",
-    "36": "Industria",
-    "37": "Industria",
-    "50": "Comercio",
-    "51": "Comercio",
-    "52": "Comercio",
-    "55": "Comercio",
-    "60": "Transporte",
-    "61": "Transporte",
-    "62": "Transporte",
-    "63": "Transporte",
-    "64": "Transporte",
-    "85": "Salud",
-}
-
-
 def _sector_label(code) -> str:
-    sec = ciiu_seccion(code)
-    return SECTOR_LABELS.get(sec, "Otros")
+    return sector_label(code)
 
 
-def _band(rank: int) -> str:
-    if rank <= CAPACITY_CRITICAL:
-        return "critico"
-    if rank <= CAPACITY_MONTHLY:
-        return "alto"
-    return "medio"
+def _band(rank: int, horizon: str = HORIZON_1M) -> str:
+    """Banda por acierto histórico del tramo (ver config.banda_por_acierto)."""
+    return banda_por_acierto(rank, horizon)
 
 
 def build_master_ranking(
@@ -111,7 +70,7 @@ def build_master_ranking(
     month["alerta_umbral"] = (month["score_riesgo"] >= threshold).astype(int)
     month = month.sort_values("score_riesgo", ascending=False).reset_index(drop=True)
     month["ranking"] = month.index + 1
-    month["banda"] = month["ranking"].map(_band)
+    month["banda"] = month["ranking"].map(lambda r: _band(int(r), horizon))
     month["horizonte"] = horizon
     month["motivo"] = "predictivo"
 
@@ -168,11 +127,18 @@ def export_ranking_contract(
     horizon: str = HORIZON_1M,
     periodo: str | None = None,
     output_dir: Path | None = None,
+    export_n: int = CAPACITY_MONTHLY,
 ) -> dict:
-    """Exporta CSV/JSON con el contrato que consumirá la API .NET / React."""
+    """Exporta CSV/JSON con el contrato que consumirá la API .NET / React.
+
+    ``export_n`` controla cuántos establecimientos (top del ranking) se
+    exportan con SHAP individual. Por defecto la capacidad mensual (225);
+    subirlo (p. ej. 1000) permite mostrar también la banda ``medio``.
+    """
     ensure_dirs()
     output_dir = Path(output_dir or REPORTS_RANKING_DIR)
     output_dir.mkdir(parents=True, exist_ok=True)
+    export_n = max(int(export_n or CAPACITY_MONTHLY), 1)
 
     ranking = build_master_ranking(panel, periodo=periodo, horizon=horizon)
     periodo = str(ranking["periodo"].iloc[0])
@@ -189,7 +155,7 @@ def export_ranking_contract(
         month_panel["score_riesgo"] = month_panel["score_riesgo_rank"]
         month_panel = month_panel.drop(columns=["score_riesgo_rank"])
     shap_by_id, shap_agregados = explain_ranking_items(
-        month_panel, horizon=horizon, top_n=CAPACITY_MONTHLY
+        month_panel, horizon=horizon, top_n=export_n
     )
     additivity_ok = sum(1 for v in shap_by_id.values() if v.get("additivity_ok"))
     additivity_fail = len(shap_by_id) - additivity_ok
@@ -200,7 +166,7 @@ def export_ranking_contract(
 
     ranking.to_csv(csv_path, index=False, sep=";")
 
-    items = ranking.head(CAPACITY_MONTHLY).to_dict(orient="records")
+    items = ranking.head(export_n).to_dict(orient="records")
     # Evitar NaN/NaT en JSON (targets futuros no evaluables).
     for item in items:
         for key, value in list(item.items()):
@@ -237,10 +203,11 @@ def export_ranking_contract(
             "capacidad_mensual": CAPACITY_MONTHLY,
             "capacidad_trimestral": CAPACITY_QUARTERLY,
             "cooldown_meses": VISIT_COOLDOWN_MONTHS,
+            "bandas_criterio": "acierto histórico (precision@K) del tramo",
+            "bandas_umbrales": BAND_ACCURACY_THRESHOLDS.get(horizon, {}),
             "bandas": {
-                "critico": f"ranking 1..{CAPACITY_CRITICAL}",
-                "alto": f"ranking {CAPACITY_CRITICAL + 1}..{CAPACITY_MONTHLY}",
-                "medio": f"ranking > {CAPACITY_MONTHLY}",
+                b: f"acierto {int(round(v * 100))}%+"
+                for b, v in (BAND_ACCURACY_THRESHOLDS.get(horizon, {}) or {}).items()
             },
             "motivos": ["predictivo", "predictivo+prs", "prs", "seguimiento"],
             "reglas": [
@@ -256,6 +223,8 @@ def export_ranking_contract(
             "filas": len(ranking),
             "criticos": int((ranking["banda"] == "critico").sum()),
             "altos": int((ranking["banda"] == "alto").sum()),
+            "medios": int((ranking["banda"] == "medio").sum()),
+            "bajos": int((ranking["banda"] == "bajo").sum()),
             "en_cooldown": int(ranking["en_cooldown"].sum()),
             "con_obligacion_prs": int(ranking["obligacion_prs"].sum()),
             "shap_explicados": len(shap_by_id),

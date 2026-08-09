@@ -11,7 +11,7 @@ import {
 type AuthState = {
   user: User | null;
   token: string | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   logout: () => void;
   setUser: (user: User) => void;
 };
@@ -30,6 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const data = await apiLogin(email, password);
         setUserState(data.user);
         setToken(data.access_token);
+        return data.user;
       },
       logout() {
         clearSession();

@@ -9,6 +9,8 @@ import {
 } from "../api";
 import { useAuth } from "../auth";
 import { motivoLabel, riesgoLabel } from "../labels";
+import { DateField } from "./DateField";
+import { Select } from "./Select";
 
 type Props = {
   item: RankingItem;
@@ -88,29 +90,22 @@ export function ProgramarVisitaDialog({ item, horizonte, onClose, onDone }: Prop
         <form onSubmit={submit} className="form-stack">
           <div className="field">
             <label htmlFor="fecha-planificada">Fecha planificada</label>
-            <input
-              id="fecha-planificada"
-              type="date"
-              required
+            <DateField
+              ariaLabel="Fecha planificada"
               min={todayIso()}
               value={fecha}
-              onChange={(e) => setFecha(e.target.value)}
+              onChange={setFecha}
             />
           </div>
           <div className="field">
             <label htmlFor="responsable">Responsable</label>
-            <select
-              id="responsable"
-              value={usuarioId}
-              onChange={(e) => setUsuarioId(Number(e.target.value))}
-              required
-            >
-              {usuarios.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.nombre} ({u.rol})
-                </option>
-              ))}
-            </select>
+            <Select
+              value={String(usuarioId)}
+              onChange={(v) => setUsuarioId(Number(v))}
+              ariaLabel="Responsable"
+              placeholder="Elegí un responsable…"
+              options={usuarios.map((u) => ({ value: String(u.id), label: `${u.nombre} (${u.rol})` }))}
+            />
           </div>
           <div className="field">
             <label htmlFor="notas">Notas (opcional)</label>
