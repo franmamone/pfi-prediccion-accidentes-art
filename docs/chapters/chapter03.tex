@@ -2,7 +2,7 @@
 
 \begin{contenidoNuevo}
 
-El presente cap\'itulo formaliza el an\'alisis funcional del prototipo construido para el hito del 50\,\%. Se documentan actores, historias de usuario, requerimientos funcionales y no funcionales, mockups de interfaz y el an\'alisis de competencias de mercado. El contenido se marca en azul para distinguir las incorporaciones respecto de la entrega del 25\,\%.
+El presente cap\'itulo formaliza el an\'alisis funcional del prototipo construido para el hito del 50\,\%. Se documentan actores, historias de usuario, requerimientos funcionales y no funcionales, mockups de interfaz, avances de \emph{user research} y el an\'alisis de competencias de mercado. El contenido se marca en azul para distinguir las incorporaciones respecto de la entrega del 25\,\%.
 
 \section{Actores del sistema}
 
@@ -124,6 +124,39 @@ El dise\~no previo se document\'o mediante wireframes de layout y mapa de pantal
 	\label{fig:mock-estadisticas}
 \end{figure}
 
+\section{User research}\label{sec:user-research}
+
+El proyecto tiene usuarios finales identificables (prevencionistas, coordinadores y perfiles vinculados a la operaci\'on ART). Por ello se incorpora \emph{user research} emp\'{\i}rico para validar necesidades y no basar el dise\~no solo en supuestos. Las t\'ecnicas previstas son encuestas (alcance cuantitativo), entrevistas semiestructuradas (profundidad cualitativa) y \emph{user personas} (s\'{\i}ntesis arquet\'{\i}pica). Al momento del hito 50\,\% se documenta la primera entrevista en profundidad; las restantes y el an\'alisis consolidado de la encuesta se completan en paralelo a esta entrega.
+
+\subsection{Entrevista 1 --- perfil operativo y funcional ART}
+
+\begin{description}
+	\item[Entrevistado] Adri\'an El\'{\i}as, con trayectoria en gesti\'on de siniestros, ex\'amenes peri\'odicos, contratos, recaudaci\'on y liderazgo funcional del producto ART en el ecosistema del sistema \emph{core}.
+	\item[Fecha y duraci\'on] 6 de agosto de 2026; aproximadamente 20 minutos (videollamada).
+	\item[Objetivo] Comprender criterios reales de priorizaci\'on de visitas, herramientas usadas hoy, ciclo de recomendaciones del preventor y datos percibidos como \'utiles para un sistema predictivo.
+\end{description}
+
+La transcripci\'on depurada integra el Anexo~\ref{anexo:entrevista-adrian-elias}. A continuaci\'on se sintetizan los hallazgos accionables para el dise\~no del prototipo.
+
+\subsubsection{Hallazgos principales}
+
+\begin{enumerate}
+	\item \textbf{Priorizaci\'on actual basada en reglas y calendario.}
+	La visita se organiza en torno a la renovaci\'on de la p\'oliza, al riesgo de la actividad (frecuencias por resoluci\'on), a relevamientos anuales (riesgos laborales / agentes de riesgo) y a disparadores por siniestros graves (p.\ ej.\ ROAM) o investigaciones puntuales. No hay un ranking predictivo de establecimientos.
+	\item \textbf{Herramienta legada y poca automatizaci\'on de alertas.}
+	El \'area operaba con un sistema interno (Centura) que listaba contratos pr\'oximos a vencer y casos ROAM; no hab\'{\i}a notificaciones por correo. La prioridad combinaba se\~nales del sistema y criterio humano.
+	\item \textbf{Ciclo visita $\rightarrow$ recomendaciones $\rightarrow$ revisita.}
+	El preventor emite un informe para ART y empleador; el incumplimiento puede impactar en la al\'{\i}cuota en la renovaci\'on. La ART queda expuesta ante la SRT si no cumple su rol de prevenci\'on.
+	\item \textbf{Valor percibido del historial de accidentes por establecimiento.}
+	El entrevistado valid\'o que conocer patrones (tipo de lesi\'on, frecuencia, posibles fraudes o concentraci\'on en ciertos d\'{\i}as) permite llegar a la visita con recomendaciones m\'as fuertes. Eso alinea con el uso de historial + explicabilidad (SHAP / resumen para el preventor) en el prototipo.
+	\item \textbf{Cuello de botella operativo del preventor.}
+	La dependencia de la agenda del preventor de la ART y la coordinaci\'on con el empleador demoran la cobertura. Un sistema de priorizaci\'on ayuda a concentrar la capacidad limitada en los establecimientos de mayor urgencia relativa.
+	\item \textbf{Cuidado con la confidencialidad de la predicci\'on.}
+	Notificar al empleador puntos d\'ebiles predichos puede ser contraproducente. El producto debe tratar el score y el detalle como informaci\'on operativa interna de la ART, con divulgaci\'on controlada.
+\end{enumerate}
+
+Estos hallazgos refuerzan las historias HU-03 a HU-06 (priorizaci\'on, detalle explicable, agenda) y los requerimientos RF-03, RF-04 y RF-05. Las entrevistas pendientes y los resultados de la encuesta permitir\'an ajustar \emph{user personas} y validar la generalizaci\'on de estos hallazgos.
+
 \section{An\'alisis de competencias}
 
 \subsection{An\'alisis FODA}
@@ -141,8 +174,8 @@ El dise\~no previo se document\'o mediante wireframes de layout y mapa de pantal
 		\hline
 		\textbf{Debilidades} & \textbf{Amenazas} \\
 		\hline
-		User research a\'un pendiente; dependencia de calidad/completitud de datos hist\'oricos; prototipo a\'un no desplegado en nube. &
-		Resistencia a modelos ``caja negra''; competencia de BI gen\'erico; cambios regulatorios; riesgo de malinterpretar el score como probabilidad. \\
+		User research en curso (1/3 entrevistas documentadas; encuesta y personas pendientes de cierre); dependencia de calidad/completitud de datos hist\'oricos; prototipo a\'un no desplegado en nube. &
+		Resistencia a modelos ``caja negra''; competencia de BI gen\'erico; cambios regulatorios; riesgo de malinterpretar el score como probabilidad; mal uso de alertas predictivas si se divulgan sin control. \\
 		\hline
 	\end{tabular}
 \end{table}
