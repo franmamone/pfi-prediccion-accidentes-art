@@ -366,3 +366,10 @@ apps/**/dist/
 apps/api/wwwroot/
 apps/**/.env
 apps/**/*.user
+
+# Visual Studio (caché local; no versionar)
+.vs/
+*.suo
+*.user
+*.rsuser
+*.vsidx

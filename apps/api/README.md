@@ -11,7 +11,20 @@ Patrón igual al de `Testing`: un solo puerto. Las rutas `/api/*` las atiende .N
 - .NET SDK 10
 - Node.js (para el frontend en desarrollo / publish)
 
-## Arranque unificado (recomendado)
+## Arranque desde Visual Studio
+
+1. Abrí `PfiPrevencion.slnx` (o el `.csproj` de la API).
+2. Marcá **PfiPrevencion.Api** como proyecto de inicio (ya viene como `DefaultStartup`).
+3. Perfil de depuración: **http** (SpaProxy; el recomendado). No uses un perfil `https` local: el certificado de desarrollo suele fallar (`ERR_CERT_AUTHORITY_INVALID`) y VS abre `:7235`.
+4. **F5** / **Ctrl+F5** inicia la API y, con el perfil `http`, SpaProxy levanta Vite (`npm run dev`).
+5. El navegador abre `http://localhost:5011` → redirige al front en `:5173`.
+6. **Shift+F5** (Detener depuración) corta la API; Vite suele cerrarse con ella.
+
+Si al cerrar el navegador se corta la depuración: en VS → **Herramientas → Opciones → Proyectos y soluciones → Proyectos web** y desmarcá *“Detener el depurador al cerrar la ventana del explorador”* (o similar).
+
+Requisito: Node.js en el PATH (para que SpaProxy pueda ejecutar `npm run dev`).
+
+## Arranque unificado por CLI (recomendado también)
 
 Desde la raíz del repo o desde `apps/api`:
 

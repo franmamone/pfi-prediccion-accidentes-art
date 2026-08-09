@@ -1,0 +1,10 @@
+<Solution>
+  <Project Path="apps/web/PfiPrevencion.Web.esproj">
+    <Build />
+  </Project>
+  <Project Path="apps/api/PfiPrevencion.Api.csproj">
+    <Properties>
+      <Property Name="DefaultStartup" Value="true" />
+    </Properties>
+  </Project>
+</Solution>
