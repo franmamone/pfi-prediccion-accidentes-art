@@ -73,7 +73,9 @@ La Figura~\ref{fig:casos-uso} resume las interacciones principales entre actores
 
 \section{Mockups y dise\~no de interfaz}
 
-El dise\~no previo se document\'o mediante wireframes de layout y mapa de pantallas. Luego se implement\'o el frontend React. La Figura~\ref{fig:wireframe-layout} muestra el esquema general; las Figuras~\ref{fig:mock-login}--\ref{fig:mock-estadisticas} ilustran las pantallas principales del prototipo.
+Antes de implementar el frontend React se elaboraron mockups esquem\'aticos del layout y de las pantallas principales.
+No reproducen datos reales del prototipo: usan placeholders y bloques gen\'ericos para documentar la estructura de navegaci\'on, filtros, grillas, pesta\~nas y formularios.
+La Figura~\ref{fig:wireframe-layout} muestra el esquema global; las Figuras~\ref{fig:mock-login}--\ref{fig:mock-perfil} cubren login, priorizaci\'on, detalle (resumen IA), agenda calendario, estad\'isticas y perfil.
 
 \begin{figure}[htbp]
 	\centering
@@ -85,43 +87,43 @@ El dise\~no previo se document\'o mediante wireframes de layout y mapa de pantal
 \begin{figure}[htbp]
 	\centering
 	\includegraphics[width=0.92\textwidth]{figures/mockups/login.png}
-	\caption{Mockup/pantalla de login (RF-01).}
+	\caption{Mockup esquem\'atico de login (RF-01).}
 	\label{fig:mock-login}
 \end{figure}
 
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[width=0.92\textwidth]{figures/mockups/resumen.png}
-	\caption{Pantalla de resumen operativo (RF-02 / HU-02).}
-	\label{fig:mock-resumen}
-\end{figure}
-
-\begin{figure}[htbp]
-	\centering
 	\includegraphics[width=0.92\textwidth]{figures/mockups/riesgo.png}
-	\caption{Pantalla de priorizaci\'on de riesgo (RF-03 / HU-03).}
+	\caption{Mockup esquem\'atico de priorizaci\'on (RF-03 / HU-03).}
 	\label{fig:mock-riesgo}
 \end{figure}
 
 \begin{figure}[htbp]
 	\centering
 	\includegraphics[width=0.92\textwidth]{figures/mockups/detalle.png}
-	\caption{Detalle con explicaci\'on de prioridad y SHAP (RF-04 / HU-04).}
+	\caption{Mockup esquem\'atico del detalle del establecimiento con pesta\~nas y resumen IA (RF-04 / HU-04).}
 	\label{fig:mock-detalle}
 \end{figure}
 
 \begin{figure}[htbp]
 	\centering
 	\includegraphics[width=0.92\textwidth]{figures/mockups/agenda.png}
-	\caption{Agenda operativa de visitas (RF-05 / HU-06).}
+	\caption{Mockup esquem\'atico de agenda tipo calendario (RF-05 / HU-06).}
 	\label{fig:mock-agenda}
 \end{figure}
 
 \begin{figure}[htbp]
 	\centering
 	\includegraphics[width=0.92\textwidth]{figures/mockups/estadisticas.png}
-	\caption{Estad\'isticas de cobertura, precisi\'on y SHAP agregado (RF-07 / HU-07).}
+	\caption{Mockup esquem\'atico de estad\'isticas con pesta\~nas y tarjetas de gr\'aficos (RF-07 / HU-07).}
 	\label{fig:mock-estadisticas}
+\end{figure}
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.92\textwidth]{figures/mockups/perfil.png}
+	\caption{Mockup esquem\'atico de perfil de usuario (RF-09).}
+	\label{fig:mock-perfil}
 \end{figure}
 
 \section{User research}\label{sec:user-research}
