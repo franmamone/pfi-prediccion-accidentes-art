@@ -128,26 +128,26 @@ La Figura~\ref{fig:wireframe-layout} muestra el esquema global; las Figuras~\ref
 
 \section{User research}\label{sec:user-research}
 
-El proyecto tiene usuarios finales identificables (prevencionistas, coordinadores y perfiles vinculados a la operaci\'on ART). Por ello se incorpora \emph{user research} emp\'{\i}rico para validar necesidades y no basar el dise\~no solo en supuestos. Las t\'ecnicas utilizadas son encuestas (alcance cuantitativo), entrevistas semiestructuradas (profundidad cualitativa) y, en una etapa siguiente, \emph{user personas} (s\'{\i}ntesis arquet\'{\i}pica). En este hito se presentan los resultados de la encuesta ($n=81$) y la primera entrevista en profundidad; restan dos entrevistas.
+El proyecto tiene usuarios finales identificables (prevencionistas, coordinadores y perfiles vinculados a la operaci\'on ART). Por ello se incorpora \emph{user research} emp\'{\i}rico para validar necesidades y no basar el dise\~no solo en supuestos. Las t\'ecnicas utilizadas son encuestas (alcance cuantitativo), entrevistas semiestructuradas (profundidad cualitativa) y, en una etapa siguiente, \emph{user personas} (s\'{\i}ntesis arquet\'{\i}pica). En este hito se presentan los resultados de la encuesta ($n=156$) y dos entrevistas en profundidad; resta una entrevista y las \emph{user personas}.
 
-\subsection{Encuesta --- percepci\'on de prevenci\'on y respuesta post-accidente}
+\subsection{Encuesta: percepci\'on de prevenci\'on y respuesta post-accidente}
 
-Se aplic\'o un formulario en l\'{\i}nea (julio 2026) a trabajadores de distintos sectores y tama\~nos de establecimiento.
-Tras eliminar duplicados exactos del export, quedaron $n=81$ respuestas \'unicas.
+Se aplic\'o un formulario en l\'{\i}nea (julio--agosto 2026) a trabajadores de distintos sectores y tama\~nos de establecimiento.
+Quedaron $n=156$ respuestas v\'alidas.
 El detalle por pregunta, con gr\'aficos, figura en el Anexo~\ref{anexo:encuesta}.
 
 Hallazgos que avalan la tesis:
 
 \begin{enumerate}
-	\item \textbf{La ART/prevenci\'on es poco visible:} 79\,\% no conoce su ART o nunca vio auditor\'{\i}as; solo 21\,\% reporta auditor\'{\i}as regulares (Figura~\ref{fig:enc-p3}).
-	\item \textbf{Predomina lo reactivo:} 44\,\% ubica capacitaciones/medidas despu\'es del incidente y 31\,\% solo en la inducci\'on; 25\,\% describe un enfoque proactivo anual (Figura~\ref{fig:enc-p4}).
-	\item \textbf{Baja anticipaci\'on percibida:} media 2,44 en escala 1--5; 57\,\% elige 1 o 2 (Figura~\ref{fig:enc-p5}).
-	\item \textbf{Accidente frecuente, aprendizaje d\'ebil:} 57\,\% reporta episodio propio o de un compa\~nero (Figura~\ref{fig:enc-p6}); entre ellos, 63\,\% percibi\'o ausencia de cambios o solo medidas m\'{\i}nimas, frente a 35\,\% con redise\~no profundo (Figura~\ref{fig:enc-p7}).
+	\item \textbf{La ART/prevenci\'on es poco visible:} 78\,\% no conoce su ART o nunca vio auditor\'{\i}as; solo 22\,\% reporta auditor\'{\i}as regulares (Figura~\ref{fig:enc-p3}).
+	\item \textbf{Predomina lo reactivo:} 35\,\% ubica capacitaciones/medidas despu\'es del incidente y 42\,\% solo en la inducci\'on; 23\,\% describe un enfoque proactivo anual (Figura~\ref{fig:enc-p4}).
+	\item \textbf{Baja anticipaci\'on percibida:} media 2,41 en escala 1--5; 60\,\% elige 1 o 2 (Figura~\ref{fig:enc-p5}).
+	\item \textbf{Accidente frecuente, aprendizaje d\'ebil:} 64\,\% reporta episodio propio o de un compa\~nero (Figura~\ref{fig:enc-p6}); entre ellos, 81\,\% percibi\'o ausencia de cambios o solo medidas m\'{\i}nimas, frente a 19\,\% con redise\~no profundo (Figura~\ref{fig:enc-p7}).
 \end{enumerate}
 
 Estos resultados sostienen el problema de investigaci\'on: hace falta priorizar intervenciones \emph{antes} del evento y cerrar el ciclo operativo, en lugar de depender de calendarios gen\'ericos o de reacciones superficiales post-siniestro.
 
-\subsection{Entrevista 1 --- perfil operativo y funcional ART}
+\subsection{Entrevista 1: perfil operativo y funcional ART}
 
 \begin{description}
 	\item[Entrevistado] Adri\'an El\'{\i}as, con trayectoria en gesti\'on de siniestros, ex\'amenes peri\'odicos, contratos, recaudaci\'on y liderazgo funcional del producto ART en el ecosistema del sistema \emph{core}.
@@ -174,7 +174,36 @@ La transcripci\'on depurada integra el Anexo~\ref{anexo:entrevista-adrian-elias}
 	Notificar al empleador puntos d\'ebiles predichos puede ser contraproducente. El producto debe tratar el score y el detalle como informaci\'on operativa interna de la ART, con divulgaci\'on controlada.
 \end{enumerate}
 
-Estos hallazgos cualitativos convergen con la encuesta (baja percepci\'on de prevenci\'on proactiva; valor del historial; necesidad de priorizar capacidad limitada) y refuerzan las historias HU-03 a HU-06 y los requerimientos RF-03, RF-04 y RF-05. Las dos entrevistas pendientes y las \emph{user personas} cerrar\'an el bloque de user research.
+Estos hallazgos cualitativos convergen con la encuesta (baja percepci\'on de prevenci\'on proactiva; valor del historial; necesidad de priorizar capacidad limitada) y refuerzan las historias HU-03 a HU-06 y los requerimientos RF-03, RF-04 y RF-05.
+
+\subsection{Entrevista 2: perfil gerencial / estrat\'egico ART}
+
+\begin{description}
+	\item[Entrevistado] Diego Oviedo, ex gerente de riesgos del trabajo y prevenci\'on en ART; licenciado en higiene y seguridad.
+	\item[Fecha y duraci\'on] 14 de agosto de 2026; aproximadamente 23 minutos (videollamada).
+	\item[Objetivo] Comprender el impacto del P.E.S.E.\ y de los relevamientos (RGRL/RAR), la reactividad del sistema, y qu\'e explicabilidad exige un perfil gerencial para confiar en un mapa de riesgo predictivo.
+\end{description}
+
+La transcripci\'on depurada integra el Anexo~\ref{anexo:entrevista-diego-oviedo}. A continuaci\'on se sintetizan los hallazgos accionables.
+
+\subsubsection{Hallazgos principales}
+
+\begin{enumerate}
+	\item \textbf{Cumplimiento normativo como base de la ``salud'' del establecimiento.}
+	La evaluaci\'on se apoya en el RGRL (industria / obra / agro) al afiliar o declarar un establecimiento, y en el RAR/NTE para exposici\'on a agentes de riesgo y ex\'amenes peri\'odicos. Ambos se registran en el sistema de gesti\'on.
+	\item \textbf{P.E.S.E.\ gatillado por \'{\i}ndice de incidencia.}
+	El ingreso al Programa de Empleadores con Siniestralidad Elevada depende del \'{\i}ndice de incidencia (siniestros / trabajadores $\times$ 1000) por actividad, publicado por la Superintendencia. Es un umbral normativo reactivo a la siniestralidad ya observada.
+	\item \textbf{El sistema apunta m\'as a la atenci\'on del siniestro que a la prevenci\'on.}
+	Hay poca inversi\'on relativa en prevenci\'on pese a la cantidad de datos disponibles. El entrevistado valor\'o el prototipo como \emph{mapa de riesgo} \'util para decidir d\'onde mirar.
+	\item \textbf{Explicabilidad accionable: sector, agente material y recomendaciones previas.}
+	Adem\'as del ranking, el preventor necesita historial de recomendaciones (cumplidas o no), incumplimientos del RGRL con fecha de regularizaci\'on, y desagregaci\'on por sector / agente material / agente causante (p.\ ej.\ rampa en un frigor\'{\i}fico) para orientar la medida correctiva. Conviene excluir \emph{in itinere} del foco preventivo del establecimiento.
+	\item \textbf{Tensi\'on comercial de las denuncias.}
+	La ART puede recomendar y, ante incumplimiento, denunciar ante la Superintendencia; eso deriva en inspecci\'on y multa al cliente. Por eso ``no se denuncia todo''. El preventor diagnostica; la ART formaliza. Incorporar el circuito de denuncias (cumplida / fecha) enriquecer\'{\i}a el prototipo.
+	\item \textbf{Extensiones \'utiles del dossier.}
+	Concentraci\'on de siniestros en el mismo trabajador (anonimizado), zona del cuerpo, y enfermedades profesionales vinculadas al RAR (agente de riesgo y exposici\'on vigente) completar\'{\i}an el contexto del preventor.
+\end{enumerate}
+
+Estos hallazgos refuerzan RF-04 (explicaci\'on / dossier), RF-03 (priorizaci\'on) y el criterio de confidencialidad ya se\~nalado por Adri\'an El\'{\i}as. Resta una entrevista y las \emph{user personas} para cerrar el bloque de user research.
 
 \section{An\'alisis de competencias}
 
@@ -193,7 +222,7 @@ Estos hallazgos cualitativos convergen con la encuesta (baja percepci\'on de pre
 		\hline
 		\textbf{Debilidades} & \textbf{Amenazas} \\
 		\hline
-		User research en curso (encuesta $n=81$ documentada; 1/3 entrevistas; personas pendientes); dependencia de calidad/completitud de datos hist\'oricos; prototipo a\'un no desplegado en nube. &
+		User research en curso (encuesta $n=156$ documentada; 2/3 entrevistas; personas pendientes); dependencia de calidad/completitud de datos hist\'oricos; prototipo a\'un no desplegado en nube. &
 		Resistencia a modelos ``caja negra''; competencia de BI gen\'erico; cambios regulatorios; riesgo de malinterpretar el score como probabilidad; mal uso de alertas predictivas si se divulgan sin control. \\
 		\hline
 	\end{tabular}

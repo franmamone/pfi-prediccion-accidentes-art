@@ -1,6 +1,6 @@
 \begin{contenidoNuevo}
 
-\anexo{Transcripci\'on de entrevista --- Adri\'an El\'{\i}as}\label{anexo:entrevista-adrian-elias}
+\anexo{Transcripci\'on de entrevista: Adri\'an El\'{\i}as}\label{anexo:entrevista-adrian-elias}
 
 \subsection*{Ficha t\'ecnica}
 
@@ -12,11 +12,6 @@
 	\item[Entrevistado] Adri\'an El\'{\i}as, con trayectoria operativa y funcional en una aseguradora de riesgos del trabajo (ART) y en el desarrollo del sistema \emph{core} del ramo.
 	\item[Tipo] Entrevista semiestructurada (gu\'{\i}a de preguntas con posibilidad de repreguntas).
 \end{description}
-
-\noindent\textit{Nota metodol\'ogica.}
-La transcripci\'on autom\'atica se depur\'o para eliminar muletillas, superposiciones y ruido de la grabaci\'on.
-Las preguntas del entrevistador se reformularon en un registro formal, sin alterar el sentido de las respuestas del entrevistado.
-Los t\'erminos t\'ecnicos del dominio (p\'oliza, ROAM, al\'{\i}cuota, SRT, etc.) se conservaron.
 
 \subsection*{Transcripci\'on}
 
@@ -31,19 +26,21 @@ Arranqu\'e como gestor de siniestros: segu\'{\i}a casos, cargaba ingresos y sini
 Luego gestion\'e los ex\'amenes peri\'odicos: semestralmente se volcaban listados de trabajadores expuestos a agentes de riesgo, se determinaban los estudios, se enviaban notificaciones, se daba seguimiento a su realizaci\'on y se cargaban los resultados.
 Despu\'es pas\'e al \'area de contratos: altas de contratos, generaci\'on e impresi\'on de p\'olizas y env\'{\i}os; era un rol con contacto con el cliente, m\'as cercano a lo comercial.
 Tambi\'en tom\'e recaudaci\'on o cobranzas: estados de cuenta, reclamos por mora, llamadas, correos y notificaciones fehacientes (incluida carta documento).
-Finalmente pas\'e a sistemas: primero como soporte con perfil de analista funcional junior y, m\'as adelante, como l\'{\i}der funcional del producto ART, coordinando ---a modo de \emph{project manager}--- los desarrollos del ramo en la empresa.
+Finalmente pas\'e a sistemas: primero como soporte con perfil de analista funcional junior y, m\'as adelante, como l\'{\i}der funcional del producto ART, coordinando (a modo de \emph{project manager}) los desarrollos del ramo en la empresa.
 En resumen, atraves\'e casi todos los estadios del circuito.
 
 \item[\textbf{Entrevistador:}]
+Perfecto, gracias: ese recorrido transversal ayuda mucho a entender el circuito completo.
 El foco de esta tesis est\'a en la prevenci\'on dentro de la ART.
 ¿Tiene experiencia o conocimiento espec\'{\i}fico en esa \'area que permita responder con fundamento?
 
 \item[\textbf{Entrevistado:}]
 S\'{\i}.
-El conocimiento de prevenci\'on proviene sobre todo del tiempo en ex\'amenes peri\'odicos ---que dependen del \'area de prevenci\'on--- y del tiempo en contratos.
+El conocimiento de prevenci\'on proviene sobre todo del tiempo en ex\'amenes peri\'odicos (que dependen del \'area de prevenci\'on) y del tiempo en contratos.
 Los contratos est\'an muy vinculados a prevenci\'on: al formalizar el contrato hay que informar al \'area de prevenci\'on para que gestione las visitas a los establecimientos y determine los riesgos.
 
 \item[\textbf{Entrevistador:}]
+Claro, tiene sentido esa vinculaci\'on entre contrato y prevenci\'on.
 ¿Qu\'e criterios se utilizaban para priorizar a qu\'e establecimiento correspond\'{\i}a una visita o una auditor\'{\i}a de prevenci\'on?
 Si no lo hac\'{\i}a personalmente, ¿c\'omo se resolv\'{\i}a en la empresa?
 
@@ -51,74 +48,213 @@ Si no lo hac\'{\i}a personalmente, ¿c\'omo se resolv\'{\i}a en la empresa?
 En prevenci\'on el criterio central es la renovaci\'on de la p\'oliza, combinada con el riesgo asociado a la actividad de la empresa.
 Las actividades se clasifican entre m\'as y menos riesgosas; la cantidad de visitas anuales obligatorias por resoluci\'on no es la misma para todas.
 Adem\'as existe el relevamiento general de riesgos laborales, que puede completar el empleador y se hace una vez al a\~no al renovar el contrato, y el relevamiento de agentes de riesgo (tambi\'en anual; hay empresas no expuestas a agentes de riesgo).
-El calendario de visitas se determina por la actividad: por ejemplo, una industria petrolera ---con mayor riesgo--- exige visitas m\'as frecuentes que un colegio, donde el riesgo suele asociarse a temas edilicios u otros problemas no inherentes a una actividad tan peligrosa.
-Tambi\'en hay visitas gatilladas por la siniestralidad: si ocurre un siniestro que requiere investigaci\'on ---por ejemplo, un posible caso inculpable u otro tratamiento especial--- interviene el \'area de prevenci\'on en ese momento puntual.
+El calendario de visitas se determina por la actividad: por ejemplo, una industria petrolera (con mayor riesgo) exige visitas m\'as frecuentes que un colegio, donde el riesgo suele asociarse a temas edilicios u otros problemas no inherentes a una actividad tan peligrosa.
+Tambi\'en hay visitas gatilladas por la siniestralidad: si ocurre un siniestro que requiere investigaci\'on (por ejemplo, un posible caso inculpable u otro tratamiento especial) interviene el \'area de prevenci\'on en ese momento puntual.
 
 \item[\textbf{Entrevistador:}]
+Entiendo: entonces hay una mezcla de calendario normativo por actividad y gatillos reactivos por siniestro.
 ¿Con qu\'e herramienta o sistema interno se gestionaba esa priorizaci\'on y la agenda de visitas?
 
 \item[\textbf{Entrevistado:}]
 Hab\'{\i}a un sistema de desarrollo interno en lenguaje Centura.
 Mediante men\'us, el \'area de prevenci\'on ve\'{\i}a los contratos pr\'oximos a vencer y, con eso, sab\'{\i}a que deb\'{\i}a coordinar visitas a esos establecimientos.
-Cuando hab\'{\i}a un ROAM ---un siniestro grave que requiere visita--- el sistema tambi\'en alertaba qu\'e casos deb\'{\i}an atenderse, siempre que el hecho hubiera ocurrido en un establecimiento y no en la v\'{\i}a p\'ublica o en itinerancia.
+Cuando hab\'{\i}a un ROAM (un siniestro grave que requiere visita) el sistema tambi\'en alertaba qu\'e casos deb\'{\i}an atenderse, siempre que el hecho hubiera ocurrido en un establecimiento y no en la v\'{\i}a p\'ublica o en itinerancia.
 Por ese software se ve\'{\i}an tambi\'en los ex\'amenes peri\'odicos, que estaban en la \'orbita de prevenci\'on.
 No hab\'{\i}a notificaciones por correo electr\'onico: la prioridad la marcaban la renovaci\'on de la p\'oliza y el criterio humano sobre esa informaci\'on.
 
 \item[\textbf{Entrevistador:}]
+Bien, gracias por ese detalle del sistema: me aclara mucho c\'omo se operaba en la pr\'actica.
 ¿Podr\'{\i}a aclarar el rol de la p\'oliza en este circuito? ¿Qu\'e obliga y c\'omo se relaciona con las visitas de prevenci\'on?
 
 \item[\textbf{Entrevistado:}]
 Al firmar el contrato con la ART, el empleador se obliga a cumplir las normas de seguridad e higiene adecuadas para evitar accidentes en el establecimiento, seg\'un el tipo de empresa.
 Empresas de m\'as de doscientos empleados deben contar con servicio propio de seguridad e higiene; algunas m\'as chicas pero con actividades muy riesgosas tambi\'en lo requieren.
 Que la visita ``dependa'' de la p\'oliza se explica porque la p\'oliza obliga tanto a la ART como al empleador a cumplir esas normas.
-La visita certifica ese cumplimiento; si no se cumple, el preventor ---especialista en seguridad e higiene--- formula recomendaciones a partir de lo que detecta en el establecimiento.
+La visita certifica ese cumplimiento; si no se cumple, el preventor (especialista en seguridad e higiene) formula recomendaciones a partir de lo que detecta en el establecimiento.
 
 \item[\textbf{Entrevistador:}]
+Perfecto, queda claro el marco contractual.
 Cuando el preventor realiza la visita y emite recomendaciones, ¿c\'omo las recibe la empresa y c\'omo se hace el seguimiento de su cumplimiento?
 
 \item[\textbf{Entrevistado:}]
 Habitualmente hay una visita y, m\'as adelante, una revisita.
-El preventor genera recomendaciones ---casi siempre al menos una: por ejemplo, uso de casco en cierto sector o m\'as matafuegos en un \'area--- y elabora un informe que se entrega a la ART y al empleador.
-La ART puede incrementar la al\'{\i}cuota ---lo que se le cobra al empleador--- una vez al a\~no, en la renovaci\'on, si no se cumplen las recomendaciones.
+El preventor genera recomendaciones (casi siempre al menos una: por ejemplo, uso de casco en cierto sector o m\'as matafuegos en un \'area) y elabora un informe que se entrega a la ART y al empleador.
+La ART puede incrementar la al\'{\i}cuota (lo que se le cobra al empleador) una vez al a\~no, en la renovaci\'on, si no se cumplen las recomendaciones.
 Eso tambi\'en sirve como respaldo si ocurre un accidente: se puede acreditar que se brindaron recomendaciones y que no fueron aplicadas.
 Quien queda expuesta ante el regulador es la ART: si no realiza las visitas, puede recibir multa; si las realiza y igual ocurre un accidente, la ART paga el siniestro.
 La SRT no suele ir contra el empleador directamente: act\'ua sobre la ART.
 La ART asesora en seguridad e higiene, pero no puede obligar al empleador a ejecutar todas las recomendaciones; de ah\'{\i} la importancia de la al\'{\i}cuota y del registro documental.
 
 \item[\textbf{Entrevistador:}]
+S\'{\i}, es un punto clave: la ART asesora y documenta, pero el cumplimiento efectivo queda del lado del empleador.
 Si la ART dispusiera de un sistema capaz de alertar mayor probabilidad de accidente en un establecimiento, ¿qu\'e datos considera \'utiles para orientar mejores recomendaciones o para priorizar la visita?
 
 \item[\textbf{Entrevistado:}]
 La ART ya tiene el historial de accidentes por establecimiento y por empresa.
 Eso permite medir qu\'e es lo m\'as frecuente y anticipar recomendaciones a\'un antes de la visita.
-Por ejemplo, en cosecha de frutas ---como manzaneros--- suele haber pinchazos en los ojos con las ramas: si en un establecimiento ese patr\'on se repite m\'as que en otro, ya se puede insistir en protecci\'on visual.
+Por ejemplo, en cosecha de frutas (como manzaneros) suele haber pinchazos en los ojos con las ramas: si en un establecimiento ese patr\'on se repite m\'as que en otro, ya se puede insistir en protecci\'on visual.
 Son herramientas potentes: al llegar a la visita se van con recomendaciones m\'as fuertes, sin depender solo de lo que se observe en el momento.
 Tambi\'en importa la frecuencia de accidentaci\'on.
 Prevenci\'on no solo busca evitar accidentes: tambi\'en ayuda a prevenir fraudes; por ejemplo, patrones como ca\'{\i}das reiteradas en el \'ultimo escal\'on de una escalera, o accidentes concentrados los d\'{\i}as lunes que podr\'{\i}an corresponder a hechos del fin de semana declarados m\'as tarde.
 
 \item[\textbf{Entrevistador:}]
+Muy \'util ese ejemplo: refuerza justo la idea de llegar a la visita con historial y patrones, no solo con lo que se ve en el momento.
 ¿Qu\'e obst\'aculo del proceso actual eliminar\'{\i}a o simplificar\'{\i}a para mejorar la prevenci\'on de accidentes de trabajo?
 
 \item[\textbf{Entrevistado:}]
 Un problema frecuente es que la visita la tiene que realizar un preventor de la ART.
 Seg\'un la envergadura de la aseguradora, eso genera demoras: hay que visitar muchos establecimientos en un mes, coordinar con el empleador y depender de la agenda del preventor.
-A nivel administrativo, ser\'{\i}a deseable ---con los recaudos legales correspondientes--- que el empleador pudiera contratar un servicio de seguridad e higiene que realice la visita, la presente y alivie a la ART de esa carga operativa.
+A nivel administrativo, ser\'{\i}a deseable (con los recaudos legales correspondientes) que el empleador pudiera contratar un servicio de seguridad e higiene que realice la visita, la presente y alivie a la ART de esa carga operativa.
 Hay mucho componente normativo en el medio.
 
 \item[\textbf{Entrevistador:}]
+Entiendo: la capacidad del equipo y el marco normativo terminan condicionando bastante la operaci\'on.
 Para cerrar: sabiendo que el proyecto apunta a un sistema predictivo de priorizaci\'on de visitas, ¿hay algo adicional que considere relevante aportar?
 
 \item[\textbf{Entrevistado:}]
 En cualquier herramienta de predicci\'on de accidentes por establecimiento hay que cuidar mucho las notificaciones.
 Si se predice mayor riesgo y se refuerza una acci\'on, es cr\'{\i}tico definir a qui\'en se notifica.
 Avisar al empleador ciertos puntos d\'ebiles puede ``levantar la perdiz'': al enterarse de una vulnerabilidad, alguien podr\'{\i}a aprovecharla.
-La confidencialidad de ese dato ---o su divulgaci\'on controlada seg\'un el caso--- es de lo m\'as importante.
+La confidencialidad de ese dato (o su divulgaci\'on controlada seg\'un el caso) es de lo m\'as importante.
 
 \item[\textbf{Entrevistador:}]
-Muchas gracias por su tiempo y por la informaci\'on.
+Totalmente de acuerdo; lo tomo como un requisito de dise\~no del prototipo.
+Muchas gracias por su tiempo y por la informaci\'on: fue muy valiosa.
 
 \item[\textbf{Entrevistado:}]
 De nada.
+
+\end{description}
+
+\anexo{Transcripci\'on de entrevista: Diego Oviedo}\label{anexo:entrevista-diego-oviedo}
+
+\subsection*{Ficha t\'ecnica}
+
+\begin{description}[style=nextline, leftmargin=3.2cm, labelwidth=2.8cm]
+	\item[Fecha] 14 de agosto de 2026.
+	\item[Duraci\'on] Aproximadamente 23 minutos.
+	\item[Modalidad] Videollamada con grabaci\'on y transcripci\'on autom\'atica posterior.
+	\item[Entrevistador] Francisco Dante Mamone (autor del PFI).
+	\item[Entrevistado] Diego Oviedo, ex gerente de riesgos del trabajo y prevenci\'on en ART (ART); licenciado en higiene y seguridad.
+	\item[Tipo] Entrevista semiestructurada (gu\'{\i}a de preguntas con posibilidad de repreguntas).
+\end{description}
+
+\subsection*{Transcripci\'on}
+
+\begin{description}[style=nextline, leftmargin=0cm, labelsep=0.35cm]
+
+\item[\textbf{Entrevistador:}]
+Para establecer un marco de su experiencia: ¿cu\'al era su rol en la ART ART y cu\'ales eran sus principales responsabilidades?
+
+\item[\textbf{Entrevistado:}]
+Mi rol era gerente de riesgos del trabajo y prevenci\'on.
+Las responsabilidades inclu\'{\i}an la coordinaci\'on general de todas las \'areas del departamento de riesgos del trabajo: afiliaciones, prevenci\'on, siniestros, ex\'amenes m\'edicos, comisiones m\'edicas y lo contable; es decir, todas las \'areas que componen ese departamento.
+
+\item[\textbf{Entrevistador:}]
+Perfecto, gracias: justo el perfil gerencial vinculado a prevenci\'on.
+A nivel gerencial, ¿c\'omo med\'{\i}an o qu\'e indicadores usaban para evaluar la ``salud'' o el estado de riesgo de las empresas al hacer prevenci\'on?
+
+\item[\textbf{Entrevistado:}]
+Eso se mide, por un lado, por el cumplimiento de la normativa: el RGRL (relevamiento general de riesgos laborales).
+Es un formulario tipo \emph{multiple choice}.
+Se parte de la base de tres grupos (industria, obra y agro) y, en cada uno, se aplica la normativa de cumplimientos que deben tener los empleadores para evitar, disminuir o mitigar los riesgos del \'ambito laboral.
+Eso se completa al momento de la afiliaci\'on del contrato de ART o al declarar un establecimiento: se informa el establecimiento y se manda ese diagn\'ostico (la ``radiograf\'{\i}a'' de la situaci\'on de cumplimiento normativo que tiene hoy ese establecimiento.
+
+\item[\textbf{Entrevistador:}]
+Claro; cualquier detalle adicional del circuito ART que quiera sumar me ayuda, porque no manejo todo el flujo operativo.
+
+\item[\textbf{Entrevistado:}]
+Por un lado tenemos el RGRL, que cuida los espacios f\'{\i}sicos del ambiente laboral.
+Despu\'es tenemos el RAR )relevamiento de agentes de riesgo ( o NTE )n\'omina de trabajadores expuestos (, que mira el contacto entre un agente de riesgo que puede provocar un da\~no a la salud del trabajador: exposici\'on, riesgo y trabajador; ese es el tri\'angulo que se eval\'ua, incluyendo el tiempo de contacto.
+Con ese relevamiento se hacen los ex\'amenes m\'edicos peri\'odicos.
+Toda esa informaci\'on la tenemos dentro del sistema de gesti\'on (ML), tanto los RAR como los RGRL.
+
+\item[\textbf{Entrevistador:}]
+Perfecto, queda claro el par RGRL / RAR.
+Respecto del programa P.E.S.E.: ¿qu\'e es y c\'omo impacta en la prevenci\'on de las empresas?
+
+\item[\textbf{Entrevistado:}]
+El P.E.S.E.\ )Programa de Empleadores con Siniestralidad Elevada ( es para empresas con mucha siniestralidad.
+Hay un \'{\i}ndice de incidencia: cantidad de siniestros dividida por la cantidad de trabajadores, por mil.
+Es decir: cada mil trabajadores, cu\'antos accidentes tuve en el establecimiento.
+Ese \'{\i}ndice es el que la Superintendencia publica y usa: si lo super\'as, qued\'as dentro del programa.
+La Superintendencia va publicando el \'{\i}ndice de incidencia por actividad; es informaci\'on p\'ublica.
+
+\item[\textbf{Entrevistador:}]
+Entiendo: en el prototipo el ordenamiento combina m\'as variables, no solo la siniestralidad pasada, para priorizar establecimientos con mayor probabilidad relativa de accidente.
+
+\item[\textbf{Entrevistado:}]
+Eso que mostraste es, dentro de prevenci\'on, lo que podr\'{\i}amos llamar un mapa de riesgo: por ejemplo, de diez establecimientos, en tres ten\'es siniestralidad, y dentro de esa siniestralidad se profundiza.
+Un punto claro para este trabajo: hay que excluir los accidentes \emph{in itinere} y los de v\'{\i}a p\'ublica cuando corresponde.
+La diferencia es importante: en v\'{\i}a p\'ublica el trabajador est\'a trabajando y a veces se puede analizar alguna medida preventiva; en \emph{in itinere} no tengo responsabilidad ni puedo hacer medidas preventivas porque es una cuesti\'on social.
+Se hacen algunas capacitaciones m\'{\i}nimas )por ejemplo, manejo a la defensiva en moto (, pero no es responsabilidad ni cobertura preventiva plena de la ART en ese caso.
+
+\item[\textbf{Entrevistador:}]
+Claro: un siniestro \emph{in itinere} mueve el \'{\i}ndice pero es muy dif\'{\i}cil de prevenir desde el establecimiento.
+Hoy, a nivel industria, ¿considera que las ART operan de forma m\'as reactiva )actuar despu\'es del accidente ( o hay enfoques m\'as predictivos como el de esta tesis?
+
+\item[\textbf{Entrevistado:}]
+La idea es tratar de que los siniestros no ocurran; pero lamentablemente el sistema te lleva y apunta m\'as a la atenci\'on del siniestro.
+Es muy poca la gente que invierte en prevenci\'on: hay muchos datos que hay que cargar, ir analizando e ir viendo.
+En ese escenario, lo que est\'as armando est\'a bueno: ser\'{\i}a un mapa de riesgo que me diga en qu\'e establecimiento mirar.
+Si adem\'as en la n\'omina est\'a el sector donde trabaja el accidentado, es mucho mejor: me vas guiando dentro del establecimiento cu\'al es el sector o \'area con mayor cantidad de accidentes.
+Por ejemplo: dentro del frigor\'{\i}fico, en el sector de poste est\'a la mayor cantidad de accidentes; despu\'es el agente material asociado y el agente causante.
+Si de diez accidentes siete fueron en el sector de poste y el agente material asociado es una rampa, como prevenci\'on ya s\'e que tengo que ir a una medida correctiva en esa rampa )goma antideslizante, cambiar la modalidad, etc.
+
+\item[\textbf{Entrevistador:}]
+Muy \'util ese ejemplo: priorizar establecimiento, sector y agente material para orientar la medida.
+En alg\'un momento me hab\'{\i}a comentado el uso de Excel o tablas din\'amicas para organizar prioridades: ¿era as\'{\i}?
+
+\item[\textbf{Entrevistado:}]
+Lo que se organiza por ah\'{\i} es el plan de visitas, con las recomendaciones de la normativa seg\'un el incumplimiento.
+Yo usaba mucho el RGRL: ese ser\'{\i}a la ``biblia'' para qu\'e prevenci\'on tengo que hacer.
+Eso te lo quer\'{\i}a pasar; lo busco y te lo env\'{\i}o despu\'es.
+
+\item[\textbf{Entrevistador:}]
+Gracias; lo tengo en cuenta.
+Para explicarle al preventor por qu\'e una visita es prioritaria (sumando historial de accidentes y visitas previas), ¿qu\'e le mostrar\'{\i}a, adem\'as del RGRL?
+
+\item[\textbf{Entrevistado:}]
+En cada visita se deja una recomendaci\'on.
+Como preventor me gustar\'{\i}a ver el historial de esas recomendaciones: si las van cumpliendo o no.
+Otro dato para ``ponerle el mo\~no'' es el RGRL: ah\'{\i} vas a tener incumplimientos.
+Del \emph{check} del RGRL (por ejemplo, ``posee servicio de higiene y seguridad'': s\'{\i} / no / no aplica), si marc\'as incumplimiento, despu\'es lo ten\'es que controlar hasta que el empleador lo cumpla.
+Estar\'{\i}a bueno mostrar en ese momento cu\'ales son los incumplimientos del establecimiento y cu\'al es la fecha de regularizaci\'on: cu\'ando se corrigi\'o.
+Porque puedo ver el siniestro de la rampa, pero si el mes pasado ya la cambiaron e informaron a la ART, la ART pone ese punto como cumplido: entonces lo descarto y hago hincapi\'e en lo que sigue incumplido.
+
+\item[\textbf{Entrevistador:}]
+Perfecto: historial de recomendaciones + incumplimientos RGRL con fecha de regularizaci\'on.
+Si el preventor recomienda y en varias visitas el establecimiento no aplica nada, ¿la ART queda cubierta documentalmente y el problema queda del lado del empleador?
+
+\item[\textbf{Entrevistado:}]
+La ART tiene dos cuestiones: deja recomendaciones y hace denuncias.
+Te digo ``arregl\'a esa rampa'' porque se van a seguir accidentando; te doy plazo (por ejemplo, hasta el primero de noviembre); si voy, verifico y no est\'a arreglado, te denuncio ante la Superintendencia.
+Al margen: ese es un problema del sistema.
+Cuando te afili\'as, te pido el RGRL; de ese RGRL surgen denuncias: tengo que denunciarte ante la Superintendencia por esos incumplimientos.
+El problema es que tengo que denunciar a mi cliente: apenas apreto denunciar, eso va a Secretar\'{\i}a o Ministerio de Trabajo, caen inspectores y te hacen una multa.
+Por eso, generalmente, el sistema no denuncia todo.
+Quien crea la denuncia es la ART; el preventor verifica si cumple o no cumple.
+Estar\'{\i}a bueno agregar las denuncias de incumplimiento al sistema: hay un punto ``denuncias'' donde figura si cumpli\'o y en qu\'e fecha; eso estar\'{\i}a b\'arbaro.
+
+\item[\textbf{Entrevistador:}]
+Clar\'{\i}simo; lo puedo contemplar en el circuito del prototipo.
+Si tiene algo m\'as \'util para agregar, lo escucho; si no, cerramos ac\'a.
+
+\item[\textbf{Entrevistado:}]
+Zona del cuerpo tambi\'en est\'a bien contemplarla.
+Estar\'{\i}a bueno ver, de los accidentes, si es el mismo trabajador o no: pod\'es tener diez siniestros y cinco del mismo trabajador.
+Sin poner CUIL ni nombre y apellido, igual es un dato \'util.
+Tambi\'en est\'a bueno tratar las enfermedades profesionales por otro lado: los accidentes se asocian al RGRL; las enfermedades profesionales al RAR.
+Decir: este establecimiento tuvo tantas enfermedades profesionales; cu\'al es el agente de riesgo (en la denuncia de enfermedad profesional te ponen el agente); por ejemplo, expuesto al c\'odigo de ruido; cu\'antas denuncias hubo; y en el RAR, ¿sigue expuesto hoy o no?
+As\'{\i} queda m\'as completo.
+
+\item[\textbf{Entrevistador:}]
+Totalmente; en el prototipo ya uso edades y categor\'{\i}as de lesi\'on, y la idea de concentraci\'on en el mismo trabajador (anonimizada) suma mucho.
+Muchas gracias por el tiempo y por la informaci\'on: fue excelente.
+
+\item[\textbf{Entrevistado:}]
+Bueno, avisame cualquier cosa.
+A m\'{\i} tambi\'en me gusta el tema: soy licenciado en higiene y seguridad, adem\'as de haber trabajado en ART; es un tema que me gusta, y la idea es alg\'un d\'{\i}a laburar de lo que me recib\'{\i}.
 
 \end{description}
 
