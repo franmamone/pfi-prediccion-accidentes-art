@@ -69,18 +69,12 @@ export function setFocusMode(value: boolean) {
 }
 
 export function getHorizontePref(): HorizontePref {
-  try {
-    const v = localStorage.getItem(KEYS.horizonte);
-    if (v === "1m" || v === "3m") return v;
-  } catch {
-    /* ignore */
-  }
-  return "1m";
+  return "3m";
 }
 
-export function setHorizontePref(value: HorizontePref) {
+export function setHorizontePref(_value: HorizontePref) {
   try {
-    localStorage.setItem(KEYS.horizonte, value);
+    localStorage.setItem(KEYS.horizonte, "3m");
   } catch {
     /* ignore */
   }

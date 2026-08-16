@@ -148,11 +148,7 @@ def draw_priorizacion() -> Image.Image:
     img, d = shell("prio")
     x0, y0, x1, y1 = content_box()
     text(d, (x0, y0), "Priorización", F20)
-    # horizon toggle
-    rr(d, (x1 - 170, y0, x1 - 95, y0 + 28), fill=PLACEHOLDER, outline=STROKE, radius=6)
-    text(d, (x1 - 155, y0 + 6), "Mes", F11, TEXT_MUTED)
-    rr(d, (x1 - 90, y0, x1, y0 + 28), fill=ACCENT, outline=ACCENT, radius=6)
-    text(d, (x1 - 78, y0 + 6), "Trimestre", F11, (255, 255, 255))
+    text(d, (x0, y0 + 26), "Próximo trimestre", F11, TEXT_MUTED)
 
     # filters
     fy = y0 + 48
@@ -316,10 +312,7 @@ def draw_estadisticas() -> Image.Image:
     img, d = shell("stats")
     x0, y0, x1, y1 = content_box()
     text(d, (x0, y0), "Estadísticas", F20)
-    rr(d, (x1 - 170, y0, x1 - 95, y0 + 28), fill=PLACEHOLDER, outline=STROKE, radius=6)
-    text(d, (x1 - 155, y0 + 6), "Mes", F11, TEXT_MUTED)
-    rr(d, (x1 - 90, y0, x1, y0 + 28), fill=ACCENT, outline=ACCENT, radius=6)
-    text(d, (x1 - 78, y0 + 6), "Trimestre", F11, (255, 255, 255))
+    text(d, (x0, y0 + 26), "Cobertura trimestral", F11, TEXT_MUTED)
 
     tabs = ["Cobertura", "SHAP", "Composición", "Sectores"]
     ty = y0 + 48

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { fetchRiesgo, shortId, type Horizonte, type RankingItem } from "../api";
+import { fetchRiesgo, HORIZONTE_OPERATIVO, shortId, type RankingItem } from "../api";
 import { ciiuDivisionLabel } from "../ciiu";
 import {
   help,
@@ -19,7 +19,7 @@ import {
   estadoOperativoLabel,
   riesgoLabel,
 } from "../labels";
-import { consumeRiesgoScroll, getHorizontePref, saveRiesgoScroll, setHorizontePref } from "../prefs";
+import { consumeRiesgoScroll, saveRiesgoScroll } from "../prefs";
 import { useToast } from "../toast";
 
 function Th({ id, children }: { id: string; children: ReactNode }) {
@@ -29,7 +29,7 @@ function Th({ id, children }: { id: string; children: ReactNode }) {
 export function RiesgoPage() {
   const toast = useToast();
   const [params, setParams] = useSearchParams();
-  const horizonte = (params.get("horizonte") as Horizonte) || getHorizontePref();
+  const horizonte = HORIZONTE_OPERATIVO;
   const banda = params.get("banda") || "";
   const sector = params.get("sector") || "";
   const q = params.get("q") || "";
@@ -43,18 +43,6 @@ export function RiesgoPage() {
   const [reloadKey, setReloadKey] = useState(0);
   const [page, setPage] = useState(1);
   const pageSize = 50;
-
-  useEffect(() => {
-    if (!params.get("horizonte")) {
-      const merged = new URLSearchParams(params);
-      merged.set("horizonte", getHorizontePref());
-      setParams(merged, { replace: true });
-    }
-  }, [params, setParams]);
-
-  useEffect(() => {
-    setHorizontePref(horizonte);
-  }, [horizonte]);
 
   useEffect(() => {
     const y = consumeRiesgoScroll();
@@ -111,7 +99,7 @@ export function RiesgoPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [horizonte, banda, sector, q, obligacionPrs, programada, estadoOperativo, reloadKey]);
+  }, [banda, sector, q, obligacionPrs, programada, estadoOperativo, reloadKey]);
 
   const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -132,7 +120,7 @@ export function RiesgoPage() {
   }
 
   function clearFilters() {
-    setParams(new URLSearchParams({ horizonte }));
+    setParams(new URLSearchParams());
   }
 
   function rememberScroll() {
@@ -144,14 +132,7 @@ export function RiesgoPage() {
       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
         <div>
           <h1 className="page-title">Priorización</h1>
-        </div>
-        <div className="horizon-toggle">
-          <button className={horizonte === "1m" ? "active" : ""} onClick={() => patch({ horizonte: "1m" })}>
-            Mes
-          </button>
-          <button className={horizonte === "3m" ? "active" : ""} onClick={() => patch({ horizonte: "3m" })}>
-            Trimestre
-          </button>
+          <p className="page-sub">Próximo trimestre</p>
         </div>
       </div>
 
@@ -245,7 +226,7 @@ export function RiesgoPage() {
         <div className="panel">
           <EmptyState
             title="Ningún establecimiento con estos filtros"
-            detail="Probá limpiar filtros o cambiar el horizonte Mes / Trimestre."
+            detail="Probá limpiar los filtros para volver a ver el ranking del trimestre."
             action={
               <button type="button" className="ghost-btn" onClick={clearFilters}>
                 Limpiar filtros
@@ -277,7 +258,7 @@ export function RiesgoPage() {
               const estado = item.estadoOperativo ?? "pendiente";
               const estadoLink =
                 estado === "pendiente"
-                  ? `/establecimientos/${item.idEstablecimiento}?horizonte=${horizonte}`
+                  ? `/establecimientos/${item.idEstablecimiento}`
                   : estado === "realizada"
                     ? "/agenda?estado=realizada"
                     : "/agenda?estado=programada";
@@ -366,7 +347,7 @@ export function RiesgoPage() {
                 <td>
                   <Link
                     className="icon-btn"
-                    to={`/establecimientos/${item.idEstablecimiento}?horizonte=${horizonte}`}
+                    to={`/establecimientos/${item.idEstablecimiento}`}
                     title="Ver detalle: explicación del puntaje, acierto histórico y ficha operativa"
                     aria-label="Ver detalle"
                     onClick={rememberScroll}

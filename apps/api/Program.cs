@@ -1712,31 +1712,19 @@ static List<object> BuildExplicacion(
 // Tabla vigente del holdout 2025 (mean_precision_at_k_per_month) por tramo top-K.
 static (double Pct, int TopK)? AciertoHistoricoLookup(string horizonte, int ranking)
 {
-    var tabla = horizonte == "3m"
-        ? new (int K, double Precision)[]
-        {
-            (50, 0.935),
-            (100, 0.881),
-            (200, 0.807),
-            (225, 0.790),
-            (300, 0.735),
-            (400, 0.681),
-            (500, 0.637),
-            (675, 0.575),
-            (1000, 0.495),
-        }
-        : new (int K, double Precision)[]
-        {
-            (50, 0.764),
-            (100, 0.671),
-            (200, 0.540),
-            (225, 0.515),
-            (300, 0.453),
-            (400, 0.394),
-            (500, 0.354),
-            (675, 0.302),
-            (1000, 0.243),
-        };
+    _ = horizonte;
+    var tabla = new (int K, double Precision)[]
+    {
+        (50, 0.935),
+        (100, 0.881),
+        (200, 0.807),
+        (225, 0.790),
+        (300, 0.735),
+        (400, 0.681),
+        (500, 0.637),
+        (675, 0.575),
+        (1000, 0.495),
+    };
 
     var fila = tabla.FirstOrDefault(t => ranking <= t.K);
     if (fila.K == 0)
@@ -1775,9 +1763,9 @@ static object BuildAciertoHistorico(string horizonte, int ranking)
         referenciaTopK = topK,
         etiqueta = "Acierto histórico",
         detalle =
-            $"En la evaluación con datos de 2025 (horizonte {(horizonte == "3m" ? "trimestral" : "mensual")}), " +
+            $"En la evaluación con datos de 2025 (horizonte trimestral), " +
             $"el {pct:0.#}% de los establecimientos que el modelo ubicó en el mismo tramo de prioridad que este " +
-            $"(primeros {topK} del ranking) registró al menos un accidente en el horizonte. " +
+            $"(primeros {topK} del ranking) registró al menos un accidente en el trimestre siguiente. " +
             $"Escala de riesgo por acierto: Crítico ≥80%, Alto ≥60%, Medio ≥30%, Bajo <30% → este caso queda en «{banda}». " +
             "Es una referencia grupal del modelo para ese tramo, no una probabilidad individual de este establecimiento.",
         holdoutAnio = 2025,
@@ -1805,8 +1793,7 @@ static string BuildDossierPrompt(string dossierJson, string horizonte, string? b
     // Los datos van PRIMERO y las instrucciones AL FINAL: los modelos siguen
     // mejor la última instrucción y así evitamos que "razonen en voz alta".
     sb.AppendLine("=== DATOS HISTÓRICOS ANONIMIZADOS DE UN ESTABLECIMIENTO ===");
-    var horizonteTxt = horizonte == "3m" ? "trimestral" : "mensual";
-    sb.Append("Contexto del modelo predictivo: horizonte ").Append(horizonteTxt).Append('.');
+    sb.Append("Contexto del modelo predictivo: horizonte trimestral (próximos tres meses).");
     if (!string.IsNullOrWhiteSpace(banda)) sb.Append(" Banda de riesgo: ").Append(banda).Append('.');
     if (ranking is not null) sb.Append(" Posición en la priorización: #").Append(ranking).Append('.');
     sb.AppendLine();
@@ -2024,8 +2011,11 @@ static double Median(List<double> values)
         : Math.Round(values[mid], 4);
 }
 
-static string NormalizeHorizonte(string? horizonte) =>
-    horizonte is "3m" or "1m" ? horizonte : "1m";
+static string NormalizeHorizonte(string? horizonte)
+{
+    _ = horizonte;
+    return "3m";
+}
 
 static async Task<RankingSnapshot?> GetVigenteAsync(AppDbContext db, string horizonte) =>
     await db.RankingSnapshots
@@ -2174,10 +2164,10 @@ static async Task<object> BuildAnaliticaAsync(AppDbContext db, RankingSnapshot s
             serieTop50 = precisiones.Where(p => p.topK == 50).ToList(),
             serieTop225 = precisiones.Where(p => p.topK == 225).ToList(),
             serieTop1000 = precisiones.Where(p => p.topK == 1000).ToList(),
-            holdoutReferenciaTop225Pct = snapshot.Horizonte == "3m" ? 79.0 : 51.5,
-            holdoutReferenciaTop1000Pct = snapshot.Horizonte == "3m" ? 49.5 : 24.3,
+            holdoutReferenciaTop225Pct = 79.0,
+            holdoutReferenciaTop1000Pct = 49.5,
             nota =
-                "Precisión observada del período de decisión T con outcome en T+1 (1m) o T+1..T+3 (3m). " +
+                "Precisión observada del período de decisión T con accidentación en el trimestre siguiente (T+1 a T+3). " +
                 "Solo madura si la fuente está completa. Los puntos holdout_metrics son evaluación histórica sin cohorte operativa.",
         },
         metodologia = new

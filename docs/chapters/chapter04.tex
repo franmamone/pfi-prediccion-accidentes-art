@@ -2,20 +2,23 @@
 
 \begin{contenidoNuevo}
 
-Este cap\'itulo documenta las decisiones tecnol\'ogicas, la arquitectura de datos, los diagramas de dise\~no y el avance funcional demostrado en el hito del 50\,\%. El texto nuevo se presenta en azul.
+Este cap\'itulo documenta las decisiones de implementaci\'on del prototipo: metodolog\'{\i}a de desarrollo, stack tecnol\'ogico, flujo de informaci\'on, arquitectura de componentes, modelo de clases, modelo de datos y arquitectura de despliegue.
+Cierra con la evidencia de avance funcional (prototipo local operativo y m\'etricas de referencia del modelo) y con las limitaciones vigentes del trabajo.
 
 \section{Metodolog\'ia}
 
 El desarrollo sigui\'o un enfoque iterativo:
 \begin{enumerate}
 	\item ingenier\'ia de datos sobre la BD core de la ART (vistas y panel establecimiento$\times$mes);
-	\item entrenamiento y evaluaci\'on de modelos XGBoost (horizontes 1m y 3m);
+	\item entrenamiento y evaluaci\'on de un modelo XGBoost con horizonte trimestral (accidentaci\'on en los tres meses siguientes);
 	\item exportaci\'on de ranking explicable (SHAP) e importaci\'on a BD operativa;
 	\item construcci\'on de API REST + frontend React para uso por prevencionistas;
 	\item anal\'itica hist\'orica (snapshots, cobertura y precisi\'on observada).
 \end{enumerate}
 
 La validaci\'on del modelo usa split temporal: entrenamiento 2022--2023, calibraci\'on 2024 y holdout 2025.
+El horizonte operativo es el \emph{pr\'oximo trimestre}: predice si el establecimiento registrar\'a al menos un accidente en los tres meses siguientes al per\'{\i}odo de decisi\'on.
+Esa ventana se alinea a la planificaci\'on de visitas relevada en las entrevistas (calendario normativo, RGRL y capacidad limitada del preventor) y evita un doble ranking mensual de alcance demasiado acotado.
 
 \section{Stack tecnol\'ogico y justificaci\'on}
 
@@ -113,16 +116,16 @@ Al momento del hito 50\,\% se encuentra operativo un prototipo local con las pan
 
 \begin{table}[htbp]
 	\centering
-	\caption{M\'etricas de referencia del modelo en holdout 2025.}
+	\caption{M\'etricas de referencia del modelo trimestral en holdout 2025.}
 	\label{tab:metricas-holdout}
-	\begin{tabular}{@{}lcc@{}}
+	\begin{tabular}{@{}lc@{}}
 		\hline
-		\textbf{M\'etrica} & \textbf{1m} & \textbf{3m} \\
+		\textbf{M\'etrica} & \textbf{Valor} \\
 		\hline
-		PR-AUC & 0,366 & 0,515 \\
-		Precision @ top-50 / mes & 76,4\,\% & 93,5\,\% \\
-		Precision @ top-225 / mes & 51,5\,\% & 79,0\,\% \\
-		Visitas reales @ mismo volumen & 10,3\,\% & 17,8\,\% \\
+		PR-AUC & 0,515 \\
+		Precision @ top-50 & 93,5\,\% \\
+		Precision @ top-225 & 79,0\,\% \\
+		Visitas reales @ mismo volumen & 17,8\,\% \\
 		\hline
 	\end{tabular}
 \end{table}

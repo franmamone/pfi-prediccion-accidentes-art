@@ -30,7 +30,7 @@ public class RankingSnapshot
 {
     public int Id { get; set; }
     [MaxLength(7)] public string Periodo { get; set; } = "";
-    [MaxLength(2)] public string Horizonte { get; set; } = "1m";
+    [MaxLength(2)] public string Horizonte { get; set; } = "3m";
     public DateTime GeneradoEn { get; set; }
     [MaxLength(400)] public string? ArchivoOrigen { get; set; }
     public int Filas { get; set; }
@@ -120,7 +120,7 @@ public class RankingItemOutcome
     public RankingItem? RankingItem { get; set; }
     public int SnapshotId { get; set; }
     [MaxLength(7)] public string PeriodoDecision { get; set; } = "";
-    [MaxLength(2)] public string Horizonte { get; set; } = "1m";
+    [MaxLength(2)] public string Horizonte { get; set; } = "3m";
     [MaxLength(7)] public string VentanaInicio { get; set; } = "";
     [MaxLength(7)] public string VentanaFin { get; set; } = "";
     [MaxLength(20)] public string Estado { get; set; } = "pendiente";
@@ -182,7 +182,7 @@ public class AgendaItem
     public Usuario? Usuario { get; set; }
     [MaxLength(64)] public string IdEstablecimiento { get; set; } = "";
     [MaxLength(7)] public string Periodo { get; set; } = "";
-    [MaxLength(2)] public string Horizonte { get; set; } = "1m";
+    [MaxLength(2)] public string Horizonte { get; set; } = "3m";
     public DateOnly FechaPlanificada { get; set; }
     [MaxLength(40)] public string MotivoVisita { get; set; } = "predictivo";
     [MaxLength(30)] public string Estado { get; set; } = "programada";
@@ -243,7 +243,7 @@ public class ResumenIaEstablecimiento
 {
     public int Id { get; set; }
     [MaxLength(64)] public string IdEstablecimiento { get; set; } = "";
-    [MaxLength(2)] public string Horizonte { get; set; } = "1m";
+    [MaxLength(2)] public string Horizonte { get; set; } = "3m";
     [MaxLength(80)] public string Modelo { get; set; } = "";
     [MaxLength(64)] public string? PromptHash { get; set; }
     public string Resumen { get; set; } = "";

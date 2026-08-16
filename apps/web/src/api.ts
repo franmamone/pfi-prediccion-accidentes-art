@@ -1,4 +1,6 @@
 export type Horizonte = "1m" | "3m";
+export const HORIZONTE_OPERATIVO = "3m" as const;
+
 
 export type User = {
   id: number;

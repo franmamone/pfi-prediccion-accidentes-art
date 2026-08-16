@@ -8,15 +8,15 @@ export const RIESGO_ACIERTO_MEDIO = 30;
 
 export const COLUMN_HELP: Record<string, string> = {
   ranking:
-    "Posición en la lista de prioridad del período vigente. #1 = máxima prioridad de visita para el horizonte elegido (mensual o trimestral).",
+    "Posición en la lista de prioridad del próximo trimestre. #1 = máxima prioridad de visita para ese horizonte.",
   establecimiento:
     "Identificador anonimizado del establecimiento (hash). Se muestra abreviado en la grilla; el valor completo está en el detalle.",
   score:
     "Puntaje del modelo (0–1): prioriza a quién visitar primero. No es una probabilidad calibrada de accidente. Más alto = más prioritario.",
   efectividad:
-    "Efectividad histórica (holdout 2025): entre los establecimientos que el modelo ubicó en el mismo tramo del ranking (top 50/100/200/300/500/675/1000), qué porcentaje registró al menos un accidente en el horizonte. Es una referencia grupal por tramo, no una probabilidad individual del establecimiento.",
+    "Efectividad histórica (holdout 2025): entre los establecimientos que el modelo ubicó en el mismo tramo del ranking (top 50/100/200/300/500/675/1000), qué porcentaje registró al menos un accidente en el trimestre siguiente. Es una referencia grupal por tramo, no una probabilidad individual del establecimiento.",
   banda:
-    "Nivel de riesgo según el acierto histórico (precision@K) del tramo del ranking, medido en holdout 2025: Crítico ≥80%, Alto ≥60%, Medio ≥30% y Bajo <30% de acierto. En el horizonte mensual el mejor tramo ronda 76%, por lo que puede no haber Crítico; en el trimestral sí (≥80%).",
+    "Nivel de riesgo según el acierto histórico (precision@K) del tramo del ranking, medido en holdout 2025 sobre el horizonte trimestral: Crítico ≥80%, Alto ≥60%, Medio ≥30% y Bajo <30% de acierto.",
   motivo:
     "Por qué entra en la lista: Predictivo = solo el modelo ML; Predictivo + PRS = modelo y además obligación de Plan de Reducción de Siniestralidad; PRS = regla regulatoria.",
   ciiu:

@@ -71,9 +71,9 @@ En el servidor: `dotnet PfiPrevencion.Api.dll` sirve **UI + API** en el mismo pr
 |--------|------|------|-------------|
 | GET | `/api/health` | No | Ping + conteo de snapshots |
 | POST | `/api/auth/login` | No | `{ "email", "password" }` → JWT |
-| GET | `/api/resumen?horizonte=1m\|3m` | Sí | KPIs del ranking vigente |
-| GET | `/api/riesgo?horizonte=&banda=&sector=&q=&top=` | Sí | Lista de priorización |
-| GET | `/api/establecimientos/{id}?horizonte=` | Sí | Ficha en ranking vigente |
+| GET | `/api/resumen` | Sí | KPIs del ranking trimestral vigente |
+| GET | `/api/riesgo?banda=&sector=&q=&top=` | Sí | Lista de priorización (horizonte trimestral) |
+| GET | `/api/establecimientos/{id}` | Sí | Ficha en el ranking trimestral vigente |
 
 ## Connection string
 

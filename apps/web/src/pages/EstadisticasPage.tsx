@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { fetchEstadisticas, type Estadisticas } from "../api";
+import { fetchEstadisticas, HORIZONTE_OPERATIVO, type Estadisticas } from "../api";
 import { BarChart, DivergingBarChart, DonutChart, TimeSeriesChart } from "../charts";
 import { ciiuDivisionLabel } from "../ciiu";
 import { SkeletonPanel } from "../components/UiKit";
-import { useHorizonte } from "../hooks/useHorizonte";
 import { riesgoLabel } from "../labels";
 import {
   getEstadisticasTab,
@@ -26,7 +25,7 @@ const TABS: { key: EstadisticasSectionKey; label: string; count: number }[] = [
 ];
 
 export function EstadisticasPage() {
-  const [horizonte, setHorizonte] = useHorizonte();
+  const horizonte = HORIZONTE_OPERATIVO;
   const [data, setData] = useState<Estadisticas | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -61,18 +60,9 @@ export function EstadisticasPage() {
 
   return (
     <>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-        <div>
-          <h1 className="page-title">Estadísticas</h1>
-        </div>
-        <div className="horizon-toggle">
-          <button className={horizonte === "1m" ? "active" : ""} onClick={() => setHorizonte("1m")}>
-            Mes
-          </button>
-          <button className={horizonte === "3m" ? "active" : ""} onClick={() => setHorizonte("3m")}>
-            Trimestre
-          </button>
-        </div>
+      <div>
+        <h1 className="page-title">Estadísticas</h1>
+        <p className="page-sub">Cobertura y desempeño del ranking trimestral</p>
       </div>
 
       {error && <div className="error">{error}</div>}
@@ -103,8 +93,8 @@ export function EstadisticasPage() {
           {tab === "operativa" && (
             <div className="charts-grid">
               <TimeSeriesChart
-                title="Cobertura operativa top-1000"
-                subtitle="Porcentaje cubierto de la lista completa mostrada (top-1000) desde su activación"
+                title="Cobertura operativa del trimestre (top-1000)"
+                subtitle="Porcentaje cubierto de la lista trimestral (top-1000) desde su activación"
                 series={(a?.coberturaCohorte.serieTop1000 ?? []).map((p) => ({
                   clave: p.activadoEn
                     ? new Date(p.activadoEn).toLocaleDateString("es-AR", { month: "short", year: "2-digit" })

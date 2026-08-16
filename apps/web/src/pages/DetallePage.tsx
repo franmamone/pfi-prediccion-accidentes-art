@@ -1,14 +1,14 @@
 import { useEffect, useState, type ReactElement } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import {
   fetchAuditoriaAgenda,
   fetchDossier,
   fetchEstablecimiento,
   generarResumenIa,
+  HORIZONTE_OPERATIVO,
   type AgendaEvento,
   type DetalleEstablecimiento,
   type DossierEstablecimiento,
-  type Horizonte,
   type ResumenIa,
 } from "../api";
 import { useAuth } from "../auth";
@@ -34,8 +34,7 @@ export function DetallePage() {
   const puedeRegenerar = user?.rol === "Admin" || user?.rol === "Coordinador";
   const esPreventor = user?.rol === "Prevencionista";
   const { id = "" } = useParams();
-  const [params] = useSearchParams();
-  const horizonte = (params.get("horizonte") as Horizonte) || "1m";
+  const horizonte = HORIZONTE_OPERATIVO;
   const [data, setData] = useState<DetalleEstablecimiento | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -148,7 +147,7 @@ export function DetallePage() {
     <>
       <div>
         <Link
-          to={`/riesgo?horizonte=${horizonte}`}
+          to="/riesgo"
           className="icon-btn"
           title="Volver a priorización"
           aria-label="Volver a priorización"
@@ -216,7 +215,7 @@ export function DetallePage() {
                 </span>
               )}
               <span className="muted">
-                período {data.periodo} · horizonte {data.horizonte}
+                período {data.periodo} · trimestre próximo
               </span>
               {data.agendaActiva ? (
                 <Link className="badge motivo-prs" to="/agenda" title="Ver en Agenda">

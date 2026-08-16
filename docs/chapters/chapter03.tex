@@ -2,15 +2,16 @@
 
 \begin{contenidoNuevo}
 
-El presente cap\'itulo formaliza el an\'alisis funcional del prototipo construido para el hito del 50\,\%. Se documentan actores, historias de usuario, requerimientos funcionales y no funcionales, mockups de interfaz, avances de \emph{user research} y el an\'alisis de competencias de mercado. El contenido se marca en azul para distinguir las incorporaciones respecto de la entrega del 25\,\%.
+Este cap\'itulo describe el sistema propuesto desde la perspectiva de sus usuarios y de su dise\~no funcional.
+Se identifican los actores, se formalizan las historias de usuario y los requerimientos (funcionales y no funcionales) y se documenta la interfaz mediante mockups esquem\'aticos y el diagrama de casos de uso.
+Tambi\'en se incorporan los resultados de la investigaci\'on emp\'{\i}rica con usuarios (encuesta y entrevistas) y un an\'alisis de competencias de mercado (FODA, fuerzas de Porter y Triple P), con el fin de articular el prototipo con las necesidades reales del \'area de prevenci\'on en las ART.
 
 \section{Actores del sistema}
 
 \begin{itemize}
-	\item \textbf{Prevencionista:} consulta el riesgo de su zona, arma agenda y registra visitas.
-	\item \textbf{Coordinador:} supervisa cobertura, indicadores y rebalanceo entre zonas.
-	\item \textbf{Analista:} consulta m\'etricas del modelo y factores agregados (SHAP).
-	\item \textbf{Administrador:} gestiona usuarios, roles y configuraci\'on b\'asica.
+	\item \textbf{Prevencionista:} consulta el ranking y el detalle de establecimientos, gestiona su agenda de visitas y accede a estad\'isticas para contextualizar su trabajo en campo.
+	\item \textbf{Coordinador:} supervisa cobertura y prioridades entre zonas, exporta listados, consulta estad\'isticas (incluido SHAP agregado) y rebalancea el plan de visitas.
+	\item \textbf{Administrador:} gestiona usuarios y roles, y accede al mismo tablero de estad\'isticas y a las funciones operativas.
 \end{itemize}
 
 \section{Historias de usuario}
@@ -18,13 +19,13 @@ El presente cap\'itulo formaliza el an\'alisis funcional del prototipo construid
 \begin{enumerate}
 	\item \textbf{HU-01.} Como prevencionista, quiero autenticarme de forma segura para acceder solo a la informaci\'on de mi rol.
 	\item \textbf{HU-02.} Como prevencionista, quiero ver un resumen operativo del d\'ia para saber qu\'e establecimientos cr\'iticos a\'un no tienen visita programada.
-	\item \textbf{HU-03.} Como prevencionista, quiero priorizar establecimientos por horizonte mensual o trimestral para alinear urgencia y planificaci\'on.
+	\item \textbf{HU-03.} Como prevencionista, quiero priorizar establecimientos para el pr\'oximo trimestre para planificar visitas con un horizonte operativo \'util.
 	\item \textbf{HU-04.} Como prevencionista, quiero abrir el detalle de un establecimiento y entender por qu\'e est\'a priorizado, con explicaci\'on en lenguaje claro y factores SHAP.
 	\item \textbf{HU-05.} Como prevencionista, quiero programar una visita desde la lista de riesgo o desde el detalle para convertir la predicci\'on en acci\'on.
 	\item \textbf{HU-06.} Como prevencionista, quiero gestionar mi agenda (programadas, realizadas y canceladas) para cerrar el ciclo operativo.
-	\item \textbf{HU-07.} Como coordinador, quiero ver estad\'isticas de cobertura y precisi\'on observada para evaluar el uso real del ranking.
+	\item \textbf{HU-07.} Como coordinador, quiero ver estad\'isticas de cobertura, precisi\'on observada y factores SHAP agregados para evaluar el uso real del ranking.
 	\item \textbf{HU-08.} Como coordinador, quiero exportar listados a CSV para compartir el plan de visitas fuera de la aplicaci\'on.
-	\item \textbf{HU-09.} Como analista, quiero consultar factores SHAP agregados del top-50 y top-225 para validar coherencia del modelo.
+	\item \textbf{HU-09.} Como prevencionista, coordinador o administrador, quiero consultar el panel de estad\'isticas para interpretar el desempe\~no del modelo sin depender de un rol espec\'ifico de an\'alisis.
 	\item \textbf{HU-10.} Como administrador, quiero administrar usuarios y roles para controlar el acceso al prototipo.
 	\item \textbf{HU-11.} Como usuario, quiero alternar tema claro/oscuro y colapsar el men\'u para trabajar con comodidad en jornadas largas.
 	\item \textbf{HU-12.} Como coordinador, quiero distinguir motivos predictivos de obligaciones regulatorias (PRS) para no mezclar prioridades.
@@ -35,16 +36,16 @@ El presente cap\'itulo formaliza el an\'alisis funcional del prototipo construid
 \begin{description}
 	\item[RF-01 Autenticaci\'on] Login con usuario/contrase\~na, emisi\'on de JWT y cierre de sesi\'on con confirmaci\'on.
 	\item[RF-02 Resumen operativo] Panel con estados de cobertura top-50/top-225 y accesos a priorizaci\'on/agenda.
-	\item[RF-03 Priorizaci\'on] Listado de establecimientos ordenados por score, con filtros de horizonte (1m/3m), banda y b\'usqueda.
+	\item[RF-03 Priorizaci\'on] Listado de establecimientos ordenados por score del ranking trimestral, con filtros de banda, actividad y b\'usqueda.
 	\item[RF-04 Detalle] Ficha del establecimiento con score, banda, motivo, explicaci\'on de prioridad y factores SHAP individuales.
 	\item[RF-05 Agenda] Alta, realizaci\'on y cancelaci\'on de visitas vinculadas al ranking vigente.
 	\item[RF-06 Auditor\'ia operativa] Registro append-only de eventos del ciclo de visitas.
-	\item[RF-07 Estad\'isticas] KPIs, cobertura hist\'orica, precisi\'on observada y SHAP agregado por cohorte.
+	\item[RF-07 Estad\'isticas] KPIs, cobertura hist\'orica, precisi\'on observada y SHAP agregado por cohorte, consultables por prevencionista, coordinador y administrador.
 	\item[RF-08 Exportaci\'on] Descarga CSV de listados relevantes para trabajo offline.
 	\item[RF-09 Perfil] Consulta de datos de usuario y cambio de contrase\~na.
-	\item[RF-10 Roles] Control de acceso por rol (Prevencionista, Coordinador, Analista, Admin).
+	\item[RF-10 Roles] Control de acceso por rol (Prevencionista, Coordinador, Administrador).
 	\item[RF-11 Snapshots] Consumo de rankings versionados e inmutables importados desde el pipeline.
-	\item[RF-12 Doble horizonte] Soporte simult\'aneo de predicci\'on a 1 mes y a 3 meses.
+	\item[RF-12 Horizonte trimestral] El ranking operativo predice accidentaci\'on en los tres meses siguientes al per\'{\i}odo de decisi\'on, alineado a la planificaci\'on de visitas.
 \end{description}
 
 \section{Requerimientos no funcionales}
@@ -115,7 +116,7 @@ La Figura~\ref{fig:wireframe-layout} muestra el esquema global; las Figuras~\ref
 \begin{figure}[htbp]
 	\centering
 	\includegraphics[width=0.92\textwidth]{figures/mockups/estadisticas.png}
-	\caption{Mockup esquem\'atico de estad\'isticas con pesta\~nas y tarjetas de gr\'aficos (RF-07 / HU-07).}
+	\caption{Mockup esquem\'atico de estad\'isticas con pesta\~nas y tarjetas de gr\'aficos (RF-07 / HU-07 y HU-09).}
 	\label{fig:mock-estadisticas}
 \end{figure}
 

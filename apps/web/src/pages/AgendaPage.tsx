@@ -479,7 +479,7 @@ export function AgendaPage() {
             )}
 
             <div className="agenda-drawer-links">
-              <Link className="btn ghost-btn" to={`/establecimientos/${selected.idEstablecimiento}?horizonte=${selected.horizonte}`}>
+              <Link className="btn ghost-btn" to={`/establecimientos/${selected.idEstablecimiento}`}>
                 Ver ficha del establecimiento
               </Link>
               <button type="button" className="ghost-btn" onClick={() => toggleTimeline(selected)}>
