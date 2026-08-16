@@ -8,11 +8,15 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import matplotlib
+
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import numpy as np
 import pandas as pd
-from matplotlib.patches import FancyBboxPatch
+from matplotlib.patches import PathPatch
+from matplotlib.path import Path as MplPath
 
 REPO = Path(__file__).resolve().parents[1]
 OUT = REPO / "docs" / "figures" / "encuesta"
@@ -27,16 +31,21 @@ DEFAULT_XLSX = Path(
     r"\Encuesta sobre Prevención y Seguridad Laboral  (Respuestas).xlsx"
 )
 
-NAVY = "#1e3a5f"
-TEAL = "#0f766e"
-AMBER = "#c2410c"
-SLATE = "#475569"
-SKY = "#0369a1"
-OK = "#15803d"
-DANGER = "#b91c1c"
-MUTED = "#64748b"
-INK = "#0f172a"
-GRID = "#e2e8f0"
+INDIGO = "#4F46E5"
+CYAN = "#06B6D4"
+AMBER = "#F59E0B"
+ROSE = "#F43F5E"
+VIOLET = "#8B5CF6"
+EMERALD = "#10B981"
+SKY = "#3B82F6"
+PINK = "#EC4899"
+OK = "#10B981"
+DANGER = "#F43F5E"
+MUTED = "#64748B"
+INK = "#0F172A"
+GRID = "#E2E8F0"
+FUN = [INDIGO, CYAN, AMBER, ROSE, VIOLET, EMERALD, SKY, PINK]
+KAPPA = 0.5522847498
 
 SECTOR_CANON = {
     "Comercio / Oficinas / Tecnología": "Comercio / oficinas / tecnología",
@@ -132,22 +141,68 @@ def load(path: Path) -> pd.DataFrame:
     return df
 
 
-def _round_bar(ax, bar, color: str) -> None:
-    x, y = bar.get_xy()
-    w, h = bar.get_width(), bar.get_height()
-    bar.set_visible(False)
-    pad = min(abs(w), abs(h)) * 0.18
-    ax.add_patch(
-        FancyBboxPatch(
-            (x, y),
-            w,
-            h,
-            boxstyle=f"round,pad=0,rounding_size={pad}",
-            linewidth=0,
-            facecolor=color,
-            mutation_aspect=0.6,
-        )
-    )
+def _pixel_scale(ax) -> tuple[float, float]:
+    ax.figure.canvas.draw()
+    origin = ax.transData.transform((0.0, 0.0))
+    ux = ax.transData.transform((1.0, 0.0))
+    uy = ax.transData.transform((0.0, 1.0))
+    return abs(ux[0] - origin[0]), abs(uy[1] - origin[1])
+
+
+def _circle_radii(ax, thickness: float, *, perp_is_y: bool) -> tuple[float, float]:
+    ppx, ppy = _pixel_scale(ax)
+    r_px = min(11.0, 0.22 * abs(thickness) * (ppy if perp_is_y else ppx))
+    return r_px / max(ppx, 1e-9), r_px / max(ppy, 1e-9)
+
+
+def _rounded_rect(x: float, y: float, w: float, h: float, rx: float, ry: float, color: str) -> PathPatch:
+    if w < 0:
+        x, w = x + w, -w
+    if h < 0:
+        y, h = y + h, -h
+    rx = min(rx, w / 2)
+    ry = min(ry, h / 2)
+    x0, y0, x1, y1 = x, y, x + w, y + h
+    k = KAPPA
+    verts = [
+        (x0 + rx, y0),
+        (x1 - rx, y0),
+        (x1 - rx + k * rx, y0),
+        (x1, y0 + ry - k * ry),
+        (x1, y0 + ry),
+        (x1, y1 - ry),
+        (x1, y1 - ry + k * ry),
+        (x1 - rx + k * rx, y1),
+        (x1 - rx, y1),
+        (x0 + rx, y1),
+        (x0 + rx - k * rx, y1),
+        (x0, y1 - ry + k * ry),
+        (x0, y1 - ry),
+        (x0, y0 + ry),
+        (x0, y0 + ry - k * ry),
+        (x0 + rx - k * rx, y0),
+        (x0 + rx, y0),
+    ]
+    codes = [
+        MplPath.MOVETO,
+        MplPath.LINETO,
+        MplPath.CURVE4,
+        MplPath.CURVE4,
+        MplPath.CURVE4,
+        MplPath.LINETO,
+        MplPath.CURVE4,
+        MplPath.CURVE4,
+        MplPath.CURVE4,
+        MplPath.LINETO,
+        MplPath.CURVE4,
+        MplPath.CURVE4,
+        MplPath.CURVE4,
+        MplPath.LINETO,
+        MplPath.CURVE4,
+        MplPath.CURVE4,
+        MplPath.CURVE4,
+    ]
+    return PathPatch(MplPath(verts, codes), facecolor=color, edgecolor="none", linewidth=0, zorder=2, clip_on=True)
 
 
 def bar_counts(
@@ -162,49 +217,59 @@ def bar_counts(
     extra_note: str | None = None,
 ) -> None:
     total = sum(counts) or 1
-    palette = colors or [NAVY, TEAL, AMBER, SLATE, SKY, MUTED]
+    palette = colors or FUN
     palette = (palette * ((len(labels) // len(palette)) + 1))[: len(labels)]
     fig_w = 8.4 if not horizontal else 8.8
     fig_h = 4.9 if not horizontal else max(3.9, 0.58 * len(labels) + 1.7)
     fig, ax = plt.subplots(figsize=(fig_w, fig_h))
     ax.set_axisbelow(True)
+    ax.set_title(title)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_color("#cbd5e1")
+    ax.spines["bottom"].set_color("#cbd5e1")
     if horizontal:
+        height = 0.70
+        y = np.arange(len(labels), dtype=float)
         ax.xaxis.grid(True, color=GRID, linewidth=0.9, zorder=0)
-        y = np.arange(len(labels))
-        bars = ax.barh(y, counts, color=palette, height=0.62, zorder=2)
-        for bar, col in zip(bars, palette):
-            _round_bar(ax, bar, col)
         ax.set_yticks(y)
         ax.set_yticklabels(labels, fontsize=10.5)
-        ax.invert_yaxis()
         ax.set_xlabel("Respuestas")
         ax.set_xlim(0, max(counts) * 1.32 if counts else 1)
-        for bar, cnt in zip(bars, counts):
+        ax.set_ylim(len(labels) - 0.38, -0.62)
+        fig.tight_layout(rect=(0, 0.03, 1, 1))
+        rx, ry = _circle_radii(ax, height, perp_is_y=True)
+        for yi, cnt, col in zip(y, counts, palette):
+            ax.add_patch(_rounded_rect(0.0, yi - height / 2, float(cnt), height, rx, ry, col))
+        for yi, cnt in zip(y, counts):
             pct = 100.0 * cnt / total
             ax.text(
                 cnt + max(total * 0.012, 0.4),
-                bar.get_y() + bar.get_height() / 2,
+                yi,
                 f"{cnt}   {pct:.0f}%",
                 va="center",
                 ha="left",
                 fontsize=10,
                 color=INK,
-                fontweight="normal",
             )
     else:
+        width = 0.72
+        x = np.arange(len(labels), dtype=float)
         ax.yaxis.grid(True, color=GRID, linewidth=0.9, zorder=0)
-        x = np.arange(len(labels))
-        bars = ax.bar(x, counts, color=palette, width=0.64, zorder=2)
-        for bar, col in zip(bars, palette):
-            _round_bar(ax, bar, col)
         ax.set_xticks(x)
         ax.set_xticklabels(labels, fontsize=10)
         ax.set_ylabel(ylabel or "Respuestas")
+        ax.yaxis.set_major_locator(mticker.MaxNLocator(integer=True))
         ax.set_ylim(0, max(counts) * 1.30 if counts else 1)
-        for bar, cnt in zip(bars, counts):
+        ax.set_xlim(-0.62, len(labels) - 0.38)
+        fig.tight_layout(rect=(0, 0.03, 1, 1))
+        rx, ry = _circle_radii(ax, width, perp_is_y=False)
+        for xi, cnt, col in zip(x, counts, palette):
+            ax.add_patch(_rounded_rect(xi - width / 2, 0.0, width, float(cnt), rx, ry, col))
+        for xi, cnt in zip(x, counts):
             pct = 100.0 * cnt / total
             ax.text(
-                bar.get_x() + bar.get_width() / 2,
+                xi,
                 cnt + max(total * 0.02, 0.25),
                 f"{cnt}\n{pct:.0f}%",
                 ha="center",
@@ -212,15 +277,8 @@ def bar_counts(
                 fontsize=9.5,
                 color=INK,
             )
-    ax.set_title(title)
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.spines["left"].set_color("#cbd5e1")
-    ax.spines["bottom"].set_color("#cbd5e1")
-    ax.yaxis.set_major_locator(mticker.MaxNLocator(integer=True))
     note = extra_note or f"n = {total}"
     fig.text(0.99, 0.012, note, ha="right", va="bottom", fontsize=9, color=MUTED)
-    fig.tight_layout(rect=(0, 0.03, 1, 1))
     outfile.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(outfile, dpi=220, bbox_inches="tight")
     plt.close(fig)
@@ -247,7 +305,7 @@ def donut(labels: list[str], counts: list[int], title: str, outfile: Path, color
         frameon=False,
         fontsize=10.5,
     )
-    ax.text(0, 0.08, str(total), ha="center", va="center", fontsize=22, fontweight="bold", color=NAVY)
+    ax.text(0, 0.08, str(total), ha="center", va="center", fontsize=22, fontweight="bold", color=INDIGO)
     ax.text(0, -0.18, "respuestas", ha="center", va="center", fontsize=9.5, color=MUTED)
     fig.tight_layout()
     outfile.parent.mkdir(parents=True, exist_ok=True)
@@ -309,7 +367,7 @@ def main() -> None:
         "P1. Sector laboral de los encuestados",
         OUT / "p1_sector.png",
         horizontal=True,
-        colors=[NAVY, TEAL, AMBER, SLATE, SKY, MUTED],
+        colors=FUN,
     )
 
     lab, cnt = size_series(df)
@@ -318,7 +376,7 @@ def main() -> None:
         cnt,
         "P2. Tamaño del establecimiento / empresa",
         OUT / "p2_tamanio.png",
-        colors=[TEAL, NAVY, AMBER, SLATE, MUTED],
+        colors=[EMERALD, INDIGO, AMBER, SKY],
     )
 
     lab, cnt = ordered_series(df[col_art], ART_ORDER, ART_LABELS)
@@ -348,7 +406,7 @@ def main() -> None:
         cnt,
         "P5. Preparación percibida para anticipar un accidente (escala 1-5)",
         OUT / "p5_preparacion.png",
-        colors=["#b91c1c", "#c2410c", "#a16207", "#0f766e", "#15803d"],
+        colors=["#F43F5E", "#FB7185", "#FBBF24", "#34D399", "#059669"],
         extra_note=f"n = {len(lik)}    media = {mean_l:.2f}",
     )
 
@@ -360,7 +418,7 @@ def main() -> None:
         [yes, no],
         "P6. Accidente laboral o enfermedad profesional en el trabajo actual",
         OUT / "p6_accidente.png",
-        colors=[DANGER, TEAL],
+        colors=[ROSE, CYAN],
     )
 
     mask_yes = acc.str.startswith("si")

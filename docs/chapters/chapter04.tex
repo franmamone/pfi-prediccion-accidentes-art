@@ -2,7 +2,7 @@
 
 \begin{contenidoNuevo}
 
-Este cap\'itulo documenta las decisiones de implementaci\'on del prototipo: metodolog\'{\i}a de desarrollo, stack tecnol\'ogico, flujo de informaci\'on, arquitectura, modelo de clases, modelo de datos, resguardo de datos frente a los dos usos de IA, y m\'etricas de referencia del modelo.
+Este cap\'itulo documenta las decisiones de implementaci\'on del prototipo: metodolog\'{\i}a de desarrollo, stack tecnol\'ogico, flujo de informaci\'on, arquitectura, modelo de clases, modelo de datos, resguardo de datos frente a los dos usos de IA, m\'etricas de referencia del modelo y capturas de la interfaz en ejecuci\'on.
 
 \section{Metodolog\'ia}
 
@@ -76,7 +76,7 @@ El mismo dise\~no se puede reutilizar con otra aseguradora.
 
 \section{Modelo de clases de dominio}
 
-\begin{figure}[htbp]
+\begin{figure}[H]
 	\centering
 	\input{figures/diagramas/clases_dominio}
 	\caption{Diagrama de clases del dominio, simplificado.}
@@ -232,6 +232,67 @@ Lectura: el modelo supera ampliamente al azar y a las visitas realmente ejecutad
 En el tramo cr\'{\i}tico supera tambi\'en a ordenar solo por siniestralidad previa.
 Al bajar hacia los 1000 la precisi\'on media baja (se incluye m\'as masa) y el historial sigue siendo un competidor serio.
 El valor del prototipo est\'a en decidir a qui\'en visitar primero, con bandas y explicaci\'on SHAP, no en reemplazar el conocimiento de accidentes pasados ni en leer el score como probabilidad.
+
+\section{Avance de implementaci\'on (demo)}
+
+A diferencia de los mockups esquem\'aticos del Cap\'itulo~\ref{ch:descripcion}, las capturas siguientes corresponden a la interfaz del prototipo en ejecuci\'on.
+Documentan el recorrido operativo: autenticaci\'on, ranking trimestral, ficha del establecimiento (historial, resumen generativo y factores SHAP), agenda, estad\'isticas y perfil.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.92\textwidth]{figures/demo/login.png}
+	\caption{Captura de login del prototipo en ejecuci\'on (RF-01).}
+	\label{fig:demo-login}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.92\textwidth]{figures/demo/priorizacion.png}
+	\caption{Captura de priorizaci\'on: ranking trimestral de establecimientos (RF-03 / HU-03).}
+	\label{fig:demo-priorizacion}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.92\textwidth]{figures/demo/detalle_historial.png}
+	\caption{Captura del detalle: historial de accidentes del establecimiento (RF-04).}
+	\label{fig:demo-historial}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.92\textwidth]{figures/demo/detalle_resumen.png}
+	\caption{Captura del detalle: resumen generativo para la pr\'oxima visita (RF-04 / HU-04).}
+	\label{fig:demo-resumen}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.92\textwidth]{figures/demo/detalle_shap.png}
+	\caption{Captura del detalle: factores de priorizaci\'on (valores SHAP) (RF-04).}
+	\label{fig:demo-shap}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.92\textwidth]{figures/demo/agenda.png}
+	\caption{Captura de agenda de visitas en vista mensual (RF-05 / HU-06).}
+	\label{fig:demo-agenda}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.92\textwidth]{figures/demo/estadisticas.png}
+	\caption{Captura de estad\'isticas: composici\'on y riesgo de la lista (RF-07 / HU-07 y HU-09).}
+	\label{fig:demo-estadisticas}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.92\textwidth]{figures/demo/perfil.png}
+	\caption{Captura de perfil de usuario del prototipo en ejecuci\'on (RF-09).}
+	\label{fig:demo-perfil}
+\end{figure}
 
 \section{Limitaciones}
 

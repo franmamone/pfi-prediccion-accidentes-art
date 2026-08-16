@@ -12,7 +12,7 @@ type BarChartProps = {
   valueFormatter?: (n: number) => string;
 };
 
-const PALETTE = ["#3b82f6", "#0ea5e9", "#22d3ee", "#818cf8", "#f79009", "#f04438", "#12b76a", "#94a3b8"];
+const PALETTE = ["#4f46e5", "#06b6d4", "#f59e0b", "#f43f5e", "#8b5cf6", "#10b981", "#3b82f6", "#ec4899"];
 
 export function BarChart({ title, subtitle, data, maxBars = 12, valueFormatter }: BarChartProps) {
   const rows = data.slice(0, maxBars);
@@ -164,7 +164,7 @@ export function TimeSeriesChart({
             <line x1={pad} y1={h - pad} x2={w - pad} y2={h - pad} stroke="currentColor" opacity="0.2" />
             <line x1={pad} y1={pad} x2={pad} y2={h - pad} stroke="currentColor" opacity="0.2" />
             {points && (
-              <polyline fill="none" stroke="#3b82f6" strokeWidth="2.5" points={points} />
+      polyline fill="none" stroke="#6366f1" strokeWidth="2.5" points={points}
             )}
             {series.map((s, i) => {
               if (s.valor == null) return null;
@@ -176,7 +176,7 @@ export function TimeSeriesChart({
                   cx={x}
                   cy={y}
                   r={4}
-                  fill={s.color ?? "#3b82f6"}
+                  fill={s.color ?? "#6366f1"}
                 >
                   <title>
                     {s.clave}: {s.valor.toFixed(1)}%

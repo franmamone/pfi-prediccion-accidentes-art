@@ -3,64 +3,129 @@
 \fontsize{7.5}{9.7}\selectfont
 \ifdefined\pcolw\else\newlength{\pcolw}\fi
 \ifdefined\pfootw\else\newlength{\pfootw}\fi
-\newcommand{\PCaja}[3][south]{%
+\definecolor{PInk}{RGB}{55,48,163}
+\definecolor{PTeal}{RGB}{13,148,136}
+\definecolor{PBlue}{RGB}{37,99,235}
+\definecolor{PSlate}{RGB}{71,85,105}
+\definecolor{PEmr}{RGB}{5,150,105}
+\definecolor{PAmb}{RGB}{217,119,6}
+\definecolor{PRed}{RGB}{220,38,38}
+\definecolor{PVio}{RGB}{124,58,237}
+\definecolor{PInd}{RGB}{67,56,202}
+\definecolor{PSky}{RGB}{2,132,199}
+\definecolor{PPlum}{RGB}{190,24,93}
+\newcommand{\PDot}[1]{%
+  \tikz[baseline=-0.42ex]\fill[#1] (0,0) circle (1.85pt);%
+  \hspace{0.48em}%
+}
+\newcommand{\PTit}[1]{\makebox[\linewidth][c]{\sffamily\bfseries #1}}
+\tikzset{
+  pchip/.style={
+    sharp corners,
+    rounded corners=7.7pt,
+    inner xsep=6.8pt,
+    inner ysep=0pt,
+    minimum height=15.4pt,
+    text height=0.68em,
+    text depth=0.22em,
+    font=\sffamily\bfseries\scriptsize,
+    draw=none,
+    line width=0pt,
+    outer sep=0pt,
+    align=center,
+    anchor=base,
+  },
+}
+\newcommand{\PPills}[6]{%
+  \begin{tikzpicture}[baseline=0.22em, rounded corners=0pt, sharp corners]
+    \node[pchip, fill=#1, text=#2] (p1) {#3};
+    \node[pchip, fill=#4, text=#5, base right=4.2pt of p1] (p2) {#6};
+  \end{tikzpicture}%
+}
+\newcommand{\PCaja}[4][south]{%
   \noindent
   \begin{tikzpicture}[baseline=(current bounding box.#1)]
+    \begin{scope}[shift={(0.4pt,-1.8pt)}]
+      \node[
+        fill=black,
+        opacity=0.18,
+        text opacity=0,
+        rounded corners=13pt,
+        inner xsep=8.4pt,
+        inner ysep=5.8pt,
+        outer sep=0pt,
+        align=left,
+        font=\fontsize{7.5}{9.7}\selectfont\sffamily,
+        text width=\dimexpr#2-16.8pt\relax,
+      ] {#4};
+    \end{scope}
     \node[
-      draw=NavyBlue!55,
-      fill=white,
-      rounded corners=5pt,
-      inner sep=5.4pt,
+      fill=#3!9,
+      rounded corners=13pt,
+      inner xsep=8.4pt,
+      inner ysep=5.8pt,
       outer sep=0pt,
       text=black,
       align=left,
       font=\fontsize{7.5}{9.7}\selectfont\sffamily,
-      text width=#2,
-    ] {#3};
+      text width=\dimexpr#2-16.8pt\relax,
+    ] (pcard) {#4};
+    \fill[#3, rounded corners=2.1pt]
+      ([xshift=2.2pt,yshift=5.2pt]pcard.south west)
+      rectangle
+      ([xshift=5.7pt,yshift=-5.2pt]pcard.north west);
   \end{tikzpicture}%
 }
 
 \begin{tikzpicture}
   \node[
-    draw=NavyBlue!78,
-    line width=0.95pt,
-    rounded corners=8pt,
+    rounded corners=16pt,
     inner sep=0pt,
     outer sep=0pt,
-    fill=NavyBlue!6,
+    fill=black!3.5,
   ] {%
     \begin{minipage}{0.988\linewidth}
-      \setlength{\fboxsep}{0pt}%
-      \colorbox{NavyBlue}{%
-        \begin{minipage}{\linewidth}
-          \vspace{6pt}
-          \hspace{9pt}%
-          \begin{minipage}{0.62\linewidth}
-            \textcolor{white}{\sffamily\bfseries\Large Laura Ferrero}\\[2pt]
-            \textcolor{white}{\sffamily\scriptsize Un mapa de riesgo que diga d\'onde mirar, no un umbral que ya explot\'o}\\[2pt]
-            \textcolor{white}{\sffamily\tiny Coordinaci\'on de prevenci\'on $\cdot$ ART $\cdot$ persona de gerencia}
+      \begin{tikzpicture}
+        \node[
+          fill=PInk,
+          rounded corners=12pt,
+          inner sep=0pt,
+          outer sep=0pt,
+          text width=\linewidth-1.4pt,
+        ] {%
+          \begin{minipage}{\linewidth}
+            \vspace{7pt}
+            \hspace{9pt}%
+            \begin{minipage}{0.60\linewidth}
+              \begin{tikzpicture}[baseline=-0.55ex]
+                \fill[white] (0,0) circle (0.34cm);
+                \node[font=\sffamily\bfseries\scriptsize, color=PInk] at (0,0) {LF};
+              \end{tikzpicture}%
+              \hspace{6pt}%
+              \raisebox{0.15ex}{\textcolor{white}{\sffamily\bfseries\Large Laura Ferrero}}\\[3pt]
+              \hspace{1pt}\textcolor{white}{\sffamily\scriptsize Un mapa de riesgo que diga d\'onde mirar, no un umbral que ya explot\'o}\\[2pt]
+              \textcolor{white!88}{\sffamily\tiny Coordinaci\'on de prevenci\'on $\cdot$ ART $\cdot$ persona de gerencia}
+            \end{minipage}%
+            \hfill
+            \begin{minipage}{0.34\linewidth}
+              \raggedleft
+              \PPills{white}{PInk}{Coordinadora}{PVio}{white}{Padr\'on y equipo}\\[5pt]
+              \textcolor{white!88}{\sffamily\tiny Uso diario del tablero}
+            \end{minipage}%
+            \hspace{9pt}%
+            \vspace{7pt}
           \end{minipage}%
-          \hfill
-          \begin{minipage}{0.32\linewidth}
-            \raggedleft
-            \colorbox{white}{\textcolor{NavyBlue}{\sffamily\bfseries\scriptsize\hspace{3pt}Coordinadora\hspace{3pt}}}%
-            \hspace{3pt}%
-            \colorbox{NavyBlue!25}{\textcolor{NavyBlue}{\sffamily\bfseries\scriptsize\hspace{3pt}Padr\'on y equipo\hspace{3pt}}}\\[4pt]
-            \textcolor{white}{\sffamily\tiny Uso diario del tablero}
-          \end{minipage}%
-          \hspace{9pt}%
-          \vspace{6pt}
-        \end{minipage}%
-      }
+        };
+      \end{tikzpicture}
 
-      \vspace{7pt}
-      \centering
+      \vspace{8pt}
+      \raggedright
       \begin{minipage}{\dimexpr\linewidth-22pt\relax}
         \setlength{\pcolw}{\dimexpr(\linewidth-16pt)/3\relax}
-        \setlength{\pfootw}{\dimexpr(\linewidth-10pt)/2\relax}
+        \setlength{\pfootw}{\dimexpr(\linewidth-8pt)/2\relax}
 
-        \PCaja{\dimexpr\linewidth-14pt\relax}{%
-          {\color{NavyBlue}\sffamily\bfseries Qui\'en es y c\'omo trabaja}\\[4pt]
+        \PCaja{\linewidth}{PTeal}{%
+          {\color{PTeal}\PTit{Qui\'en es y c\'omo trabaja}}\\[4pt]
           Mira el padr\'on y decide d\'onde poner al equipo; no recorre cada visita.
           Eval\'ua la \enquote{salud} del establecimiento con el RGRL al afiliar o declarar, y el RAR/NTE para agentes de riesgo.
           El P.E.S.E.\ entra cuando el \'{\i}ndice de incidencia ya se dispar\'o: es un umbral reactivo.
@@ -71,70 +136,70 @@
         \vspace{9pt}
         \noindent
         \begin{minipage}[t]{\pcolw}
-          \PCaja[north]{\dimexpr\pcolw-14pt\relax}{%
-            {\color{NavyBlue}\sffamily\bfseries Contexto de uso}\\[4pt]
-            $\cdot$ D\'onde: escritorio, tablero de cobertura y asignaci\'on.\\[3pt]
-            $\cdot$ Cu\'ando: arma el plan trimestral y rebalancea en la semana.\\[3pt]
-            $\cdot$ Por qu\'e: tiene que rendir capacidad de preventores, no un modelo.\\[3pt]
-            $\cdot$ Competencia: experta en RGRL/P.E.S.E., no en aprendizaje autom\'atico.
+          \PCaja[north]{\pcolw}{PBlue}{%
+            {\color{PBlue}\PTit{Contexto de uso}}\\[4pt]
+            \PDot{PBlue}D\'onde: escritorio, tablero de cobertura y asignaci\'on.\\[2.6pt]
+            \PDot{PBlue}Cu\'ando: arma el plan trimestral y rebalancea en la semana.\\[2.6pt]
+            \PDot{PBlue}Por qu\'e: tiene que rendir capacidad de preventores, no un modelo.\\[2.6pt]
+            \PDot{PBlue}Competencia: experta en RGRL/P.E.S.E., no en aprendizaje autom\'atico.
           }
         \end{minipage}%
-        \hfill
+        \hspace{8pt}%
         \begin{minipage}[t]{\pcolw}
-          \PCaja[north]{\dimexpr\pcolw-14pt\relax}{%
-            {\color{NavyBlue}\sffamily\bfseries Herramientas de hoy}\\[4pt]
-            $\cdot$ RGRL como \enquote{biblia} de qu\'e prevenci\'on hacer.\\[3pt]
-            $\cdot$ Planillas para el plan de visitas.\\[3pt]
-            $\cdot$ \'Indice de incidencia publicado por la Superintendencia.\\[3pt]
-            $\cdot$ Sistema de gesti\'on de relevamientos y recomendaciones.
+          \PCaja[north]{\pcolw}{PSlate}{%
+            {\color{PSlate}\PTit{Herramientas de hoy}}\\[4pt]
+            \PDot{PSlate}RGRL como \enquote{biblia} de qu\'e prevenci\'on hacer.\\[2.6pt]
+            \PDot{PSlate}Planillas para el plan de visitas.\\[2.6pt]
+            \PDot{PSlate}\'Indice de incidencia publicado por la Superintendencia.\\[2.6pt]
+            \PDot{PSlate}Sistema de gesti\'on de relevamientos y recomendaciones.
           }
         \end{minipage}%
-        \hfill
+        \hspace{8pt}%
         \begin{minipage}[t]{\pcolw}
-          \PCaja[north]{\dimexpr\pcolw-14pt\relax}{%
-            {\color{NavyBlue}\sffamily\bfseries Motivaciones}\\[4pt]
-            $\cdot$ Ver el recorte accionable del padr\'on, no todo el universo.\\[3pt]
-            $\cdot$ Que el preventor sepa sector y agente material.\\[3pt]
-            $\cdot$ Cubrir incumplimientos con fecha de regularizaci\'on.\\[3pt]
-            $\cdot$ Equilibrar denuncia ante la SRT y relaci\'on con el afiliado.
+          \PCaja[north]{\pcolw}{PEmr}{%
+            {\color{PEmr}\PTit{Motivaciones}}\\[4pt]
+            \PDot{PEmr}Ver el recorte accionable del padr\'on, no todo el universo.\\[2.6pt]
+            \PDot{PEmr}Que el preventor sepa sector y agente material.\\[2.6pt]
+            \PDot{PEmr}Cubrir incumplimientos con fecha de regularizaci\'on.\\[2.6pt]
+            \PDot{PEmr}Equilibrar denuncia ante la SRT y relaci\'on con el afiliado.
           }
         \end{minipage}
 
-        \vspace{16pt}
+        \vspace{9pt}
         \noindent
         \begin{minipage}[t]{\pcolw}
-          \PCaja[north]{\dimexpr\pcolw-14pt\relax}{%
-            {\color{NavyBlue}\sffamily\bfseries Objetivos}\\[4pt]
-            $\cdot$ Distribuir preventores seg\'un riesgo relativo del trimestre.\\[3pt]
-            $\cdot$ Distinguir ranking predictivo de obligaci\'on PRS o P.E.S.E.\\[3pt]
-            $\cdot$ Medir cobertura y factores que m\'as empujan el ranking.\\[3pt]
-            $\cdot$ Sacar del foco del establecimiento los siniestros \emph{in itinere}.
+          \PCaja[north]{\pcolw}{PAmb}{%
+            {\color{PAmb}\PTit{Objetivos}}\\[4pt]
+            \PDot{PAmb}Distribuir preventores seg\'un riesgo relativo del trimestre.\\[2.6pt]
+            \PDot{PAmb}Distinguir ranking predictivo de obligaci\'on PRS o P.E.S.E.\\[2.6pt]
+            \PDot{PAmb}Medir cobertura y factores que m\'as empujan el ranking.\\[2.6pt]
+            \PDot{PAmb}Sacar del foco del establecimiento los siniestros \emph{in itinere}.
           }
         \end{minipage}%
-        \hfill
+        \hspace{8pt}%
         \begin{minipage}[t]{\pcolw}
-          \PCaja[north]{\dimexpr\pcolw-14pt\relax}{%
-            {\color{NavyBlue}\sffamily\bfseries Frustraciones}\\[4pt]
-            $\cdot$ Actuar cuando el \'{\i}ndice ya estall\'o.\\[3pt]
-            $\cdot$ Excel y RGRL manuales para priorizar gente.\\[3pt]
-            $\cdot$ Poca inversi\'on relativa en prevenci\'on pese a los datos.\\[3pt]
-            $\cdot$ \enquote{No se denuncia todo}: denunciar es denunciar al cliente.
+          \PCaja[north]{\pcolw}{PRed}{%
+            {\color{PRed}\PTit{Frustraciones}}\\[4pt]
+            \PDot{PRed}Actuar cuando el \'{\i}ndice ya estall\'o.\\[2.6pt]
+            \PDot{PRed}Excel y RGRL manuales para priorizar gente.\\[2.6pt]
+            \PDot{PRed}Poca inversi\'on relativa en prevenci\'on pese a los datos.\\[2.6pt]
+            \PDot{PRed}\enquote{No se denuncia todo}: denunciar es denunciar al cliente.
           }
         \end{minipage}%
-        \hfill
+        \hspace{8pt}%
         \begin{minipage}[t]{\pcolw}
-          \PCaja[north]{\dimexpr\pcolw-14pt\relax}{%
-            {\color{NavyBlue}\sffamily\bfseries H\'abitos}\\[4pt]
-            $\cdot$ Pide al preventor el sector (poste, rampa) antes que un puntaje suelto.\\[3pt]
-            $\cdot$ Cruza recomendaciones cumplidas o no con el RGRL.\\[3pt]
-            $\cdot$ Separa accidentes de enfermedades profesionales (RAR).\\[3pt]
-            $\cdot$ Quiere ver concentraci\'on anonimizada en el mismo trabajador.
+          \PCaja[north]{\pcolw}{PVio}{%
+            {\color{PVio}\PTit{H\'abitos}}\\[4pt]
+            \PDot{PVio}Pide al preventor el sector (poste, rampa) antes que un puntaje suelto.\\[2.6pt]
+            \PDot{PVio}Cruza recomendaciones cumplidas o no con el RGRL.\\[2.6pt]
+            \PDot{PVio}Separa accidentes de enfermedades profesionales (RAR).\\[2.6pt]
+            \PDot{PVio}Quiere ver concentraci\'on anonimizada en el mismo trabajador.
           }
         \end{minipage}
 
         \vspace{10pt}
-        \PCaja{\dimexpr\linewidth-14pt\relax}{%
-          {\color{NavyBlue}\sffamily\bfseries Escenario}\\[4pt]
+        \PCaja{\linewidth}{PInd}{%
+          {\color{PInd}\PTit{Escenario}}\\[4pt]
           Abre estad\'{\i}sticas de cobertura del top-1000 y el SHAP agregado: d\'onde el modelo pone la masa.
           Asigna visitas a preventores sin mezclar un caso PRS con un cr\'{\i}tico predictivo.
           En la ficha mira incumplimientos y si la rampa del mes pasado ya se regulariz\'o; si est\'a cumplida, no la insiste.
@@ -144,24 +209,25 @@
         \vspace{9pt}
         \noindent
         \begin{minipage}[t]{\pfootw}
-          \PCaja[north]{\dimexpr\pfootw-14pt\relax}{%
-            {\color{NavyBlue}\sffamily\bfseries Qu\'e necesita de Prevex}\\[4pt]
-            Cobertura y SHAP agregado sobre el top-1000 (HU-07, HU-09 / RF-07).\\[3pt]
-            Asignar visitas (HU-08 / RF-08).\\[3pt]
-            Distinguir motivo predictivo de PRS (HU-12).\\[3pt]
-            Ficha con historial e incumplimientos, sin leer el score como probabilidad (RF-04, RNF-06).
+          \PCaja[north]{\pfootw}{PSky}{%
+            {\color{PSky}\PTit{Qu\'e necesita de Prevex}}\\[4pt]
+            \PDot{PSky}Cobertura y SHAP agregado sobre el top-1000 (HU-07, HU-09 / RF-07).\\[2.6pt]
+            \PDot{PSky}Asignar visitas (HU-08 / RF-08).\\[2.6pt]
+            \PDot{PSky}Distinguir motivo predictivo de PRS (HU-12).\\[2.6pt]
+            \PDot{PSky}Ficha con historial e incumplimientos, sin leer el score como probabilidad (RF-04, RNF-06).
           }
         \end{minipage}%
-        \hfill
+        \hspace{8pt}%
         \begin{minipage}[t]{\pfootw}
-          \PCaja[north]{\dimexpr\pfootw-14pt\relax}{%
-            {\color{NavyBlue}\sffamily\bfseries \'Exito y temores}\\[4pt]
-            \'Exito: el equipo mira primero donde hay que mirar, con causa accionable, y el plan no se mezcla con el umbral P.E.S.E.\\[4pt]
-            Temor: tratar el ranking como or\'aculo; ensuciar el establecimiento con \emph{in itinere}; romper la relaci\'on comercial con una denuncia autom\'atica.
+          \PCaja[north]{\pfootw}{PPlum}{%
+            {\color{PEmr}\PTit{\'Exito}}\\[3pt]
+            El equipo mira primero donde hay que mirar, con causa accionable, y el plan no se mezcla con el umbral P.E.S.E.\\[5pt]
+            {\color{PPlum}\PTit{Temor}}\\[3pt]
+            Tratar el ranking como or\'aculo; ensuciar el establecimiento con \emph{in itinere}; romper la relaci\'on comercial con una denuncia autom\'atica.
           }
         \end{minipage}
 
-        \vspace{3pt}
+        \vspace{4pt}
       \end{minipage}
     \end{minipage}%
   };
