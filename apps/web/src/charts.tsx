@@ -164,7 +164,7 @@ export function TimeSeriesChart({
             <line x1={pad} y1={h - pad} x2={w - pad} y2={h - pad} stroke="currentColor" opacity="0.2" />
             <line x1={pad} y1={pad} x2={pad} y2={h - pad} stroke="currentColor" opacity="0.2" />
             {points && (
-      polyline fill="none" stroke="#6366f1" strokeWidth="2.5" points={points}
+              <polyline fill="none" stroke="#6366f1" strokeWidth="2.5" points={points} />
             )}
             {series.map((s, i) => {
               if (s.valor == null) return null;

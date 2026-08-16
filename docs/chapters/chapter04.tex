@@ -33,9 +33,9 @@ Esa ventana se alinea a la planificaci\'on de visitas relevada en las entrevista
 		\hline
 		Pipeline ML & Python + XGBoost + SHAP: adecuado a datos tabulares heterog\'eneos y a la necesidad de explicabilidad. \\
 		API & ASP.NET Core (C\#): encaje con ecosistemas ART/.NET, Minimal APIs y JWT. \\
-		Frontend & React + Vite + TypeScript: UI moderna, tipado y ciclo de desarrollo \'agil. \\
+		Frontend & React + Vite + TypeScript: interfaz tipada y ciclo de desarrollo \'agil. \\
 		BD operativa & SQL Server Express (`PfiPrevencion`): modelo relacional de rankings, agenda y usuarios. \\
-		Auth & JWT Bearer + hash de contrase\~nas: simple para tesis y upgradeable. \\
+		Auth & JWT Bearer + hash de contrase\~nas: adecuado al prototipo y reemplazable por un esquema institucional. \\
 		Comunicaci\'on & HTTPS/HTTP + REST JSON: desacople cliente-servidor. \\
 		Arquitectura & AWS Free Tier: una EC2 con Nginx, React, API y SQL Express, S3 para rankings y Budgets para el control de costo. \\
 		\hline
@@ -236,7 +236,13 @@ El valor del prototipo est\'a en decidir a qui\'en visitar primero, con bandas y
 \section{Avance de implementaci\'on (demo)}
 
 A diferencia de los mockups esquem\'aticos del Cap\'itulo~\ref{ch:descripcion}, las capturas siguientes corresponden a la interfaz del prototipo en ejecuci\'on.
-Documentan el recorrido operativo: autenticaci\'on, ranking trimestral, ficha del establecimiento (historial, resumen generativo y factores SHAP), agenda, estad\'isticas y perfil.
+
+El recorrido es este.
+El usuario se autentica (Figura~\ref{fig:demo-login}) y abre el ranking trimestral de hasta 1000 establecimientos, con bandas y estado de visita (Figura~\ref{fig:demo-priorizacion}).
+Desde la fila entra a la ficha: historial de accidentes (Figura~\ref{fig:demo-historial}), resumen generativo para la pr\'oxima visita (Figura~\ref{fig:demo-resumen}) y factores SHAP (Figura~\ref{fig:demo-shap}).
+Programa o sigue la visita en la agenda (Figura~\ref{fig:demo-agenda}), consulta estad\'isticas de la lista (Figura~\ref{fig:demo-estadisticas}) y, si hace falta, actualiza el perfil (Figura~\ref{fig:demo-perfil}).
+
+El horizonte operativo es el trimestre (Figuras~\ref{fig:demo-priorizacion} y~\ref{fig:demo-estadisticas}).
 
 \begin{figure}[H]
 	\centering
@@ -248,7 +254,7 @@ Documentan el recorrido operativo: autenticaci\'on, ranking trimestral, ficha de
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.92\textwidth]{figures/demo/priorizacion.png}
-	\caption{Captura de priorizaci\'on: ranking trimestral de establecimientos (RF-03 / HU-03).}
+	\caption{Captura de priorizaci\'on: ranking trimestral y estado de visita (RF-02, RF-03 / HU-02, HU-03).}
 	\label{fig:demo-priorizacion}
 \end{figure}
 
@@ -293,13 +299,5 @@ Documentan el recorrido operativo: autenticaci\'on, ranking trimestral, ficha de
 	\caption{Captura de perfil de usuario del prototipo en ejecuci\'on (RF-09).}
 	\label{fig:demo-perfil}
 \end{figure}
-
-\section{Limitaciones}
-
-\begin{itemize}
-	\item Encuesta de 156 respuestas (Anexo~\ref{anexo:encuesta}) y entrevistas (Anexos~\ref{anexo:entrevista-adrian-elias} y~\ref{anexo:entrevista-diego-oviedo}); las personas de la Secci\'on~\ref{sec:personas} son s\'{\i}ntesis de esas fuentes, no nuevos relevamientos.
-	\item El score de riesgo no debe interpretarse como probabilidad calibrada de accidente.
-	\item El resumen generativo no punt\'ua establecimientos: solo redacta una gu\'{\i}a sobre evidencia ya desidentificada.
-\end{itemize}
 
 \end{contenidoNuevo}

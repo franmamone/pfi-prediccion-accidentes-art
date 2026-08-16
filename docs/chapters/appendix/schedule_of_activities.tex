@@ -1,6 +1,33 @@
+\begin{contenidoNuevo}
+
 \anexo{Cronograma de Actividades}\label{anexo:cronograma}
 
-El desarrollo del proyecto avanza conforme a lo planificado para el hito de entrega del 25\%. Las actividades de definici\'on, marco te\'orico y estado del arte fueron completadas entre abril y mayo de 2026, sin desv\'{\i}os significativos respecto del calendario inicial. La investigaci\'on con usuarios (encuestas y entrevistas) se mantiene planificada para junio y julio de 2026, en l\'{\i}nea con el alcance acordado para la entrega del 50\%, de modo que el presente informe pueda concentrarse en los antecedentes conceptuales y la fundamentaci\'on de la brecha de investigaci\'on.
+\textbf{Abril de 2026.}
+Se defini\'o la propuesta y el alcance: priorizaci\'on de visitas ART a nivel de establecimiento, modelo XGBoost y explicabilidad SHAP, con stack Python, .NET y React.
+
+\textbf{Mayo de 2026.}
+Se redactaron el marco te\'orico y el estado del arte (matriz de siete antecedentes).
+Se arm\'o el repositorio LaTeX UADE.
+Se entreg\'o el 25\% a fin de mes.
+
+\textbf{Junio de 2026.}
+Se habilit\'o el acceso de solo lectura a la BD core de la ART y se exploraron esquemas, vol\'umenes y tablas de siniestros, n\'omina y prevenci\'on.
+Se dise\~naron las primeras vistas SQL.
+Arranc\'o la encuesta en l\'{\i}nea a trabajadores.
+Se cerr\'o el empaque documental del 25\% (car\'atula, flags de entrega y este Gantt).
+
+\textbf{Julio de 2026.}
+Se consolid\'o la vista ML y el panel universo (del orden de 35\,500 establecimientos).
+Se entren\'o y evalu\'o el XGBoost con horizonte trimestral, se calcul\'o SHAP y se compar\'o el ranking con las visitas reales.
+Se construy\'o el prototipo local: BD operativa, API REST y frontend React (ranking, ficha, agenda y estad\'isticas), con snapshots de anal\'{\i}tica hist\'orica.
+Se hicieron las entrevistas a Adri\'an El\'{\i}as (8 de julio) y Diego Oviedo (23 de julio).
+Se empez\'o la documentaci\'on de ingenier\'{\i}a del 50\%.
+
+\textbf{Agosto de 2026.}
+La aplicaci\'on pas\'o a llamarse Prevex y se cerr\'o el circuito operativo (dossier, resumen generativo, lista de 1000 y horizonte solo trimestral).
+La encuesta qued\'o en 156 respuestas v\'alidas.
+Se sintetizaron las personas a partir de la encuesta y las entrevistas.
+Se documentaron requerimientos, mockups, diagramas, competencias, modelo de datos y capturas de la interfaz en ejecuci\'on.
 
 \begin{landscape}
 \begin{figure}[ht]
@@ -15,8 +42,9 @@ El desarrollo del proyecto avanza conforme a lo planificado para el hito de entr
 		title label font=\small\bfseries,
 		bar label font=\scriptsize,
 		group label font=\small\bfseries,
-		bar/.style={fill=blue!35, draw=blue!60},
-		bar complete/.style={fill=green!45, draw=green!60!black},
+		bar/.style={fill=violet!40, draw=violet!65},
+		bar incomplete/.style={fill=violet!40, draw=violet!65},
+		bar complete/.style={fill=violet!40, draw=violet!65},
 		bar height=0.55,
 		group height=0.35,
 		group peaks height=0.2,
@@ -28,27 +56,29 @@ El desarrollo del proyecto avanza conforme a lo planificado para el hito de entr
 	]{2026-04-01}{2026-11-30}
 		\gantttitlecalendar{year, month=shortname} \\
 		\ganttgroup{Antecedentes (hito 25\%)}{2026-04-01}{2026-05-31} \\
-		\ganttbar[progress=100]{Propuesta y definición}{2026-04-01}{2026-04-30} \\
-		\ganttbar[progress=100]{Marco teórico}{2026-04-15}{2026-05-15} \\
-		\ganttbar[progress=100]{Estado del arte}{2026-05-01}{2026-05-31} \\
+		\ganttbar{Propuesta y definici\'on}{2026-04-01}{2026-04-30} \\
+		\ganttbar{Marco te\'orico}{2026-04-15}{2026-05-15} \\
+		\ganttbar{Estado del arte}{2026-05-01}{2026-05-31} \\
 		\ganttmilestone{Entrega 25\%}{2026-05-31} \\
-		\ganttgroup{Desarrollo (hito 50\%)}{2026-06-01}{2026-07-31} \\
-		\ganttbar{Investigación con usuarios}{2026-06-01}{2026-06-30} \\
-		\ganttbar{Ingeniería de datos}{2026-06-01}{2026-07-15} \\
+		\ganttgroup{Desarrollo (hito 50\%)}{2026-06-01}{2026-08-18} \\
+		\ganttbar{Investigaci\'on con usuarios}{2026-06-01}{2026-07-23} \\
+		\ganttbar{Ingenier\'{\i}a de datos}{2026-06-01}{2026-07-15} \\
 		\ganttbar{Modelado XGBoost}{2026-07-01}{2026-07-31} \\
-		\ganttmilestone{Entrega 50\%}{2026-07-31} \\
-		\ganttgroup{Integración (hito 75\%)}{2026-08-01}{2026-09-30} \\
-		\ganttbar{Explicabilidad SHAP}{2026-08-01}{2026-08-31} \\
-		\ganttbar{Backend API (.NET)}{2026-08-01}{2026-09-15} \\
-		\ganttbar{Frontend (React)}{2026-08-15}{2026-09-30} \\
+		\ganttmilestone{Entrega 50\%}{2026-08-18} \\
+		\ganttgroup{Integraci\'on (hito 75\%)}{2026-07-13}{2026-09-30} \\
+		\ganttbar{Explicabilidad SHAP}{2026-07-13}{2026-08-08} \\
+		\ganttbar{Backend API (.NET)}{2026-07-19}{2026-08-16} \\
+		\ganttbar{Frontend (React)}{2026-07-19}{2026-08-16} \\
 		\ganttbar{Despliegue en AWS}{2026-09-01}{2026-09-30} \\
 		\ganttmilestone{Entrega 75\%}{2026-09-30} \\
 		\ganttgroup{Cierre (hito 100\%)}{2026-10-01}{2026-11-30} \\
-		\ganttbar{Validación y métricas}{2026-10-01}{2026-10-31} \\
-		\ganttbar{Documentación final}{2026-11-01}{2026-11-30} \\
+		\ganttbar{Validaci\'on y m\'etricas}{2026-10-01}{2026-10-31} \\
+		\ganttbar{Documentaci\'on final}{2026-11-01}{2026-11-30} \\
 		\ganttmilestone{Entrega final}{2026-11-30}
 	\end{ganttchart}
-	\caption{Cronograma de actividades del proyecto y estado de avance al hito del 25\%.}
+	\caption{Cronograma de actividades del proyecto.}
 	\label{fig:cronograma}
 \end{figure}
 \end{landscape}
+
+\end{contenidoNuevo}

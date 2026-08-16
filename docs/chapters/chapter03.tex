@@ -18,7 +18,7 @@ Tambi\'en se incorporan los resultados de la investigaci\'on con usuarios (encue
 
 \begin{enumerate}
 	\item \textbf{HU-01.} Como prevencionista, quiero autenticarme de forma segura para acceder solo a la informaci\'on de mi rol.
-	\item \textbf{HU-02.} Como prevencionista, quiero ver un resumen operativo del d\'ia para saber qu\'e establecimientos cr\'iticos a\'un no tienen visita programada.
+	\item \textbf{HU-02.} Como prevencionista, quiero ver en la lista de priorizaci\'on qu\'e establecimientos cr\'iticos todav\'{\i}a no tienen visita programada, para orientar el trabajo del trimestre.
 	\item \textbf{HU-03.} Como prevencionista, quiero priorizar establecimientos para el pr\'oximo trimestre para planificar visitas con un horizonte operativo \'util.
 	\item \textbf{HU-04.} Como prevencionista, quiero abrir el detalle de un establecimiento y entender por qu\'e est\'a priorizado, con explicaci\'on en lenguaje claro y factores SHAP.
 	\item \textbf{HU-05.} Como prevencionista, quiero programar una visita desde la lista de riesgo o desde el detalle para convertir la predicci\'on en acci\'on.
@@ -35,7 +35,7 @@ Tambi\'en se incorporan los resultados de la investigaci\'on con usuarios (encue
 
 \begin{description}
 	\item[RF-01 Autenticaci\'on] Login con usuario/contrase\~na, emisi\'on de JWT y cierre de sesi\'on con confirmaci\'on.
-	\item[RF-02 Resumen operativo] Panel con estados de cobertura de la lista operativa (top-1000) y accesos a priorizaci\'on/agenda.
+	\item[RF-02 Estado de cobertura] En la lista operativa cada establecimiento muestra el estado de visita (pendiente o programada) y se filtra para cubrir primero los cr\'{\i}ticos sin agenda.
 	\item[RF-03 Priorizaci\'on] Listado de hasta 1000 establecimientos ordenados por score del ranking trimestral, con filtros de banda, actividad y b\'usqueda.
 	\item[RF-04 Detalle] Ficha del establecimiento con score, banda, motivo, factores SHAP individuales y, si hay dossier, un resumen en lenguaje claro generado sin enviar identificadores.
 	\item[RF-05 Agenda] Alta, realizaci\'on y cancelaci\'on de visitas vinculadas al ranking vigente.
@@ -181,7 +181,7 @@ Aun as\'{\i}, los patrones son consistentes entre s\'{\i} y convergen con lo que
 
 \begin{description}
 	\item[Entrevistado] Adri\'an El\'{\i}as, con trayectoria en gesti\'on de siniestros, ex\'amenes peri\'odicos, contratos, recaudaci\'on y liderazgo funcional del producto ART en el ecosistema del sistema core.
-	\item[Fecha y duraci\'on] 6 de agosto de 2026; aproximadamente 20 minutos, en videollamada.
+	\item[Fecha y duraci\'on] 8 de julio de 2026; aproximadamente 20 minutos, en videollamada.
 	\item[Objetivo] Comprender criterios reales de priorizaci\'on de visitas, herramientas usadas hoy, ciclo de recomendaciones del preventor y datos percibidos como \'utiles para un sistema predictivo.
 \end{description}
 
@@ -210,7 +210,7 @@ Estos hallazgos convergen con la encuesta en la baja percepci\'on de prevenci\'o
 
 \begin{description}
 	\item[Entrevistado] Diego Oviedo, ex gerente de riesgos del trabajo y prevenci\'on en ART; licenciado en higiene y seguridad.
-	\item[Fecha y duraci\'on] 14 de agosto de 2026; aproximadamente 23 minutos, en videollamada.
+	\item[Fecha y duraci\'on] 23 de julio de 2026; aproximadamente 23 minutos, en videollamada.
 	\item[Objetivo] Comprender el impacto del P.E.S.E.\ y de los relevamientos (RGRL/RAR), la reactividad del sistema, y qu\'e explicabilidad exige un perfil gerencial para confiar en un mapa de riesgo predictivo.
 \end{description}
 
@@ -305,7 +305,9 @@ La encuesta ($n=156$) explica por qu\'e ese circuito importa: afuera la prevenci
 		\hline
 		\textbf{Debilidades} & \textbf{Amenazas} \\
 		\hline
-		Dependencia de la calidad de los datos hist\'oricos. &
+		Dependencia de la calidad de los datos hist\'oricos.
+		El prototipo no est\'a en producci\'on: la demo del hito es local y la arquitectura AWS queda como dise\~no.
+		El entrenamiento usa una sola ART, as\'{\i} que otra aseguradora exige adaptar vistas y reentrenar. &
 		Resistencia a modelos ``caja negra''; competencia de BI gen\'erico; cambios regulatorios; riesgo de malinterpretar el score como probabilidad; mal uso de alertas predictivas si se divulgan sin control. \\
 		\hline
 	\end{tabular}
@@ -343,7 +345,6 @@ El diferencial del prototipo es juntar predicci\'on a horizonte trimestral, expl
 	El valor se mide en eficiencia del panel: mejor precisi\'on en el top de la lista, frente a visitar el mismo volumen al azar o por calendario.
 	En esta tesis el prototipo se valida sin comercializaci\'on.
 	\item[Plaza]
-	El canal es directo a equipos de prevenci\'on de ART.
 	El canal es directo a equipos de prevenci\'on de ART, sobre una arquitectura en AWS de bajo costo, reutilizable por m\'as de una aseguradora.
 \end{description}
 
