@@ -1,0 +1,169 @@
+% Persona de coordinaci\'on de prevenci\'on
+\begingroup
+\fontsize{7.5}{9.7}\selectfont
+\ifdefined\pcolw\else\newlength{\pcolw}\fi
+\ifdefined\pfootw\else\newlength{\pfootw}\fi
+\newcommand{\PCaja}[3][south]{%
+  \noindent
+  \begin{tikzpicture}[baseline=(current bounding box.#1)]
+    \node[
+      draw=NavyBlue!55,
+      fill=white,
+      rounded corners=5pt,
+      inner sep=5.4pt,
+      outer sep=0pt,
+      text=black,
+      align=left,
+      font=\fontsize{7.5}{9.7}\selectfont\sffamily,
+      text width=#2,
+    ] {#3};
+  \end{tikzpicture}%
+}
+
+\begin{tikzpicture}
+  \node[
+    draw=NavyBlue!78,
+    line width=0.95pt,
+    rounded corners=8pt,
+    inner sep=0pt,
+    outer sep=0pt,
+    fill=NavyBlue!6,
+  ] {%
+    \begin{minipage}{0.988\linewidth}
+      \setlength{\fboxsep}{0pt}%
+      \colorbox{NavyBlue}{%
+        \begin{minipage}{\linewidth}
+          \vspace{6pt}
+          \hspace{9pt}%
+          \begin{minipage}{0.62\linewidth}
+            \textcolor{white}{\sffamily\bfseries\Large Laura Ferrero}\\[2pt]
+            \textcolor{white}{\sffamily\scriptsize Un mapa de riesgo que diga d\'onde mirar, no un umbral que ya explot\'o}\\[2pt]
+            \textcolor{white}{\sffamily\tiny Coordinaci\'on de prevenci\'on $\cdot$ ART $\cdot$ persona de gerencia}
+          \end{minipage}%
+          \hfill
+          \begin{minipage}{0.32\linewidth}
+            \raggedleft
+            \colorbox{white}{\textcolor{NavyBlue}{\sffamily\bfseries\scriptsize\hspace{3pt}Coordinadora\hspace{3pt}}}%
+            \hspace{3pt}%
+            \colorbox{NavyBlue!25}{\textcolor{NavyBlue}{\sffamily\bfseries\scriptsize\hspace{3pt}Padr\'on y equipo\hspace{3pt}}}\\[4pt]
+            \textcolor{white}{\sffamily\tiny Uso diario del tablero}
+          \end{minipage}%
+          \hspace{9pt}%
+          \vspace{6pt}
+        \end{minipage}%
+      }
+
+      \vspace{7pt}
+      \centering
+      \begin{minipage}{\dimexpr\linewidth-22pt\relax}
+        \setlength{\pcolw}{\dimexpr(\linewidth-16pt)/3\relax}
+        \setlength{\pfootw}{\dimexpr(\linewidth-10pt)/2\relax}
+
+        \PCaja{\dimexpr\linewidth-14pt\relax}{%
+          {\color{NavyBlue}\sffamily\bfseries Qui\'en es y c\'omo trabaja}\\[4pt]
+          Mira el padr\'on y decide d\'onde poner al equipo; no recorre cada visita.
+          Eval\'ua la \enquote{salud} del establecimiento con el RGRL al afiliar o declarar, y el RAR/NTE para agentes de riesgo.
+          El P.E.S.E.\ entra cuando el \'{\i}ndice de incidencia ya se dispar\'o: es un umbral reactivo.
+          El plan de visitas vive en planillas; el sistema empuja m\'as a atender el siniestro que a prevenirlo.
+          No denuncia todo: denunciar al afiliado deriva en inspectores y multa. El preventor verifica; la ART formaliza.
+        }
+
+        \vspace{9pt}
+        \noindent
+        \begin{minipage}[t]{\pcolw}
+          \PCaja[north]{\dimexpr\pcolw-14pt\relax}{%
+            {\color{NavyBlue}\sffamily\bfseries Contexto de uso}\\[4pt]
+            $\cdot$ D\'onde: escritorio, tablero de cobertura y asignaci\'on.\\[3pt]
+            $\cdot$ Cu\'ando: arma el plan trimestral y rebalancea en la semana.\\[3pt]
+            $\cdot$ Por qu\'e: tiene que rendir capacidad de preventores, no un modelo.\\[3pt]
+            $\cdot$ Competencia: experta en RGRL/P.E.S.E., no en aprendizaje autom\'atico.
+          }
+        \end{minipage}%
+        \hfill
+        \begin{minipage}[t]{\pcolw}
+          \PCaja[north]{\dimexpr\pcolw-14pt\relax}{%
+            {\color{NavyBlue}\sffamily\bfseries Herramientas de hoy}\\[4pt]
+            $\cdot$ RGRL como \enquote{biblia} de qu\'e prevenci\'on hacer.\\[3pt]
+            $\cdot$ Planillas para el plan de visitas.\\[3pt]
+            $\cdot$ \'Indice de incidencia publicado por la Superintendencia.\\[3pt]
+            $\cdot$ Sistema de gesti\'on de relevamientos y recomendaciones.
+          }
+        \end{minipage}%
+        \hfill
+        \begin{minipage}[t]{\pcolw}
+          \PCaja[north]{\dimexpr\pcolw-14pt\relax}{%
+            {\color{NavyBlue}\sffamily\bfseries Motivaciones}\\[4pt]
+            $\cdot$ Ver el recorte accionable del padr\'on, no todo el universo.\\[3pt]
+            $\cdot$ Que el preventor sepa sector y agente material.\\[3pt]
+            $\cdot$ Cubrir incumplimientos con fecha de regularizaci\'on.\\[3pt]
+            $\cdot$ Equilibrar denuncia ante la SRT y relaci\'on con el afiliado.
+          }
+        \end{minipage}
+
+        \vspace{16pt}
+        \noindent
+        \begin{minipage}[t]{\pcolw}
+          \PCaja[north]{\dimexpr\pcolw-14pt\relax}{%
+            {\color{NavyBlue}\sffamily\bfseries Objetivos}\\[4pt]
+            $\cdot$ Distribuir preventores seg\'un riesgo relativo del trimestre.\\[3pt]
+            $\cdot$ Distinguir ranking predictivo de obligaci\'on PRS o P.E.S.E.\\[3pt]
+            $\cdot$ Medir cobertura y factores que m\'as empujan el ranking.\\[3pt]
+            $\cdot$ Sacar del foco del establecimiento los siniestros \emph{in itinere}.
+          }
+        \end{minipage}%
+        \hfill
+        \begin{minipage}[t]{\pcolw}
+          \PCaja[north]{\dimexpr\pcolw-14pt\relax}{%
+            {\color{NavyBlue}\sffamily\bfseries Frustraciones}\\[4pt]
+            $\cdot$ Actuar cuando el \'{\i}ndice ya estall\'o.\\[3pt]
+            $\cdot$ Excel y RGRL manuales para priorizar gente.\\[3pt]
+            $\cdot$ Poca inversi\'on relativa en prevenci\'on pese a los datos.\\[3pt]
+            $\cdot$ \enquote{No se denuncia todo}: denunciar es denunciar al cliente.
+          }
+        \end{minipage}%
+        \hfill
+        \begin{minipage}[t]{\pcolw}
+          \PCaja[north]{\dimexpr\pcolw-14pt\relax}{%
+            {\color{NavyBlue}\sffamily\bfseries H\'abitos}\\[4pt]
+            $\cdot$ Pide al preventor el sector (poste, rampa) antes que un puntaje suelto.\\[3pt]
+            $\cdot$ Cruza recomendaciones cumplidas o no con el RGRL.\\[3pt]
+            $\cdot$ Separa accidentes de enfermedades profesionales (RAR).\\[3pt]
+            $\cdot$ Quiere ver concentraci\'on anonimizada en el mismo trabajador.
+          }
+        \end{minipage}
+
+        \vspace{10pt}
+        \PCaja{\dimexpr\linewidth-14pt\relax}{%
+          {\color{NavyBlue}\sffamily\bfseries Escenario}\\[4pt]
+          Abre estad\'{\i}sticas de cobertura del top-1000 y el SHAP agregado: d\'onde el modelo pone la masa.
+          Asigna visitas a preventores sin mezclar un caso PRS con un cr\'{\i}tico predictivo.
+          En la ficha mira incumplimientos y si la rampa del mes pasado ya se regulariz\'o; si est\'a cumplida, no la insiste.
+          No trata el score como probabilidad. Afuera el trabajador casi no percibe prevenci\'on: el valor de Prevex es ordenar al equipo.
+        }
+
+        \vspace{9pt}
+        \noindent
+        \begin{minipage}[t]{\pfootw}
+          \PCaja[north]{\dimexpr\pfootw-14pt\relax}{%
+            {\color{NavyBlue}\sffamily\bfseries Qu\'e necesita de Prevex}\\[4pt]
+            Cobertura y SHAP agregado sobre el top-1000 (HU-07, HU-09 / RF-07).\\[3pt]
+            Asignar visitas (HU-08 / RF-08).\\[3pt]
+            Distinguir motivo predictivo de PRS (HU-12).\\[3pt]
+            Ficha con historial e incumplimientos, sin leer el score como probabilidad (RF-04, RNF-06).
+          }
+        \end{minipage}%
+        \hfill
+        \begin{minipage}[t]{\pfootw}
+          \PCaja[north]{\dimexpr\pfootw-14pt\relax}{%
+            {\color{NavyBlue}\sffamily\bfseries \'Exito y temores}\\[4pt]
+            \'Exito: el equipo mira primero donde hay que mirar, con causa accionable, y el plan no se mezcla con el umbral P.E.S.E.\\[4pt]
+            Temor: tratar el ranking como or\'aculo; ensuciar el establecimiento con \emph{in itinere}; romper la relaci\'on comercial con una denuncia autom\'atica.
+          }
+        \end{minipage}
+
+        \vspace{3pt}
+      \end{minipage}
+    \end{minipage}%
+  };
+\end{tikzpicture}
+\endgroup

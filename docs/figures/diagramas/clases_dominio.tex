@@ -1,27 +1,66 @@
 % Diagrama de clases de dominio (simplificado)
 \begin{tikzpicture}[
-  font=\tiny\sffamily,
-  cls/.style={draw=blue!70, fill=blue!4, rectangle split, rectangle split parts=2, align=left, rounded corners=1pt},
-  ]
-  \node[cls] (u) at (0,2.2) {\textbf{Usuario}
+  font=\scriptsize\sffamily,
+  cls/.style={
+    rectangle split,
+    rectangle split parts=2,
+    rectangle split part fill={NavyBlue!14, white},
+    draw=NavyBlue!70,
+    rounded corners=3pt,
+    align=left,
+    text width=2.9cm,
+    inner sep=4pt,
+    line width=0.75pt,
+    font=\scriptsize\sffamily,
+  },
+  rel/.style={line width=0.8pt, NavyBlue!68},
+  mul/.style={font=\tiny\sffamily, NavyBlue},
+]
+
+  \node[font=\scriptsize\sffamily\bfseries, NavyBlue] at (0, 5.12) {Identidad};
+  \node[font=\scriptsize\sffamily\bfseries, NavyBlue] at (4.6, 5.12) {Priorizaci\'on};
+  \node[font=\scriptsize\sffamily\bfseries, NavyBlue] at (9.2, 5.12) {Operaci\'on};
+
+  \node[cls] (u) at (0, 2.55) {\textbf{Usuario}
     \nodepart{second} Id\\Email\\Rol\\ZonaId};
-  \node[cls] (z) at (3.2,2.2) {\textbf{Zona}
-    \nodepart{second} Id\\Nombre};
-  \node[cls] (s) at (0,0) {\textbf{RankingSnapshot}
+  \node[cls] (s) at (4.6, 2.55) {\textbf{RankingSnapshot}
     \nodepart{second} Periodo\\Horizonte\\EsVigente\\ArtifactHash};
-  \node[cls] (i) at (3.6,0) {\textbf{RankingItem}
-    \nodepart{second} Ranking\\ScoreRiesgo\\Banda\\Motivo};
-  \node[cls] (a) at (7.2,2.2) {\textbf{AgendaItem}
+  \node[cls] (a) at (9.2, 2.55) {\textbf{AgendaItem}
     \nodepart{second} FechaPlanificada\\Estado\\MotivoVisita};
-  \node[cls] (v) at (7.2,0) {\textbf{VisitaApp}
+
+  \node[cls] (z) at (0, 0.15) {\textbf{Zona}
+    \nodepart{second} Id\\Nombre};
+  \node[cls] (i) at (4.6, 0.15) {\textbf{RankingItem}
+    \nodepart{second} Ranking\\ScoreRiesgo\\Banda\\Motivo};
+  \node[cls] (v) at (9.2, 0.15) {\textbf{VisitaApp}
     \nodepart{second} FechaRealizada\\Resultado};
-  \node[cls] (c) at (3.6,-2.0) {\textbf{ContribucionSHAP}
+
+  \node[cls] (c) at (4.6, -2.15) {\textbf{ContribucionSHAP}
     \nodepart{second} Feature\\ShapValue\\Direccion};
 
-  \draw[-{Latex}, blue!60] (u) -- (z);
-  \draw[-{Latex}, blue!60] (s) -- (i);
-  \draw[-{Latex}, blue!60] (i) -- (c);
-  \draw[-{Latex}, blue!60] (u) -- (a);
-  \draw[-{Latex}, blue!60] (a) -- (v);
-  \draw[-{Latex}, blue!60] (s) -- (a);
+  \draw[rel] (u.south) -- (z.north)
+    node[mul, left, pos=0.18] {*}
+    node[mul, left, pos=0.82] {1};
+  \draw[rel] (s.south) -- (i.north)
+    node[mul, left, pos=0.18] {1}
+    node[mul, left, pos=0.82] {*};
+  \draw[rel] (i.south) -- (c.north)
+    node[mul, left, pos=0.15] {1}
+    node[mul, left, pos=0.85] {*};
+  \draw[rel] (a.south) -- (v.north)
+    node[mul, right, pos=0.18] {1}
+    node[mul, right, pos=0.82] {0..1};
+  % Snapshot $\to$ Agenda: misma cota Y (cajas de distinta altura)
+  \draw[rel]
+    ([yshift=-10pt]s.east) -- ([yshift=-10pt]s.east -| a.west)
+    node[mul, above, pos=0.16] {1}
+    node[mul, above, pos=0.84] {*};
+
+  % Usuario $\to$ Agenda: tramo superior a Y fija, luego baja en vertical
+  \coordinate (barra-ua) at ([yshift=0.88cm]u.north);
+  \draw[rel, rounded corners=3.5pt]
+    (u.north) -- (barra-ua) -- (barra-ua -| a.north) -- (a.north);
+  \node[mul] at ($(u.north)+(-0.28,0.18)$) {1};
+  \node[mul] at ($(a.north)+(0.28,0.18)$) {*};
+
 \end{tikzpicture}

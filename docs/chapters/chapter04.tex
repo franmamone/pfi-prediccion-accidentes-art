@@ -2,8 +2,7 @@
 
 \begin{contenidoNuevo}
 
-Este cap\'itulo documenta las decisiones de implementaci\'on del prototipo: metodolog\'{\i}a de desarrollo, stack tecnol\'ogico, flujo de informaci\'on, arquitectura de componentes, modelo de clases, modelo de datos y arquitectura de despliegue.
-Cierra con la evidencia de avance funcional (prototipo local operativo y m\'etricas de referencia del modelo) y con las limitaciones vigentes del trabajo.
+Este cap\'itulo documenta las decisiones de implementaci\'on del prototipo: metodolog\'{\i}a de desarrollo, stack tecnol\'ogico, flujo de informaci\'on, arquitectura, modelo de clases, modelo de datos, resguardo de datos frente a los dos usos de IA, y m\'etricas de referencia del modelo.
 
 \section{Metodolog\'ia}
 
@@ -11,14 +10,16 @@ El desarrollo sigui\'o un enfoque iterativo:
 \begin{enumerate}
 	\item ingenier\'ia de datos sobre la BD core de la ART (vistas y panel establecimiento$\times$mes);
 	\item entrenamiento y evaluaci\'on de un modelo XGBoost con horizonte trimestral (accidentaci\'on en los tres meses siguientes);
-	\item exportaci\'on de ranking explicable (SHAP) e importaci\'on a BD operativa;
+	\item generaci\'on del ranking explicable (SHAP) e importaci\'on a la BD operativa;
 	\item construcci\'on de API REST + frontend React para uso por prevencionistas;
 	\item anal\'itica hist\'orica (snapshots, cobertura y precisi\'on observada).
 \end{enumerate}
 
-La validaci\'on del modelo usa split temporal: entrenamiento 2022--2023, calibraci\'on 2024 y holdout 2025.
-El horizonte operativo es el \emph{pr\'oximo trimestre}: predice si el establecimiento registrar\'a al menos un accidente en los tres meses siguientes al per\'{\i}odo de decisi\'on.
-Esa ventana se alinea a la planificaci\'on de visitas relevada en las entrevistas (calendario normativo, RGRL y capacidad limitada del preventor) y evita un doble ranking mensual de alcance demasiado acotado.
+Los \'arboles del XGBoost se ajustan solo con 2022 y 2023.
+El a\~no 2024 no entra a ese entrenamiento: se reserva para fijar el umbral de decisi\'on, sin volver a entrenar el modelo.
+El desempe\~no que se reporta es el de 2025, que el modelo no vio.
+El horizonte operativo es el pr\'oximo trimestre: predice si el establecimiento registrar\'a al menos un accidente en los tres meses siguientes al per\'{\i}odo de decisi\'on.
+Esa ventana se alinea a la planificaci\'on de visitas relevada en las entrevistas: el calendario normativo, los relevamientos como el RGRL y la capacidad limitada del preventor.
 
 \section{Stack tecnol\'ogico y justificaci\'on}
 
@@ -36,7 +37,7 @@ Esa ventana se alinea a la planificaci\'on de visitas relevada en las entrevista
 		BD operativa & SQL Server Express (`PfiPrevencion`): modelo relacional de rankings, agenda y usuarios. \\
 		Auth & JWT Bearer + hash de contrase\~nas: simple para tesis y upgradeable. \\
 		Comunicaci\'on & HTTPS/HTTP + REST JSON: desacople cliente-servidor. \\
-		Cloud objetivo & AWS Free Tier (EC2 todo-en-uno + S3 + Budgets): bajo costo para demo posterior. \\
+		Arquitectura & AWS Free Tier: una EC2 con Nginx, React, API y SQL Express, S3 para rankings y Budgets para el control de costo. \\
 		\hline
 	\end{tabular}
 \end{table}
@@ -46,8 +47,8 @@ Esa ventana se alinea a la planificaci\'on de visitas relevada en las entrevista
 \begin{itemize}
 	\item \textbf{REST/HTTP(S):} intercambio de recursos JSON entre React y la API.
 	\item \textbf{JWT Bearer:} autorizaci\'on por token en el encabezado \texttt{Authorization}.
-	\item \textbf{SQL/TDS:} persistencia en la BD operativa local (y futura en EC2).
-	\item \textbf{Separaci\'on de redes:} la BD core de la ART permanece on-prem; solo el pipeline (VPN/local) la consulta en solo lectura.
+	\item \textbf{SQL/TDS:} persistencia en SQL Express, en la misma EC2 que la API.
+	\item \textbf{Separaci\'on de redes:} la BD core de la ART permanece on-prem; solo el pipeline la consulta en solo lectura, por VPN.
 \end{itemize}
 
 \section{Flujo de informaci\'on}
@@ -55,19 +56,22 @@ Esa ventana se alinea a la planificaci\'on de visitas relevada en las entrevista
 \begin{figure}[htbp]
 	\centering
 	\input{figures/diagramas/flujo_informacion}
-	\caption{Flujo de informaci\'on: core ART $\rightarrow$ pipeline $\rightarrow$ ranking $\rightarrow$ BD app $\rightarrow$ API $\rightarrow$ React.}
+	\caption{Flujo de informaci\'on desde la BD core de la ART hasta la interfaz de los preventores.}
 	\label{fig:flujo-info}
 \end{figure}
 
-\section{Arquitectura de componentes (desarrollo local)}
+\section{Arquitectura propuesta}
 
-La Figura~\ref{fig:componentes-local} muestra el despliegue usado para la demo del 50\,\%.
+La Figura~\ref{fig:aws-ft} resume la arquitectura propuesta en AWS.
+Se usa Free Tier: una EC2 concentra Nginx, React, API y SQL Express; S3 guarda los rankings y Budgets controla el cr\'edito.
+La BD core de la ART no se expone a Internet; el pipeline la lee por VPN e importa el ranking a la nube.
+El mismo dise\~no se puede reutilizar con otra aseguradora.
 
 \begin{figure}[htbp]
 	\centering
-	\input{figures/diagramas/componentes_local}
-	\caption{Componentes en entorno local de demostraci\'on.}
-	\label{fig:componentes-local}
+	\input{figures/diagramas/arquitectura_aws_freetier}
+	\caption{Arquitectura propuesta en AWS Free Tier.}
+	\label{fig:aws-ft}
 \end{figure}
 
 \section{Modelo de clases de dominio}
@@ -75,18 +79,19 @@ La Figura~\ref{fig:componentes-local} muestra el despliegue usado para la demo d
 \begin{figure}[htbp]
 	\centering
 	\input{figures/diagramas/clases_dominio}
-	\caption{Diagrama de clases simplificado del dominio de la aplicaci\'on.}
+	\caption{Diagrama de clases del dominio, simplificado.}
 	\label{fig:clases}
 \end{figure}
 
+\clearpage
 \section{Modelo de datos (ER)}
 
 La BD operativa `PfiPrevencion` (schema \texttt{app}) almacena snapshots de ranking, \'items, contribuciones SHAP, outcomes, m\'etricas, coberturas, agenda y visitas. La Figura~\ref{fig:er} resume las entidades principales.
 
-\begin{figure}[htbp]
+\begin{figure}[H]
 	\centering
 	\input{figures/diagramas/modelo_er}
-	\caption{Diagrama entidad-relaci\'on simplificado de la BD operativa.}
+	\caption{Diagrama entidad-relaci\'on de la BD operativa, simplificado.}
 	\label{fig:er}
 \end{figure}
 
@@ -97,47 +102,143 @@ Arquitectura de datasources:
 	\item \textbf{Artefactos ML:} modelos y reportes generados offline (no se cargan en cada request).
 \end{enumerate}
 
-\section{Arquitectura AWS Free Tier (objetivo)}
+\section{Dos usos de IA y el resguardo de datos}\label{sec:ia-datos}
 
-Para el hito 50\,\% la demo es local. La Figura~\ref{fig:aws-ft} documenta el despliegue objetivo posterior, alineado a AWS Free Tier personal (hasta ~USD\,200 / 6 meses): una EC2 con Nginx + React + API + SQL Express, S3 opcional para rankings y Budgets para control de cr\'editos. La BD core de la ART no se expone a Internet; el dise\~no contempla multi-ART.
+El prototipo usa inteligencia artificial en dos lugares distintos, con reglas de datos distintas.
+No es el mismo modelo ni el mismo circuito.
 
-\begin{figure}[htbp]
-	\centering
-	\input{figures/diagramas/arquitectura_aws_freetier}
-	\caption{Arquitectura objetivo en AWS Free Tier (EC2 todo-en-uno).}
-	\label{fig:aws-ft}
-\end{figure}
+\subsection*{Modelo predictivo (entrenamiento local)}
 
-\section{Avance de implementaci\'on (demo)}
+El ranking trimestral lo produce un XGBoost entrenado y evaluado de forma local, en el pipeline offline, sobre el panel establecimiento$\times$mes extra\'{\i}do de la BD core de la ART.
+Esa corrida no env\'{\i}a filas a ning\'un servicio de IA p\'ublica ni a ning\'un modelo generativo.
+Los identificadores de establecimiento y de empleador llegan al prototipo como hashes, no como CUIT, raz\'on social ni datos de personas.
+El pipeline lee la core en solo lectura por VPN; el artefacto (\'arboles, umbral y contribuciones SHAP) se importa a la BD operativa.
+El preventor ve el score, la banda y los factores SHAP calculados en esa corrida local.
+El entrenamiento y el c\'alculo de SHAP no se delegan a una IA p\'ublica: quedan en el pipeline y en la BD operativa.
 
-Al momento del hito 50\,\% se encuentra operativo un prototipo local con las pantallas de login, resumen, priorizaci\'on, detalle (explicaci\'on + SHAP), agenda, estad\'isticas, exportaciones y perfil. La API expone autenticaci\'on JWT y endpoints de riesgo, agenda y anal\'itica hist\'orica.
+\subsection*{Modelo generativo (narrativa para el preventor)}
 
-\subsection{Resultados del modelo (referencia holdout 2025)}
+El resumen en lenguaje claro del detalle es opcional y no interviene en el puntaje ni en el orden de la lista.
+Solo redacta una gu\'{\i}a de la pr\'oxima visita a partir de un dossier ya agregado: conteos de accidentes, formas, zonas del cuerpo, naturaleza y gravedad, incumplimientos u observaciones de visitas previas, banda y posici\'on en el ranking.
+Antes de invocar el servicio de generaci\'on de texto, la API arma un prompt anonimizado: quita hashes, nombres y cualquier identificador.
+El modelo externo no recibe qui\'en es el establecimiento ni el empleador; recibe evidencia operacional ya agregada y debe devolverla en un formato fijo (resumen ejecutivo, perfil de riesgo, incumplimientos a verificar y focos de la visita).
+El texto se guarda en la BD operativa para no reiterar la llamada.
+Si no hay dossier, no hay invocaci\'on.
+
+La distinci\'on importa porque los datos de ART son sensibles (siniestros, n\'omina, visitas).
+Entrenar el ranking en una IA p\'ublica expondr\'{\i}a el panel completo.
+Pedirle a un modelo generativo que ``conozca'' al establecimiento lo convertir\'{\i}a en un repositorio de qui\'en tuvo qu\'e accidente.
+Por eso el XGBoost se entrena en local y el generativo solo resume evidencia ya desidentificada, en el molde que pide el preventor.
+La explicaci\'on auditable del puntaje sigue siendo SHAP, calculada en el pipeline; la narrativa es un apoyo de redacci\'on, no la fuente de la priorizaci\'on.
+
+\section{Resultados del modelo}
+
+Los resultados vigentes corresponden al horizonte trimestral en holdout 2025 (el a\~no que el modelo no vio).
+Los \'arboles se ajustan con 2022--2023; 2024 fija el umbral de decisi\'on, sin reentrenar.
+
+La aplicaci\'on muestra una lista operativa de \textbf{1000 establecimientos}: el 2,8\,\% de los 35\,505 del universo modelado.
+Sobre esa lista se calculan las bandas de riesgo, el SHAP agregado y la cobertura de visitas.
+No se usa un recorte menor como universo de la priorizaci\'on.
+
+\subsection*{Protocolo y volumen evaluado}
+
+Cada fila es un establecimiento en un mes de decisi\'on.
+El positivo es registrar al menos un accidente en los tres meses siguientes.
+El holdout 2025 trimestral cubre 284\,040 filas, de las que 7\,565 son positivas (tasa base 2,66\,\%).
 
 \begin{table}[htbp]
 	\centering
-	\caption{M\'etricas de referencia del modelo trimestral en holdout 2025.}
+	\caption{Split temporal y volumen del holdout trimestral 2025.}
+	\label{tab:holdout-split}
+	\begin{tabular}{@{}ll@{}}
+		\hline
+		\textbf{Rol} & \textbf{Detalle} \\
+		\hline
+		Entrenamiento (\'arboles) & 2022--2023 (852\,120 filas) \\
+		Calibraci\'on del umbral & 2024 (sin reentrenar) \\
+		Holdout reportado & 2025, horizonte 3 meses \\
+		Filas evaluadas & 284\,040 \\
+		Positivos & 7\,565 (tasa base 2,66\,\%) \\
+		Universo modelado & 35\,505 establecimientos \\
+		Lista operativa & 1000 (2,8\,\% del universo) \\
+		\hline
+	\end{tabular}
+\end{table}
+
+\subsection*{Calidad global del ranking}
+
+El PR-AUC de 0,515 mide la calidad del orden en un problema muy desbalanceado: no se lee como ``51,5\,\% de aciertos''.
+El recall al umbral F2 (0,826) es 66,7\,\%: el modelo dispara alerta en aproximadamente dos de cada tres establecimientos que tendr\'an al menos un accidente en el trimestre siguiente.
+El Brier de 0,055 confirma que el score no est\'a calibrado como probabilidad; en la interfaz se presenta como prioridad, no como chance individual.
+
+\begin{table}[htbp]
+	\centering
+	\caption{M\'etricas globales del modelo trimestral en holdout 2025.}
 	\label{tab:metricas-holdout}
 	\begin{tabular}{@{}lc@{}}
 		\hline
 		\textbf{M\'etrica} & \textbf{Valor} \\
 		\hline
 		PR-AUC & 0,515 \\
-		Precision @ top-50 & 93,5\,\% \\
-		Precision @ top-225 & 79,0\,\% \\
-		Visitas reales @ mismo volumen & 17,8\,\% \\
+		Recall (umbral F2) & 66,7\,\% \\
+		Umbral de alerta & 0,826 \\
+		Brier score & 0,055 \\
+		Top-50 con cooldown de 3 meses & 89,0\,\% \\
 		\hline
 	\end{tabular}
 \end{table}
 
-Los mockups esquem\'aticos (Figuras~\ref{fig:mock-login}--\ref{fig:mock-perfil} del Cap\'itulo~\ref{ch:descripcion}) documentan el dise\~no previo; la demo en vivo usa el prototipo implementado. El recorrido es: login $\rightarrow$ priorizaci\'on $\rightarrow$ detalle (resumen IA / factores SHAP) $\rightarrow$ agenda $\rightarrow$ estad\'isticas $\rightarrow$ perfil.
+\subsection*{Precisi\'on operativa en la lista de 1000}
 
-\section{Limitaciones del hito}
+La m\'etrica de uso es la precisi\'on media por mes: entre los $K$ primeros del ranking de cada mes de 2025, qu\'e porcentaje registr\'o al menos un accidente en los tres meses siguientes.
+Esa curva es la ``efectividad hist\'orica'' por tramo que consume la aplicaci\'on.
+
+Las bandas no se cortan por un cupo fijo de visitas.
+Un establecimiento es cr\'{\i}tico si el acierto hist\'orico de su tramo es $\geq 80$\,\%, alto si $\geq 60$\,\% y medio si $\geq 30$\,\%.
+En el holdout trimestral eso produce 200 cr\'{\i}ticos, 300 altos y 500 medios.
+No hay banda baja dentro de los 1000: el acierto del tramo m\'as amplio (top-1000) es 49,5\,\%, por encima del 30\,\%.
+
+\begin{table}[htbp]
+	\centering
+	\caption{Precisi\'on media por mes en holdout 2025 (horizonte 3 meses) sobre la lista de 1000.}
+	\label{tab:precision-topk}
+	\begin{tabular}{@{}lccc@{}}
+		\hline
+		\textbf{Top-$K$} & \textbf{Precisi\'on} & \textbf{Lift vs tasa base} & \textbf{Banda} \\
+		\hline
+		50 & 93,5\,\% & $\times$35 & Cr\'{\i}tico \\
+		100 & 88,1\,\% & $\times$33 & Cr\'{\i}tico \\
+		200 & 80,7\,\% & $\times$30 & Cr\'{\i}tico (200 est.) \\
+		300 & 73,5\,\% & $\times$28 & Alto \\
+		500 & 63,7\,\% & $\times$24 & Alto (300 est.) \\
+		1000 & 49,5\,\% & $\times$19 & Medio (500 est.) \\
+		\hline
+	\end{tabular}
+\end{table}
+
+Si se junta todo 2025 en un solo ranking (m\'etrica global, no la de la app), la precisi\'on del top-1000 llega a 86,9\,\%.
+Ese n\'umero es un techo; la referencia operativa sigue siendo la media mensual de 49,5\,\%.
+En cortes trimestrales no solapados (un trimestre cerrado de planificaci\'on) el top-150 alcanza 85,0\,\%.
+
+\subsection*{Comparaci\'on con otras pol\'{\i}ticas}
+
+Sobre el mismo holdout, el azar coincide con la tasa base (2,7\,\%).
+La pr\'actica real de visitas, al volumen hist\'orico de referencia, alcanza 17,8\,\%.
+Una regla simple por historial de accidentes, al mismo volumen, llega a 58,2\,\%.
+El modelo en el n\'ucleo (top-50) llega a 93,5\,\%; si se excluyen establecimientos visitados en los \'ultimos tres meses, 89,0\,\%.
+En la lista completa de 1000 la media mensual es 49,5\,\% (unas 19 veces la tasa base), muy por encima de las visitas reales y por debajo del historial puro medido en un recorte m\'as chico.
+
+Lectura: el modelo supera ampliamente al azar y a las visitas realmente ejecutadas.
+En el tramo cr\'{\i}tico supera tambi\'en a ordenar solo por siniestralidad previa.
+Al bajar hacia los 1000 la precisi\'on media baja (se incluye m\'as masa) y el historial sigue siendo un competidor serio.
+El valor del prototipo est\'a en decidir a qui\'en visitar primero, con bandas y explicaci\'on SHAP, no en reemplazar el conocimiento de accidentes pasados ni en leer el score como probabilidad.
+
+\section{Limitaciones}
 
 \begin{itemize}
-	\item User research en curso: encuesta $n=156$ (Anexo~\ref{anexo:encuesta}) y dos entrevistas (Anexos~\ref{anexo:entrevista-adrian-elias} y~\ref{anexo:entrevista-diego-oviedo}); resta una entrevista y las \emph{user personas}.
-	\item Despliegue cloud diferido a post-hito (misma arquitectura Free Tier documentada).
+	\item Encuesta de 156 respuestas (Anexo~\ref{anexo:encuesta}) y entrevistas (Anexos~\ref{anexo:entrevista-adrian-elias} y~\ref{anexo:entrevista-diego-oviedo}); las personas de la Secci\'on~\ref{sec:personas} son s\'{\i}ntesis de esas fuentes, no nuevos relevamientos.
 	\item El score de riesgo no debe interpretarse como probabilidad calibrada de accidente.
+	\item El resumen generativo no punt\'ua establecimientos: solo redacta una gu\'{\i}a sobre evidencia ya desidentificada.
 \end{itemize}
 
 \end{contenidoNuevo}

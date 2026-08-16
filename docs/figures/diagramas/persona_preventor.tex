@@ -1,0 +1,169 @@
+% Persona primaria: prevencionista de campo
+\begingroup
+\fontsize{7.5}{9.7}\selectfont
+\ifdefined\pcolw\else\newlength{\pcolw}\fi
+\ifdefined\pfootw\else\newlength{\pfootw}\fi
+\newcommand{\PCaja}[3][south]{%
+  \noindent
+  \begin{tikzpicture}[baseline=(current bounding box.#1)]
+    \node[
+      draw=NavyBlue!55,
+      fill=white,
+      rounded corners=5pt,
+      inner sep=5.4pt,
+      outer sep=0pt,
+      text=black,
+      align=left,
+      font=\fontsize{7.5}{9.7}\selectfont\sffamily,
+      text width=#2,
+    ] {#3};
+  \end{tikzpicture}%
+}
+
+\begin{tikzpicture}
+  \node[
+    draw=NavyBlue!78,
+    line width=0.95pt,
+    rounded corners=8pt,
+    inner sep=0pt,
+    outer sep=0pt,
+    fill=NavyBlue!6,
+  ] {%
+    \begin{minipage}{0.988\linewidth}
+      \setlength{\fboxsep}{0pt}%
+      \colorbox{NavyBlue}{%
+        \begin{minipage}{\linewidth}
+          \vspace{6pt}
+          \hspace{9pt}%
+          \begin{minipage}{0.62\linewidth}
+            \textcolor{white}{\sffamily\bfseries\Large Mart\'{\i}n R\'{\i}os}\\[2pt]
+            \textcolor{white}{\sffamily\scriptsize Llegar a la visita con el historial, no con la lista de vencimientos}\\[2pt]
+            \textcolor{white}{\sffamily\tiny Prevencionista de campo $\cdot$ ART $\cdot$ persona primaria}
+          \end{minipage}%
+          \hfill
+          \begin{minipage}{0.32\linewidth}
+            \raggedleft
+            \colorbox{white}{\textcolor{NavyBlue}{\sffamily\bfseries\scriptsize\hspace{3pt}Campo\hspace{3pt}}}%
+            \hspace{3pt}%
+            \colorbox{NavyBlue!25}{\textcolor{NavyBlue}{\sffamily\bfseries\scriptsize\hspace{3pt}Escritorio y visita\hspace{3pt}}}\\[4pt]
+            \textcolor{white}{\sffamily\tiny Uso diario, obligatorio}
+          \end{minipage}%
+          \hspace{9pt}%
+          \vspace{6pt}
+        \end{minipage}%
+      }
+
+      \vspace{7pt}
+      \centering
+      \begin{minipage}{\dimexpr\linewidth-22pt\relax}
+        \setlength{\pcolw}{\dimexpr(\linewidth-16pt)/3\relax}
+        \setlength{\pfootw}{\dimexpr(\linewidth-10pt)/2\relax}
+
+        \PCaja{\dimexpr\linewidth-14pt\relax}{%
+          {\color{NavyBlue}\sffamily\bfseries Qui\'en es y c\'omo trabaja}\\[4pt]
+          Recorre los establecimientos de su zona con una capacidad de visitas limitada.
+          Arma la ronda con renovaci\'on de p\'oliza, frecuencia por actividad, RGRL/RAR y disparadores graves (ROAM).
+          Coordina fecha con el empleador: si no hay agenda, la cobertura se atrasa.
+          En el establecimiento emite informe para ART y empleador; el incumplimiento puede pegar en la al\'{\i}cuota y deja a la ART expuesta ante la SRT.
+          Quiere llegar ya sabiendo qu\'e lesiones se reiteran. El score de Prevex queda interno: avisarlo al empleador puede \enquote{levantar la perdiz}.
+        }
+
+        \vspace{9pt}
+        \noindent
+        \begin{minipage}[t]{\pcolw}
+          \PCaja[north]{\dimexpr\pcolw-14pt\relax}{%
+            {\color{NavyBlue}\sffamily\bfseries Contexto de uso}\\[4pt]
+            $\cdot$ D\'onde: PC de escritorio en la ART; la visita es en el establecimiento.\\[3pt]
+            $\cdot$ Cu\'ando: arma el trimestre y ajusta la agenda cada semana.\\[3pt]
+            $\cdot$ Por qu\'e: el trabajo lo obliga; no es un tablero opcional.\\[3pt]
+            $\cdot$ Competencia: experto en el circuito de visita, no en el modelo.
+          }
+        \end{minipage}%
+        \hfill
+        \begin{minipage}[t]{\pcolw}
+          \PCaja[north]{\dimexpr\pcolw-14pt\relax}{%
+            {\color{NavyBlue}\sffamily\bfseries Herramientas de hoy}\\[4pt]
+            $\cdot$ Sistema legado: vencimientos y ROAM, sin alerta por correo.\\[3pt]
+            $\cdot$ Criterio propio sobre la lista.\\[3pt]
+            $\cdot$ Informe de visita y revisita.\\[3pt]
+            $\cdot$ Historial de accidentes del establecimiento, cuando lo consigue.
+          }
+        \end{minipage}%
+        \hfill
+        \begin{minipage}[t]{\pcolw}
+          \PCaja[north]{\dimexpr\pcolw-14pt\relax}{%
+            {\color{NavyBlue}\sffamily\bfseries Motivaciones}\\[4pt]
+            $\cdot$ Cubrir la zona cr\'{\i}tica con el tiempo que tiene.\\[3pt]
+            $\cdot$ Salir de la visita con una recomendaci\'on fundada.\\[3pt]
+            $\cdot$ Dejar constancia del rol de la ART ante la SRT.\\[3pt]
+            $\cdot$ No improvisar in situ; el score no sale al empleador.
+          }
+        \end{minipage}
+
+        \vspace{16pt}
+        \noindent
+        \begin{minipage}[t]{\pcolw}
+          \PCaja[north]{\dimexpr\pcolw-14pt\relax}{%
+            {\color{NavyBlue}\sffamily\bfseries Objetivos}\\[4pt]
+            $\cdot$ Priorizar el trimestre, no la p\'oliza aislada.\\[3pt]
+            $\cdot$ Abrir el establecimiento y entender por qu\'e est\'a arriba.\\[3pt]
+            $\cdot$ Convertir el ranking en una visita agendada y cerrada.\\[3pt]
+            $\cdot$ Llevar historial de lesiones y patrones (p.\ ej.\ pinchazos en cosecha).
+          }
+        \end{minipage}%
+        \hfill
+        \begin{minipage}[t]{\pcolw}
+          \PCaja[north]{\dimexpr\pcolw-14pt\relax}{%
+            {\color{NavyBlue}\sffamily\bfseries Frustraciones}\\[4pt]
+            $\cdot$ No hay ranking predictivo: manda el calendario y el ROAM.\\[3pt]
+            $\cdot$ Cuello de botella: su agenda + la del empleador.\\[3pt]
+            $\cdot$ Listados sin notificaci\'on; todo depende de que \'el mire el sistema.\\[3pt]
+            $\cdot$ Si el puntaje se filtra, alguien podr\'{\i}a aprovechar un punto d\'ebil.
+          }
+        \end{minipage}%
+        \hfill
+        \begin{minipage}[t]{\pcolw}
+          \PCaja[north]{\dimexpr\pcolw-14pt\relax}{%
+            {\color{NavyBlue}\sffamily\bfseries H\'abitos}\\[4pt]
+            $\cdot$ Combina el listado del sistema con lo que vio en visitas previas.\\[3pt]
+            $\cdot$ Ciclo: visita $\to$ informe $\to$ recomendaciones $\to$ revisita.\\[3pt]
+            $\cdot$ Documenta para la ART aun si el empleador no ejecuta.\\[3pt]
+            $\cdot$ Desconf\'{\i}a de alertas abiertas hacia afuera del \'area.
+          }
+        \end{minipage}
+
+        \vspace{10pt}
+        \PCaja{\dimexpr\linewidth-14pt\relax}{%
+          {\color{NavyBlue}\sffamily\bfseries Escenario}\\[4pt]
+          Arranca el trimestre, abre Prevex y ve la lista operativa de 1000 con bandas.
+          Filtra su zona, entra a un establecimiento cr\'{\i}tico, lee SHAP y el resumen sin identificadores, y agenda la visita.
+          En el predio ya sabe d\'onde insistir (protecci\'on visual, un puesto, un patr\'on de d\'{\i}as).
+          Cierra el informe, marca la visita realizada y deja el score dentro del equipo.
+        }
+
+        \vspace{9pt}
+        \noindent
+        \begin{minipage}[t]{\pfootw}
+          \PCaja[north]{\dimexpr\pfootw-14pt\relax}{%
+            {\color{NavyBlue}\sffamily\bfseries Qu\'e necesita de Prevex}\\[4pt]
+            Ranking trimestral top-1000 con bandas (HU-02, HU-03 / RF-02, RF-03, RF-12).\\[3pt]
+            Ficha con SHAP y resumen sin identificadores (HU-04 / RF-04, RNF-06, RNF-09).\\[3pt]
+            Agenda propia para programar y cerrar (HU-05, HU-06 / RF-05).\\[3pt]
+            El score no se exporta al empleador.
+          }
+        \end{minipage}%
+        \hfill
+        \begin{minipage}[t]{\pfootw}
+          \PCaja[north]{\dimexpr\pfootw-14pt\relax}{%
+            {\color{NavyBlue}\sffamily\bfseries \'Exito y temores}\\[4pt]
+            \'Exito: la ronda cubre primero lo cr\'{\i}tico del trimestre y cada visita sale con una recomendaci\'on concreta.\\[4pt]
+            Temor: no alcanzar la cobertura; que la SRT no encuentre registro; que alguien use el puntaje fuera de la ART.
+          }
+        \end{minipage}
+
+        \vspace{3pt}
+      \end{minipage}
+    \end{minipage}%
+  };
+\end{tikzpicture}
+\endgroup

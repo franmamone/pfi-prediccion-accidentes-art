@@ -1,26 +1,109 @@
-% Modelo entidad-relaci\'on (crow's foot simplificado)
+% Modelo entidad-relaci\'on (simplificado): tres columnas, bus inferior interno
 \begin{tikzpicture}[
-  font=\tiny\sffamily,
-  ent/.style={draw=blue!70, fill=blue!5, rounded corners=1pt, align=center, minimum width=2.1cm, minimum height=0.7cm},
-  ]
-  \node[ent] (zonas) at (0,3) {Zonas};
-  \node[ent] (usuarios) at (3,3) {Usuarios};
-  \node[ent] (snap) at (0,1.4) {RankingSnapshots};
-  \node[ent] (items) at (3.5,1.4) {RankingItems};
-  \node[ent] (shap) at (7,1.4) {Contribuciones};
-  \node[ent] (out) at (3.5,-0.2) {Outcomes};
-  \node[ent] (agenda) at (0,-0.2) {AgendaItems};
-  \node[ent] (visitas) at (0,-1.8) {VisitasApp};
-  \node[ent] (met) at (7,-0.2) {MetricasObs.};
-  \node[ent] (cob) at (7,-1.8) {Coberturas};
+  font=\scriptsize\sffamily,
+  ent/.style={
+    draw=NavyBlue!70,
+    fill=white,
+    rounded corners=3.5pt,
+    align=center,
+    minimum width=2.38cm,
+    minimum height=0.74cm,
+    inner sep=2.4pt,
+    line width=0.8pt,
+    font=\tiny\sffamily\bfseries,
+  },
+  rel/.style={line width=0.85pt, NavyBlue!68, rounded corners=2.8pt},
+  pill/.style={
+    font=\tiny\sffamily,
+    NavyBlue,
+    fill=NavyBlue!9,
+    rounded corners=2.5pt,
+    inner sep=1.3pt,
+  },
+]
 
-  \draw[-{Latex}, blue!60] (usuarios) -- node[above, font=\tiny]{N:1} (zonas);
-  \draw[-{Latex}, blue!60] (items) -- node[above, font=\tiny]{N:1} (snap);
-  \draw[-{Latex}, blue!60] (shap) -- (items);
-  \draw[-{Latex}, blue!60] (out) -- (items);
-  \draw[-{Latex}, blue!60] (agenda) -- (usuarios);
-  \draw[-{Latex}, blue!60] (agenda) -- (snap);
-  \draw[-{Latex}, blue!60] (visitas) -- (agenda);
-  \draw[-{Latex}, blue!60] (met) -- (snap);
-  \draw[-{Latex}, blue!60] (cob) -- (snap);
+  % Lienzo expl\'{\i}cito: el bus inferior queda dentro del recuadro
+  \useasboundingbox (0.00,-3.05) rectangle (13.26,2.18);
+
+  \fill[NavyBlue!8, rounded corners=8pt] (0.16,-2.92) rectangle (3.42,1.98);
+  \fill[NavyBlue!8, rounded corners=8pt] (3.96,-2.92) rectangle (9.62,1.98);
+  \fill[NavyBlue!8, rounded corners=8pt] (10.16,-2.92) rectangle (13.32,1.98);
+
+  \draw[NavyBlue!42, line width=0.7pt, rounded corners=8pt, fill=white]
+    (0.04,-2.80) rectangle (3.30,2.10);
+  \draw[NavyBlue!42, line width=0.7pt, rounded corners=8pt, fill=white]
+    (3.84,-2.80) rectangle (9.50,2.10);
+  \draw[NavyBlue!42, line width=0.7pt, rounded corners=8pt, fill=white]
+    (10.04,-2.80) rectangle (13.20,2.10);
+
+  \begin{scope}
+    \clip[rounded corners=8pt] (0.04,-2.80) rectangle (3.30,2.10);
+    \fill[NavyBlue!12] (0.04,1.52) rectangle (3.30,2.10);
+  \end{scope}
+  \begin{scope}
+    \clip[rounded corners=8pt] (3.84,-2.80) rectangle (9.50,2.10);
+    \fill[NavyBlue!12] (3.84,1.52) rectangle (9.50,2.10);
+  \end{scope}
+  \begin{scope}
+    \clip[rounded corners=8pt] (10.04,-2.80) rectangle (13.20,2.10);
+    \fill[NavyBlue!12] (10.04,1.52) rectangle (13.20,2.10);
+  \end{scope}
+  \draw[NavyBlue!42, line width=0.7pt] (0.04,1.52) -- (3.30,1.52);
+  \draw[NavyBlue!42, line width=0.7pt] (3.84,1.52) -- (9.50,1.52);
+  \draw[NavyBlue!42, line width=0.7pt] (10.04,1.52) -- (13.20,1.52);
+  \draw[NavyBlue!42, line width=0.7pt, rounded corners=8pt]
+    (0.04,-2.80) rectangle (3.30,2.10);
+  \draw[NavyBlue!42, line width=0.7pt, rounded corners=8pt]
+    (3.84,-2.80) rectangle (9.50,2.10);
+  \draw[NavyBlue!42, line width=0.7pt, rounded corners=8pt]
+    (10.04,-2.80) rectangle (13.20,2.10);
+
+  \node[font=\scriptsize\sffamily\bfseries, NavyBlue] at (1.67, 1.81) {Identidad};
+  \node[font=\scriptsize\sffamily\bfseries, NavyBlue] at (6.67, 1.81) {Priorizaci\'on};
+  \node[font=\scriptsize\sffamily\bfseries, NavyBlue] at (11.62, 1.81) {Operaci\'on};
+
+  \node[ent] (zonas)    at (1.67,  0.78) {Zonas};
+  \node[ent] (usuarios) at (1.67, -0.42) {Usuarios};
+
+  \node[ent] (met)      at (5.08,  0.78) {M\'etricas};
+  \node[ent] (cob)      at (5.08, -0.42) {Coberturas};
+  \node[ent] (snap)     at (7.88,  0.78) {RankingSnapshots};
+  \node[ent] (items)    at (7.88, -0.42) {RankingItems};
+  \node[ent] (shap)     at (6.70, -1.62) {Contribuciones};
+  \node[ent] (out)      at (9.06, -1.62) {Outcomes};
+
+  \node[ent] (agenda)   at (11.62,  0.78) {AgendaItems};
+  \node[ent] (visitas)  at (11.62, -0.42) {VisitasApp};
+
+  % Verticales de columna
+  \draw[rel] (zonas.south) -- node[pill, pos=0.5, xshift=-13pt] {N:1} (usuarios.north);
+  \draw[rel] (snap.south) -- node[pill, pos=0.5, xshift=13pt] {N:1} (items.north);
+  \draw[rel] (agenda.south) -- node[pill, pos=0.5, xshift=13pt] {N:1} (visitas.north);
+
+  % Anal\'{\i}tica del snapshot: dos cajas a la izquierda, enlace a media altura
+  \draw[rel] (met.east) -- node[pill, pos=0.5, above=1.2pt] {N:1} (snap.west);
+  \coordinate (cob-mid) at (5.08, 0.18);
+  \draw[rel]
+    (cob.north) -- (cob-mid) -- (cob-mid -| snap.west) -- ([yshift=-7pt]snap.west);
+  \node[pill] at (6.28, 0.18) {N:1};
+
+  % SHAP y outcomes cuelgan del \'item
+  \draw[rel] (shap.north) -- ++(0,0.16) -| (items.south);
+  \draw[rel] (out.north) -- ++(0,0.16) -| (items.south);
+  \node[pill] at (6.70, -0.98) {N:1};
+  \node[pill] at (9.06, -0.98) {N:1};
+
+  % Snapshot $\to$ Agenda por el pasillo, Y fija
+  \draw[rel] (snap.east) -- (snap.east -| agenda.west)
+    node[pill, pos=0.5, above=1.2pt] {N:1};
+
+  % Usuarios $\to$ Agenda: pasillo inferior DENTRO de las tres columnas
+  % (no cuelga abajo ni sale a la derecha del recuadro de Operaci\'on)
+  \coordinate (ua-y) at (0, -2.48);
+  \coordinate (ua-r) at (13.02, -2.48);
+  \draw[rel]
+    (usuarios.south) -- (usuarios.south |- ua-y)
+    -- (ua-r) -- (ua-r |- agenda.east) -- (agenda.east);
+  \node[pill] at (6.67, -2.48) {N:1};
+
 \end{tikzpicture}

@@ -1,20 +1,105 @@
-% Flujo de informaci\'on del sistema
+% Flujo de informaci\'on: tres etapas, de la ART a Prevex
 \begin{tikzpicture}[
-  font=\scriptsize\sffamily,
-  node distance=0.55cm and 0.7cm,
-  box/.style={draw=blue!70, fill=blue!6, rounded corners=2pt, align=center, minimum width=2.3cm, minimum height=0.85cm},
-  arr/.style={-{Latex}, thick, blue!60}
-  ]
-  \node[box] (core) {BD core\\ART (on-prem)};
-  \node[box, right=of core] (pipe) {Pipeline\\Python / XGBoost};
-  \node[box, right=of pipe] (rank) {Ranking\\JSON + SHAP};
-  \node[box, right=of rank] (appdb) {BD operativa\\app};
-  \node[box, below=1.1cm of appdb] (api) {API\\ASP.NET};
-  \node[box, left=of api] (web) {React\\Prevencionistas};
+  font=\footnotesize\sffamily,
+  card/.style={
+    draw=NavyBlue!72,
+    fill=white,
+    rounded corners=5pt,
+    align=center,
+    minimum width=3.15cm,
+    minimum height=1.18cm,
+    inner sep=3.5pt,
+    line width=0.75pt,
+    font=\scriptsize\sffamily,
+  },
+  badge/.style={
+    circle,
+    fill=NavyBlue,
+    text=white,
+    font=\tiny\sffamily\bfseries,
+    inner sep=1.4pt,
+    minimum size=0.42cm,
+  },
+  arr/.style={
+    -{Latex[length=2.3mm, width=2.1mm]},
+    line width=0.9pt,
+    NavyBlue!68,
+  },
+  pill/.style={
+    font=\tiny\sffamily,
+    NavyBlue,
+    fill=NavyBlue!10,
+    rounded corners=3pt,
+    inner sep=2.2pt,
+  },
+]
 
-  \draw[arr] (core) -- node[above, font=\tiny]{solo lectura} (pipe);
+  % Sombra de cada etapa
+  \foreach \x in {0.16, 4.76, 9.36}
+    \fill[NavyBlue!10, rounded corners=9pt] (\x,-3.48) rectangle (\x+3.70,2.08);
+
+  % Tres tarjetas de etapa
+  \coordinate (A1) at (0.02,2.22);
+  \coordinate (A2) at (3.72,-3.34);
+  \coordinate (B1) at (4.62,2.22);
+  \coordinate (B2) at (8.32,-3.34);
+  \coordinate (C1) at (9.22,2.22);
+  \coordinate (C2) at (12.92,-3.34);
+
+  \draw[NavyBlue!42, line width=0.7pt, rounded corners=9pt, fill=white]
+    (A1) rectangle (A2);
+  \draw[NavyBlue!42, line width=0.7pt, rounded corners=9pt, fill=white]
+    (B1) rectangle (B2);
+  \draw[NavyBlue!42, line width=0.7pt, rounded corners=9pt, fill=white]
+    (C1) rectangle (C2);
+
+  \begin{scope}
+    \clip[rounded corners=9pt] (A1) rectangle (A2);
+    \fill[NavyBlue!13] (0.02,1.62) rectangle (3.72,2.22);
+  \end{scope}
+  \begin{scope}
+    \clip[rounded corners=9pt] (B1) rectangle (B2);
+    \fill[NavyBlue!13] (4.62,1.62) rectangle (8.32,2.22);
+  \end{scope}
+  \begin{scope}
+    \clip[rounded corners=9pt] (C1) rectangle (C2);
+    \fill[NavyBlue!13] (9.22,1.62) rectangle (12.92,2.22);
+  \end{scope}
+  \draw[NavyBlue!42, line width=0.7pt] (0.02,1.62) -- (3.72,1.62);
+  \draw[NavyBlue!42, line width=0.7pt] (4.62,1.62) -- (8.32,1.62);
+  \draw[NavyBlue!42, line width=0.7pt] (9.22,1.62) -- (12.92,1.62);
+  \draw[NavyBlue!42, line width=0.7pt, rounded corners=9pt] (A1) rectangle (A2);
+  \draw[NavyBlue!42, line width=0.7pt, rounded corners=9pt] (B1) rectangle (B2);
+  \draw[NavyBlue!42, line width=0.7pt, rounded corners=9pt] (C1) rectangle (C2);
+
+  \node[font=\scriptsize\sffamily\bfseries, NavyBlue] at (1.87, 1.92) {1. Origen ART};
+  \node[font=\scriptsize\sffamily\bfseries, NavyBlue] at (6.47, 1.92) {2. Pipeline offline};
+  \node[font=\scriptsize\sffamily\bfseries, NavyBlue] at (11.07, 1.92) {3. Aplicaci\'on Prevex};
+
+  \node[card] (core)  at (1.87, 0.20) {BD core de la ART\\on-prem};
+  \node[font=\tiny\sffamily, NavyBlue!65, align=center, text width=3.1cm] at (1.87, -1.35)
+    {El pipeline lee, no escribe.\\La ART no se expone a Internet.};
+  \node[card] (pipe)  at (6.47, 0.20) {Pipeline\\Python y XGBoost};
+  \node[card] (rank)  at (6.47,-1.70) {Ranking\\JSON y SHAP};
+  \node[card] (appdb) at (11.07, 0.20) {BD operativa\\PfiPrevencion};
+  \node[card] (api)   at (11.07,-1.20) {API ASP.NET\\REST y JWT};
+  \node[card] (web)   at (11.07,-2.55) {React\\preventores};
+
+  \node[badge] at ([shift={(0.28cm,-0.28cm)}]core.north west) {1};
+  \node[badge] at ([shift={(0.28cm,-0.28cm)}]pipe.north west) {2};
+  \node[badge] at ([shift={(0.28cm,-0.28cm)}]rank.north west) {3};
+  \node[badge] at ([shift={(0.28cm,-0.28cm)}]appdb.north west) {4};
+  \node[badge] at ([shift={(0.28cm,-0.28cm)}]api.north west) {5};
+  \node[badge] at ([shift={(0.28cm,-0.28cm)}]web.north west) {6};
+
+  \draw[arr] (core) -- node[pill, above=2pt] {solo lectura} (pipe);
   \draw[arr] (pipe) -- (rank);
-  \draw[arr] (rank) -- node[above, font=\tiny]{import} (appdb);
   \draw[arr] (appdb) -- (api);
-  \draw[arr] (api) -- node[above, font=\tiny]{REST/JWT} (web);
+  \draw[arr] (api) -- (web);
+
+  % Importaci\'on: sube por el hueco entre etapas y entra a la BD app
+  \draw[arr, rounded corners=3pt]
+    (rank.east) -- (8.77,-1.70) -- (8.77,0.20) -- (appdb.west);
+  \node[pill] at (8.77, -0.72) {import};
+
 \end{tikzpicture}

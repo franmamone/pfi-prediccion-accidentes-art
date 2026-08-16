@@ -1,25 +1,123 @@
-% Diagrama de casos de uso (simplificado)
+% Diagrama de casos de uso (UML 2: actor abstracto + generalizaci\'on)
 \begin{tikzpicture}[
-  font=\scriptsize\sffamily,
-  actor/.style={align=center},
-  uc/.style={ellipse, draw=blue!70, fill=blue!5, minimum width=2.6cm, minimum height=0.7cm, align=center},
-  system/.style={draw=blue!50, dashed, inner sep=8pt},
-  ]
-  \node[actor] (prev) at (-5.2,1.6) {Prevencionista};
-  \node[actor] (coord) at (-5.2,0) {Coordinador};
-  \node[actor] (admin) at (-5.2,-1.6) {Admin};
+  font=\footnotesize\sffamily,
+  uc/.style={
+    ellipse,
+    draw=NavyBlue!78,
+    fill=white,
+    minimum width=3.9cm,
+    minimum height=0.86cm,
+    align=center,
+    inner sep=1.2pt,
+    line width=0.8pt,
+    font=\footnotesize\sffamily,
+  },
+  ucadm/.style={
+    uc,
+    draw=NavyBlue,
+    fill=NavyBlue!10,
+  },
+  assoc/.style={line width=0.7pt, NavyBlue!65},
+  gen/.style={
+    line width=0.85pt,
+    NavyBlue,
+    -{Triangle[open, length=2.8mm, width=2.55mm]},
+  },
+  nametag/.style={
+    font=\scriptsize\sffamily\bfseries,
+    NavyBlue,
+    fill=NavyBlue!6,
+    rounded corners=3pt,
+    inner sep=2.4pt,
+    align=center,
+  },
+  stick/.pic={
+    \fill[NavyBlue!18] (0,1.22) circle[radius=0.15];
+    \draw[line width=0.82pt, NavyBlue]
+      (0,1.22) circle[radius=0.15]
+      (0,1.07) -- (0,0.50)
+      (-0.28,0.90) -- (0.28,0.90)
+      (0,0.50) -- (-0.22,0.10)
+      (0,0.50) -- (0.22,0.10);
+  },
+]
 
-  \node[uc] (login) at (-0.2,2.4) {Autenticarse};
-  \node[uc] (res) at (2.8,2.4) {Ver resumen};
-  \node[uc] (riesgo) at (-0.2,1.2) {Priorizar riesgo};
-  \node[uc] (det) at (2.8,1.2) {Ver detalle/SHAP};
-  \node[uc] (ag) at (-0.2,0) {Gestionar agenda};
-  \node[uc] (est) at (2.8,0) {Ver estad\'isticas};
-  \node[uc] (exp) at (-0.2,-1.2) {Exportar datos};
-  \node[uc] (cfg) at (2.8,-1.2) {Administrar usuarios};
+  % Sombra de la tarjeta
+  \fill[NavyBlue!11, rounded corners=8pt]
+    (0.28,-4.78) rectangle (5.68,4.18);
 
-  \node[system, fit=(login)(res)(riesgo)(det)(ag)(est)(exp)(cfg), label={[blue!70]above:Sistema de prevenci\'on predictiva}] {};
+  % Caja del sistema
+  \path[rounded corners=8pt, fill=white, draw=NavyBlue!50, line width=0.95pt]
+    (0.12,-4.62) rectangle (5.52,4.32);
 
-  \foreach \a/\u in {prev/login,prev/res,prev/riesgo,prev/det,prev/ag,prev/est,coord/login,coord/res,coord/riesgo,coord/det,coord/ag,coord/est,coord/exp,admin/login,admin/cfg,admin/est,admin/exp}
-    \draw (\a) -- (\u);
+  % Franja de t\'itulo
+  \begin{scope}
+    \clip[rounded corners=8pt] (0.12,-4.62) rectangle (5.52,4.32);
+    \fill[NavyBlue!14] (0.12,3.66) rectangle (5.52,4.32);
+  \end{scope}
+  \draw[NavyBlue!50, line width=0.95pt] (0.12,3.66) -- (5.52,3.66);
+  \node[font=\small\sffamily\bfseries, NavyBlue] at (2.82, 3.99)
+    {Sistema Prevex};
+  \draw[NavyBlue!50, line width=0.95pt, rounded corners=8pt]
+    (0.12,-4.62) rectangle (5.52,4.32);
+
+  % Casos compartidos
+  \node[uc] (login)  at (2.82,  2.88) {Autenticarse};
+  \node[uc] (riesgo) at (2.82,  1.82) {Priorizar visitas};
+  \node[uc] (det)    at (2.82,  0.76) {Ver detalle (IA / SHAP)};
+  \node[uc] (ag)     at (2.82, -0.30) {Gestionar agenda};
+  \node[uc] (est)    at (2.82, -1.36) {Ver estad\'isticas};
+  \node[uc] (perf)   at (2.82, -2.42) {Gestionar perfil};
+
+  \draw[NavyBlue!30, dashed, line width=0.65pt]
+    (0.42,-2.96) -- (5.22,-2.96);
+  \node[font=\tiny\sffamily, NavyBlue!65, anchor=east] at (5.22, -3.16)
+    {s\'olo administrador};
+
+  \node[ucadm] (cfg) at (2.82, -3.84) {Administrar usuarios};
+
+  % Actor abstracto
+  \node[
+    draw=NavyBlue,
+    fill=NavyBlue!8,
+    rounded corners=10pt,
+    align=center,
+    inner sep=6pt,
+    line width=0.85pt,
+    font=\scriptsize\sffamily,
+    minimum width=2.15cm,
+  ] (usr) at (-2.38, 0.95)
+    {\textbf{Usuario}\\[-0.6pt]{\tiny autenticado}};
+
+  % Actores concretos (m\'as aire vertical para que no se pisen las etiquetas)
+  \pic at (-5.55, 2.28) {stick};
+  \node[nametag, below, yshift=1pt] at (-5.55, 2.28) {Prevencionista};
+  \coordinate (prev) at (-5.27, 3.18);
+
+  \pic at (-5.55, 0.05) {stick};
+  \node[nametag, below, yshift=1pt] at (-5.55, 0.05) {Coordinador};
+  \coordinate (coord) at (-5.27, 0.95);
+
+  \pic at (-5.55, -2.18) {stick};
+  \node[nametag, below, yshift=1pt] at (-5.55, -2.18) {Administrador};
+  \coordinate (admin) at (-5.27, -1.28);
+
+  % Generalizaci\'on UML: un solo tri\'angulo hueco (sin flechas superpuestas)
+  \coordinate (gjoin) at (-3.88, 0.95);
+  \draw[line width=0.85pt, NavyBlue, rounded corners=2pt] (prev)  |- (gjoin);
+  \draw[line width=0.85pt, NavyBlue] (coord) -- (gjoin);
+  \draw[line width=0.85pt, NavyBlue, rounded corners=2pt] (admin) |- (gjoin);
+  \draw[gen] (gjoin) -- (usr.west);
+
+  % Asociaciones compartidas en ruteo ortogonal (sin abanico ni cruces)
+  \coordinate (hub) at (-0.18, 0.95);
+  \draw[assoc] (usr.east) -- (hub);
+  \draw[assoc] (hub |- login.west) -- (hub |- perf.west);
+  \foreach \u in {login, riesgo, det, ag, est, perf}
+    \draw[assoc] (hub |- \u.west) -- (\u.west);
+
+  % Administrar usuarios: baja desde el administrador y entra por debajo
+  \draw[assoc, rounded corners=5pt]
+    (admin) -- ++(0,-1.42) -| (cfg.west);
+
 \end{tikzpicture}

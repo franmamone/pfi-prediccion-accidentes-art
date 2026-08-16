@@ -4,13 +4,13 @@
 
 Este cap\'itulo describe el sistema propuesto desde la perspectiva de sus usuarios y de su dise\~no funcional.
 Se identifican los actores, se formalizan las historias de usuario y los requerimientos (funcionales y no funcionales) y se documenta la interfaz mediante mockups esquem\'aticos y el diagrama de casos de uso.
-Tambi\'en se incorporan los resultados de la investigaci\'on emp\'{\i}rica con usuarios (encuesta y entrevistas) y un an\'alisis de competencias de mercado (FODA, fuerzas de Porter y Triple P), con el fin de articular el prototipo con las necesidades reales del \'area de prevenci\'on en las ART.
+Tambi\'en se incorporan los resultados de la investigaci\'on con usuarios (encuesta, entrevistas y personas) y un an\'alisis de competencias de mercado que incluye FODA, fuerzas de Porter y Triple P, para articular el prototipo con las necesidades reales del \'area de prevenci\'on en las ART.
 
 \section{Actores del sistema}
 
 \begin{itemize}
 	\item \textbf{Prevencionista:} consulta el ranking y el detalle de establecimientos, gestiona su agenda de visitas y accede a estad\'isticas para contextualizar su trabajo en campo.
-	\item \textbf{Coordinador:} supervisa cobertura y prioridades entre zonas, exporta listados, consulta estad\'isticas (incluido SHAP agregado) y rebalancea el plan de visitas.
+	\item \textbf{Coordinador:} supervisa cobertura y prioridades entre zonas, consulta estad\'isticas (incluido SHAP agregado) y rebalancea el plan de visitas.
 	\item \textbf{Administrador:} gestiona usuarios y roles, y accede al mismo tablero de estad\'isticas y a las funciones operativas.
 \end{itemize}
 
@@ -24,7 +24,7 @@ Tambi\'en se incorporan los resultados de la investigaci\'on emp\'{\i}rica con u
 	\item \textbf{HU-05.} Como prevencionista, quiero programar una visita desde la lista de riesgo o desde el detalle para convertir la predicci\'on en acci\'on.
 	\item \textbf{HU-06.} Como prevencionista, quiero gestionar mi agenda (programadas, realizadas y canceladas) para cerrar el ciclo operativo.
 	\item \textbf{HU-07.} Como coordinador, quiero ver estad\'isticas de cobertura, precisi\'on observada y factores SHAP agregados para evaluar el uso real del ranking.
-	\item \textbf{HU-08.} Como coordinador, quiero exportar listados a CSV para compartir el plan de visitas fuera de la aplicaci\'on.
+	\item \textbf{HU-08.} Como coordinador, quiero asignar visitas a un prevencionista para distribuir la capacidad del equipo.
 	\item \textbf{HU-09.} Como prevencionista, coordinador o administrador, quiero consultar el panel de estad\'isticas para interpretar el desempe\~no del modelo sin depender de un rol espec\'ifico de an\'alisis.
 	\item \textbf{HU-10.} Como administrador, quiero administrar usuarios y roles para controlar el acceso al prototipo.
 	\item \textbf{HU-11.} Como usuario, quiero alternar tema claro/oscuro y colapsar el men\'u para trabajar con comodidad en jornadas largas.
@@ -35,13 +35,13 @@ Tambi\'en se incorporan los resultados de la investigaci\'on emp\'{\i}rica con u
 
 \begin{description}
 	\item[RF-01 Autenticaci\'on] Login con usuario/contrase\~na, emisi\'on de JWT y cierre de sesi\'on con confirmaci\'on.
-	\item[RF-02 Resumen operativo] Panel con estados de cobertura top-50/top-225 y accesos a priorizaci\'on/agenda.
-	\item[RF-03 Priorizaci\'on] Listado de establecimientos ordenados por score del ranking trimestral, con filtros de banda, actividad y b\'usqueda.
-	\item[RF-04 Detalle] Ficha del establecimiento con score, banda, motivo, explicaci\'on de prioridad y factores SHAP individuales.
+	\item[RF-02 Resumen operativo] Panel con estados de cobertura de la lista operativa (top-1000) y accesos a priorizaci\'on/agenda.
+	\item[RF-03 Priorizaci\'on] Listado de hasta 1000 establecimientos ordenados por score del ranking trimestral, con filtros de banda, actividad y b\'usqueda.
+	\item[RF-04 Detalle] Ficha del establecimiento con score, banda, motivo, factores SHAP individuales y, si hay dossier, un resumen en lenguaje claro generado sin enviar identificadores.
 	\item[RF-05 Agenda] Alta, realizaci\'on y cancelaci\'on de visitas vinculadas al ranking vigente.
 	\item[RF-06 Auditor\'ia operativa] Registro append-only de eventos del ciclo de visitas.
-	\item[RF-07 Estad\'isticas] KPIs, cobertura hist\'orica, precisi\'on observada y SHAP agregado por cohorte, consultables por prevencionista, coordinador y administrador.
-	\item[RF-08 Exportaci\'on] Descarga CSV de listados relevantes para trabajo offline.
+	\item[RF-07 Estad\'isticas] Cobertura hist\'orica y SHAP agregado sobre la lista top-1000, consultables por prevencionista, coordinador y administrador.
+	\item[RF-08 Asignaci\'on] Al programar una visita, el coordinador o el administrador puede asignarla a un prevencionista.
 	\item[RF-09 Perfil] Consulta de datos de usuario y cambio de contrase\~na.
 	\item[RF-10 Roles] Control de acceso por rol (Prevencionista, Coordinador, Administrador).
 	\item[RF-11 Snapshots] Consumo de rankings versionados e inmutables importados desde el pipeline.
@@ -55,20 +55,23 @@ Tambi\'en se incorporan los resultados de la investigaci\'on emp\'{\i}rica con u
 	\item[RNF-02 Desacople de datos] La aplicaci\'on opera sobre una BD propia (`PfiPrevencion`); el pipeline es el \'unico que lee la BD core on-prem.
 	\item[RNF-03 Trazabilidad] Snapshots con hash de artefacto, vigencia y m\'etricas observadas auditables.
 	\item[RNF-04 Usabilidad] Interfaz clara, paneles contextuales de ``c\'omo se calcula'', estados vac\'ios y confirmaciones.
-	\item[RNF-05 Performance local] Respuesta interactiva en entorno local de demostraci\'on (API + web + SQL Express).
-	\item[RNF-06 Explicabilidad] Las salidas del modelo se acompa\~nan de narrativa y SHAP; el score no se presenta como probabilidad.
+	\item[RNF-05 Performance] Respuesta interactiva de la API, el frontend y SQL Express en la instancia propuesta.
+	\item[RNF-06 Explicabilidad] Las salidas del ranking se acompa\~nan de SHAP calculado en el pipeline; el score no se presenta como probabilidad.
 	\item[RNF-07 Multi-ART] La arquitectura permite reutilizar la misma aplicaci\'on con distintas fuentes core de ART, sin acoplar nombres de proveedores.
-	\item[RNF-08 Portabilidad cloud] Dise\~no compatible con despliegue futuro en AWS Free Tier (EC2 todo-en-uno), sin requerirlo para el hito 50\,\%.
+	\item[RNF-08 Arquitectura] Despliegue en AWS Free Tier, con una EC2 todo-en-uno, S3 para rankings y Budgets para control de costo, sin exponer la BD core de la ART.
+	\item[RNF-09 Privacidad de IA] El XGBoost se entrena en local, sin enviar el panel a ninguna IA p\'ublica. El resumen generativo para el preventor se alimenta con un prompt sin hashes, nombres ni identificadores; el modelo externo solo reformatea evidencia ya agregada.
 \end{description}
 
 \section{Diagrama de casos de uso}
 
-La Figura~\ref{fig:casos-uso} resume las interacciones principales entre actores y el sistema.
+La Figura~\ref{fig:casos-uso} resume las interacciones entre actores y el sistema.
+Un actor abstracto \emph{Usuario autenticado} concentra los casos compartidos; Prevencionista, Coordinador y Administrador lo especializan (generalizaci\'on UML).
+Los tres roles heredan autenticaci\'on, priorizaci\'on, detalle, agenda, estad\'isticas y perfil; solo el administrador administra usuarios.
 
 \begin{figure}[htbp]
 	\centering
 	\input{figures/diagramas/casos_de_uso}
-	\caption{Diagrama de casos de uso del prototipo (hito 50\,\%).}
+	\caption{Diagrama de casos de uso.}
 	\label{fig:casos-uso}
 \end{figure}
 
@@ -127,32 +130,58 @@ La Figura~\ref{fig:wireframe-layout} muestra el esquema global; las Figuras~\ref
 	\label{fig:mock-perfil}
 \end{figure}
 
-\section{User research}\label{sec:user-research}
+\section{Investigaci\'on con usuarios}\label{sec:user-research}
 
-El proyecto tiene usuarios finales identificables (prevencionistas, coordinadores y perfiles vinculados a la operaci\'on ART). Por ello se incorpora \emph{user research} emp\'{\i}rico para validar necesidades y no basar el dise\~no solo en supuestos. Las t\'ecnicas utilizadas son encuestas (alcance cuantitativo), entrevistas semiestructuradas (profundidad cualitativa) y, en una etapa siguiente, \emph{user personas} (s\'{\i}ntesis arquet\'{\i}pica). En este hito se presentan los resultados de la encuesta ($n=156$) y dos entrevistas en profundidad; resta una entrevista y las \emph{user personas}.
+El proyecto tiene usuarios finales identificables: prevencionistas y coordinadores del \'area de prevenci\'on, y el administrador del prototipo.
+Por eso se investig\'o con usuarios reales, para validar necesidades y no basar el dise\~no solo en supuestos.
+Se combin\'o una encuesta a trabajadores con entrevistas semiestructuradas a perfiles de ART.
+A partir de esa evidencia se construyeron dos personas de usuario: el prevencionista de campo y la coordinaci\'on de prevenci\'on.
+La encuesta no describe a un usuario de Prevex: describe el contexto que esos perfiles enfrentan en el establecimiento.
+En este hito se presentan los 156 casos de la encuesta, las dos entrevistas y las personas que las condensan.
 
 \subsection{Encuesta: percepci\'on de prevenci\'on y respuesta post-accidente}
 
-Se aplic\'o un formulario en l\'{\i}nea (julio--agosto 2026) a trabajadores de distintos sectores y tama\~nos de establecimiento.
-Quedaron $n=156$ respuestas v\'alidas.
-El detalle por pregunta, con gr\'aficos, figura en el Anexo~\ref{anexo:encuesta}.
+Entre junio y agosto de 2026 se aplic\'o un formulario en l\'{\i}nea a trabajadores de distintos sectores y tama\~nos de establecimiento en Argentina.
+Quedaron 156 respuestas v\'alidas.
+Los gr\'aficos, la ficha t\'ecnica y el detalle por pregunta est\'an en el Anexo~\ref{anexo:encuesta}.
+Esta secci\'on interpreta esos resultados y los articula con el problema de dise\~no.
 
-Hallazgos que avalan la tesis:
+La muestra no pretende representatividad nacional.
+Se concentra en salud y educaci\'on, 28\,\%, y en comercio, oficinas y tecnolog\'{\i}a, 27\,\%, con presencia de industria y log\'{\i}stica, agro y construcci\'on.
+Hay microempresas, pymes y gran empresa.
+Esa heterogeneidad alcanza para leer percepciones transversales: la baja visibilidad de la ART no aparece atada a un \'unico sector ni a un \'unico tama\~no, como se ve en las Figuras~\ref{fig:enc-p1} y~\ref{fig:enc-p2}.
 
-\begin{enumerate}
-	\item \textbf{La ART/prevenci\'on es poco visible:} 78\,\% no conoce su ART o nunca vio auditor\'{\i}as; solo 22\,\% reporta auditor\'{\i}as regulares (Figura~\ref{fig:enc-p3}).
-	\item \textbf{Predomina lo reactivo:} 35\,\% ubica capacitaciones/medidas despu\'es del incidente y 42\,\% solo en la inducci\'on; 23\,\% describe un enfoque proactivo anual (Figura~\ref{fig:enc-p4}).
-	\item \textbf{Baja anticipaci\'on percibida:} media 2,41 en escala 1--5; 60\,\% elige 1 o 2 (Figura~\ref{fig:enc-p5}).
-	\item \textbf{Accidente frecuente, aprendizaje d\'ebil:} 64\,\% reporta episodio propio o de un compa\~nero (Figura~\ref{fig:enc-p6}); entre ellos, 81\,\% percibi\'o ausencia de cambios o solo medidas m\'{\i}nimas, frente a 19\,\% con redise\~no profundo (Figura~\ref{fig:enc-p7}).
-\end{enumerate}
+Lo m\'as marcado es que la prevenci\'on de la ART casi no se percibe.
+El 31\,\% no sabe qu\'e ART lo cubre ni si hay prevenci\'on, y el 47\,\% conoce la ART pero nunca vio auditor\'{\i}as o inspecciones.
+Solo el 22\,\% reporta auditor\'{\i}as regulares, Figura~\ref{fig:enc-p3}.
+Si el trabajador no ve esa acci\'on, el valor de un ranking con explicaci\'on reside primero en la eficiencia interna del \'area de prevenci\'on, y reci\'en despu\'es en c\'omo se comunica hacia el establecimiento, de forma controlada.
 
-Estos resultados sostienen el problema de investigaci\'on: hace falta priorizar intervenciones \emph{antes} del evento y cerrar el ciclo operativo, en lugar de depender de calendarios gen\'ericos o de reacciones superficiales post-siniestro.
+El tono de las medidas tambi\'en es reactivo.
+El 35\,\% sit\'ua capacitaciones o medidas reci\'en despu\'es de un incidente, y el 42\,\% las limita a la inducci\'on de ingreso.
+Solo el 23\,\% describe un enfoque planificado a lo largo del a\~no, Figura~\ref{fig:enc-p4}.
+En la autoevaluaci\'on de preparaci\'on para anticipar un accidente, en escala de 1 a 5, la media es 2,41 y la mediana es 2.
+El 60\,\% elige 1 o 2, y apenas el 5\,\% elige el m\'aximo, Figura~\ref{fig:enc-p5}.
+Eso no mide la capacidad real de la ART, pero s\'{\i} muestra que la anticipaci\'on no se siente instalada en el d\'{\i}a a d\'{\i}a.
+
+El accidente, en cambio, s\'{\i} forma parte de la experiencia laboral.
+El 64\,\% reporta un episodio propio o de un compa\~nero en el trabajo actual, Figura~\ref{fig:enc-p6}.
+Entre quienes contestaron qu\'e cambi\'o despu\'es, solo el 19\,\% percibi\'o un redise\~no de procesos.
+El resto indica que todo sigui\'o igual o que hubo medidas m\'{\i}nimas, como una charla o un cartel, Figura~\ref{fig:enc-p7}.
+En la pr\'actica, el evento es frecuente y el aprendizaje que queda es d\'ebil.
+
+Le\'{\i}dos juntos, los resultados describen un entorno donde la ART se ve poco, se act\'ua tarde y el accidente no alcanza a transformar la operaci\'on.
+Eso sostiene el problema de investigaci\'on: hace falta priorizar intervenciones antes del evento y cerrar el ciclo operativo, en lugar de depender de calendarios gen\'ericos o de reacciones superficiales despu\'es del siniestro.
+El prototipo apunta a ese hueco con un ranking trimestral, historial por establecimiento y un flujo de visita con seguimiento.
+
+La lectura tiene l\'{\i}mites.
+Es una muestra de conveniencia, de autoreporte perceptivo, y puede haber sesgo por las redes de difusi\'on del formulario.
+Aun as\'{\i}, los patrones son consistentes entre s\'{\i} y convergen con lo que surge de las entrevistas.
 
 \subsection{Entrevista 1: perfil operativo y funcional ART}
 
 \begin{description}
-	\item[Entrevistado] Adri\'an El\'{\i}as, con trayectoria en gesti\'on de siniestros, ex\'amenes peri\'odicos, contratos, recaudaci\'on y liderazgo funcional del producto ART en el ecosistema del sistema \emph{core}.
-	\item[Fecha y duraci\'on] 6 de agosto de 2026; aproximadamente 20 minutos (videollamada).
+	\item[Entrevistado] Adri\'an El\'{\i}as, con trayectoria en gesti\'on de siniestros, ex\'amenes peri\'odicos, contratos, recaudaci\'on y liderazgo funcional del producto ART en el ecosistema del sistema core.
+	\item[Fecha y duraci\'on] 6 de agosto de 2026; aproximadamente 20 minutos, en videollamada.
 	\item[Objetivo] Comprender criterios reales de priorizaci\'on de visitas, herramientas usadas hoy, ciclo de recomendaciones del preventor y datos percibidos como \'utiles para un sistema predictivo.
 \end{description}
 
@@ -168,20 +197,20 @@ La transcripci\'on depurada integra el Anexo~\ref{anexo:entrevista-adrian-elias}
 	\item \textbf{Ciclo visita $\rightarrow$ recomendaciones $\rightarrow$ revisita.}
 	El preventor emite un informe para ART y empleador; el incumplimiento puede impactar en la al\'{\i}cuota en la renovaci\'on. La ART queda expuesta ante la SRT si no cumple su rol de prevenci\'on.
 	\item \textbf{Valor percibido del historial de accidentes por establecimiento.}
-	El entrevistado valid\'o que conocer patrones (tipo de lesi\'on, frecuencia, posibles fraudes o concentraci\'on en ciertos d\'{\i}as) permite llegar a la visita con recomendaciones m\'as fuertes. Eso alinea con el uso de historial + explicabilidad (SHAP / resumen para el preventor) en el prototipo.
+	El entrevistado valid\'o que conocer patrones de lesi\'on, frecuencia, posibles fraudes o concentraci\'on en ciertos d\'{\i}as permite llegar a la visita con recomendaciones m\'as fuertes. Eso alinea con el uso de historial y de explicabilidad para el preventor en el prototipo.
 	\item \textbf{Cuello de botella operativo del preventor.}
 	La dependencia de la agenda del preventor de la ART y la coordinaci\'on con el empleador demoran la cobertura. Un sistema de priorizaci\'on ayuda a concentrar la capacidad limitada en los establecimientos de mayor urgencia relativa.
 	\item \textbf{Cuidado con la confidencialidad de la predicci\'on.}
 	Notificar al empleador puntos d\'ebiles predichos puede ser contraproducente. El producto debe tratar el score y el detalle como informaci\'on operativa interna de la ART, con divulgaci\'on controlada.
 \end{enumerate}
 
-Estos hallazgos cualitativos convergen con la encuesta (baja percepci\'on de prevenci\'on proactiva; valor del historial; necesidad de priorizar capacidad limitada) y refuerzan las historias HU-03 a HU-06 y los requerimientos RF-03, RF-04 y RF-05.
+Estos hallazgos convergen con la encuesta en la baja percepci\'on de prevenci\'on proactiva, el valor del historial y la necesidad de priorizar una capacidad limitada, y refuerzan las historias HU-03 a HU-06 y los requerimientos RF-03, RF-04 y RF-05.
 
 \subsection{Entrevista 2: perfil gerencial / estrat\'egico ART}
 
 \begin{description}
 	\item[Entrevistado] Diego Oviedo, ex gerente de riesgos del trabajo y prevenci\'on en ART; licenciado en higiene y seguridad.
-	\item[Fecha y duraci\'on] 14 de agosto de 2026; aproximadamente 23 minutos (videollamada).
+	\item[Fecha y duraci\'on] 14 de agosto de 2026; aproximadamente 23 minutos, en videollamada.
 	\item[Objetivo] Comprender el impacto del P.E.S.E.\ y de los relevamientos (RGRL/RAR), la reactividad del sistema, y qu\'e explicabilidad exige un perfil gerencial para confiar en un mapa de riesgo predictivo.
 \end{description}
 
@@ -195,22 +224,75 @@ La transcripci\'on depurada integra el Anexo~\ref{anexo:entrevista-diego-oviedo}
 	\item \textbf{P.E.S.E.\ gatillado por \'{\i}ndice de incidencia.}
 	El ingreso al Programa de Empleadores con Siniestralidad Elevada depende del \'{\i}ndice de incidencia (siniestros / trabajadores $\times$ 1000) por actividad, publicado por la Superintendencia. Es un umbral normativo reactivo a la siniestralidad ya observada.
 	\item \textbf{El sistema apunta m\'as a la atenci\'on del siniestro que a la prevenci\'on.}
-	Hay poca inversi\'on relativa en prevenci\'on pese a la cantidad de datos disponibles. El entrevistado valor\'o el prototipo como \emph{mapa de riesgo} \'util para decidir d\'onde mirar.
+	Hay poca inversi\'on relativa en prevenci\'on pese a la cantidad de datos disponibles. El entrevistado valor\'o el prototipo como un mapa de riesgo \'util para decidir d\'onde mirar.
 	\item \textbf{Explicabilidad accionable: sector, agente material y recomendaciones previas.}
-	Adem\'as del ranking, el preventor necesita historial de recomendaciones (cumplidas o no), incumplimientos del RGRL con fecha de regularizaci\'on, y desagregaci\'on por sector / agente material / agente causante (p.\ ej.\ rampa en un frigor\'{\i}fico) para orientar la medida correctiva. Conviene excluir \emph{in itinere} del foco preventivo del establecimiento.
+	Adem\'as del ranking, el preventor necesita historial de recomendaciones, cumplidas o no, incumplimientos del RGRL con fecha de regularizaci\'on, y desagregaci\'on por sector, agente material y agente causante, por ejemplo una rampa en un frigor\'{\i}fico, para orientar la medida correctiva. Conviene dejar fuera del foco preventivo del establecimiento los accidentes in itinere, ocurridos en el trayecto.
 	\item \textbf{Tensi\'on comercial de las denuncias.}
 	La ART puede recomendar y, ante incumplimiento, denunciar ante la Superintendencia; eso deriva en inspecci\'on y multa al cliente. Por eso ``no se denuncia todo''. El preventor diagnostica; la ART formaliza. Incorporar el circuito de denuncias (cumplida / fecha) enriquecer\'{\i}a el prototipo.
 	\item \textbf{Extensiones \'utiles del dossier.}
 	Concentraci\'on de siniestros en el mismo trabajador (anonimizado), zona del cuerpo, y enfermedades profesionales vinculadas al RAR (agente de riesgo y exposici\'on vigente) completar\'{\i}an el contexto del preventor.
 \end{enumerate}
 
-Estos hallazgos refuerzan RF-04 (explicaci\'on / dossier), RF-03 (priorizaci\'on) y el criterio de confidencialidad ya se\~nalado por Adri\'an El\'{\i}as. Resta una entrevista y las \emph{user personas} para cerrar el bloque de user research.
+Estos hallazgos refuerzan la ficha del establecimiento, la priorizaci\'on y el criterio de confidencialidad ya se\~nalado por Adri\'an El\'{\i}as.
+Se condensan, junto con la entrevista 1 y la encuesta, en las dos personas que siguen.
+
+\subsection{Personas de usuario}\label{sec:personas}
+
+Las personas condensan encuesta y entrevistas.
+Cada ficha incluye lema, biograf\'{\i}a, contexto de uso, herramientas actuales, motivaciones, objetivos, frustraciones, h\'abitos, un escenario y criterios de \'exito.
+Mart\'{\i}n R\'{\i}os es la persona primaria (actor Prevencionista, HU-02 a HU-06); Laura Ferrero es la de coordinaci\'on (HU-07, HU-08, HU-12).
+El administrador reutiliza el tablero y no requiere una tercera ficha.
+
+\clearpage
+\begin{figure}[H]
+	\centering
+	\input{figures/diagramas/persona_preventor}
+	\caption{Persona primaria: Mart\'{\i}n R\'{\i}os, prevencionista de campo.}
+	\label{fig:persona-preventor}
+\end{figure}
+
+\clearpage
+\begin{figure}[H]
+	\centering
+	\input{figures/diagramas/persona_coordinadora}
+	\caption{Persona de coordinaci\'on: Laura Ferrero.}
+	\label{fig:persona-coordinadora}
+\end{figure}
+
+\clearpage
+
+Las Figuras~\ref{fig:persona-preventor} y~\ref{fig:persona-coordinadora} cierran el mismo circuito que el prototipo ya implementa.
+Mart\'{\i}n necesita ranking trimestral, ficha explicable y agenda propia, con el score como dato interno.
+Laura necesita mapa de cobertura, asignaci\'on de visitas y no mezclar P.E.S.E.\ o PRS con la prioridad predictiva.
+La encuesta ($n=156$) explica por qu\'e ese circuito importa: afuera la prevenci\'on casi no se ve, as\'{\i} que el valor de Prevex es primero eficiencia interna del \'area, no un tablero para el empleador.
+
+\begin{table}[H]
+	\centering
+	\caption{Trazabilidad de personas a historias y requerimientos.}
+	\label{tab:personas-hu}
+	\small
+	\begin{tabular}{@{}p{0.28\textwidth}p{0.32\textwidth}p{0.32\textwidth}@{}}
+		\hline
+		\textbf{Persona} & \textbf{Historias} & \textbf{Requerimientos} \\
+		\hline
+		Mart\'{\i}n R\'{\i}os (campo) &
+		HU-01 a HU-06, HU-09, HU-11 &
+		RF-01 a RF-06, RF-09, RF-12; RNF-06, RNF-09 \\
+		\hline
+		Laura Ferrero (coordinaci\'on) &
+		HU-07, HU-08, HU-09, HU-12 &
+		RF-02, RF-04, RF-07, RF-08, RF-10; RNF-06 \\
+		\hline
+	\end{tabular}
+\end{table}
+
+\FloatBarrier
 
 \section{An\'alisis de competencias}
 
 \subsection{An\'alisis FODA}
 
-\begin{table}[htbp]
+\begin{table}[H]
 	\centering
 	\caption{An\'alisis FODA del sistema predictivo para ART.}
 	\label{tab:foda}
@@ -219,11 +301,11 @@ Estos hallazgos refuerzan RF-04 (explicaci\'on / dossier), RF-03 (priorizaci\'on
 		\textbf{Fortalezas} & \textbf{Oportunidades} \\
 		\hline
 		Predicci\'on a nivel establecimiento con XGBoost validado en holdout 2025; explicabilidad SHAP accionable; app operativa (agenda + cobertura); desacople app/core ART. &
-		Marco Prevenci\'on 4.0 y Res.\ SRT 48/2025; demanda de priorizaci\'on eficiente; escalabilidad multi-ART; despliegue cloud posterior. \\
+		Marco Prevenci\'on 4.0 y Res.\ SRT 48/2025; demanda de priorizaci\'on eficiente; escalabilidad multi-ART. \\
 		\hline
 		\textbf{Debilidades} & \textbf{Amenazas} \\
 		\hline
-		User research en curso (encuesta $n=156$ documentada; 2/3 entrevistas; personas pendientes); dependencia de calidad/completitud de datos hist\'oricos; prototipo a\'un no desplegado en nube. &
+		Dependencia de la calidad de los datos hist\'oricos. &
 		Resistencia a modelos ``caja negra''; competencia de BI gen\'erico; cambios regulatorios; riesgo de malinterpretar el score como probabilidad; mal uso de alertas predictivas si se divulgan sin control. \\
 		\hline
 	\end{tabular}
@@ -232,21 +314,37 @@ Estos hallazgos refuerzan RF-04 (explicaci\'on / dossier), RF-03 (priorizaci\'on
 \subsection{Fuerzas de Porter}
 
 \begin{enumerate}
-	\item \textbf{Rivalidad:} cores de seguros con reglas est\'aticas y plataformas BI gen\'ericas (alta capacidad t\'ecnica, baja especializaci\'on ART/prevenci\'on).
-	\item \textbf{Nuevos entrantes:} startups de HSE analytics; barrera: acceso a datos reales de ART y encaje normativo local.
-	\item \textbf{Poder de proveedores:} infraestructura cloud y librer\'ias ML est\'andar; riesgo bajo por uso de stack abierto (.NET, React, XGBoost).
-	\item \textbf{Poder de clientes (ART):} alto; exigen trazabilidad, seguridad y utilidad para prevencionistas de campo.
-	\item \textbf{Sustitutos:} ranking manual por CIIU/PESE, planillas y criterios expertos sin modelo.
+	\item \textbf{Rivalidad.}
+	En el mercado conviven sistemas core de seguros, con reglas fijas y calendarios de visita, y plataformas de inteligencia de negocios de uso general.
+	Tienen mucha capacidad t\'ecnica, pero poca especializaci\'on en prevenci\'on ART: no indican qu\'e establecimiento visitar el pr\'oximo trimestre ni explican el motivo al preventor.
+	\item \textbf{Nuevos entrantes.}
+	Pueden aparecer startups de anal\'{\i}tica en higiene y seguridad.
+	La barrera real no es el algoritmo, sino el acceso a datos hist\'oricos de una ART y el encaje con la normativa local, el sigilo del score y el circuito de visitas.
+	\item \textbf{Poder de proveedores.}
+	La infraestructura en la nube y las librer\'{\i}as de aprendizaje autom\'atico son est\'andar y f\'aciles de sustituir.
+	El prototipo usa stack abierto, .NET, React y XGBoost, as\'{\i} que la dependencia de un proveedor puntual es baja.
+	\item \textbf{Poder de clientes.}
+	Las ART concentran la demanda y exigen trazabilidad, seguridad de datos y utilidad concreta para el prevencionista de campo.
+	Si el ranking no se traduce en agenda y cobertura, no se adopta.
+	\item \textbf{Sustitutos.}
+	Hoy se sustituye con ranking manual por actividad o PESE, planillas y criterio experto, sin modelo predictivo.
+	Ese enfoque es barato de mantener, pero no anticipa el accidente ni explica el caso a caso.
 \end{enumerate}
 
-El diferencial del proyecto es combinar predicci\'on prospectiva, XAI y flujo operativo (agenda/cobertura) en una interfaz pensada para el prevencionista, no solo para el cient\'ifico de datos.
+El diferencial del prototipo es juntar predicci\'on a horizonte trimestral, explicabilidad por establecimiento y el ciclo operativo de agenda y cobertura, en una interfaz pensada para el preventor y no solo para quien entrena el modelo.
 
-\subsection{Triple P (Producto--Precio--Plaza)}
+\subsection{Triple P: producto, precio y plaza}
 
 \begin{description}
-	\item[Producto] Sistema de priorizaci\'on predictiva de visitas con explicabilidad y gesti\'on operativa (agenda, auditor\'ia, indicadores).
-	\item[Precio] Modelo de valor orientado a eficiencia de panel (mejor precisi\'on top-K vs.\ visitas reales) m\'as que a licencia gen\'erica de BI; en la tesis el prototipo se valida sin comercializaci\'on.
-	\item[Plaza] Canal directo a equipos de prevenci\'on de ART (intranet/demo local hoy; cloud Free Tier/EC2 como arquitectura objetivo multi-ART).
+	\item[Producto]
+	Es un sistema de priorizaci\'on predictiva de visitas.
+	Ordena establecimientos, explica por qu\'e entran en la lista y permite programar, realizar y auditar la intervenci\'on, con indicadores de cobertura.
+	\item[Precio]
+	El valor se mide en eficiencia del panel: mejor precisi\'on en el top de la lista, frente a visitar el mismo volumen al azar o por calendario.
+	En esta tesis el prototipo se valida sin comercializaci\'on.
+	\item[Plaza]
+	El canal es directo a equipos de prevenci\'on de ART.
+	El canal es directo a equipos de prevenci\'on de ART, sobre una arquitectura en AWS de bajo costo, reutilizable por m\'as de una aseguradora.
 \end{description}
 
 \end{contenidoNuevo}

@@ -1,27 +1,102 @@
-% Arquitectura AWS Free Tier objetivo (post-despliegue)
+% Arquitectura propuesta en AWS Free Tier
 \begin{tikzpicture}[
-  font=\scriptsize\sffamily,
-  box/.style={draw=blue!70, fill=blue!6, rounded corners=2pt, align=center, minimum height=0.75cm},
-  cloud/.style={draw=blue!45, dashed, inner sep=10pt},
-  ]
-  \node[box, minimum width=2.4cm] (user) at (0,3.2) {Usuario ART};
-  \node[box, minimum width=2.6cm] (sg) at (0,2.0) {SG :80/:443};
-  \node[box, minimum width=3.4cm] (nginx) at (-2.2,0.6) {Nginx\\React dist};
-  \node[box, minimum width=3.4cm] (api) at (2.2,0.6) {API .NET};
-  \node[box, minimum width=3.4cm] (sql) at (0,-0.8) {SQL Express\\(misma EC2)};
-  \node[box, minimum width=2.6cm] (s3) at (5.2,0.6) {S3\\rankings};
-  \node[box, minimum width=2.6cm] (bud) at (5.2,2.0) {Budgets};
-  \node[box, minimum width=2.8cm] (core) at (-5.0,0.6) {BD core ART\\(on-prem)};
-  \node[box, minimum width=2.8cm] (pipe) at (-5.0,-0.8) {Pipeline\\local/VPN};
+  font=\footnotesize\sffamily,
+  card/.style={
+    draw=NavyBlue!72,
+    fill=white,
+    rounded corners=5pt,
+    align=center,
+    minimum width=2.85cm,
+    minimum height=1.05cm,
+    inner sep=3pt,
+    line width=0.75pt,
+    font=\scriptsize\sffamily,
+  },
+  arr/.style={
+    -{Latex[length=2.2mm, width=2.0mm]},
+    line width=0.85pt,
+    NavyBlue!68,
+  },
+  pill/.style={
+    font=\tiny\sffamily,
+    NavyBlue,
+    fill=NavyBlue!10,
+    rounded corners=3pt,
+    inner sep=1.8pt,
+  },
+]
 
-  \node[cloud, fit=(sg)(nginx)(api)(sql), label={[blue!70]above:EC2 Free Tier (t3.micro/small)}] {};
+  % Sombras
+  \fill[NavyBlue!10, rounded corners=9pt] (0.16,-3.53) rectangle (3.76,1.95);
+  \fill[NavyBlue!10, rounded corners=9pt] (4.56,-3.53) rectangle (9.66,1.95);
+  \fill[NavyBlue!10, rounded corners=9pt] (10.46,-3.53) rectangle (13.36,1.95);
 
-  \draw[-{Latex}, thick, blue!60] (user) -- (sg);
-  \draw[-{Latex}, thick, blue!60] (sg) -- (nginx);
-  \draw[-{Latex}, thick, blue!60] (sg) -- (api);
-  \draw[-{Latex}, thick, blue!60] (api) -- (sql);
-  \draw[-{Latex}, thick, blue!60] (core) -- (pipe);
-  \draw[-{Latex}, thick, blue!60] (pipe) -- (s3);
-  \draw[-{Latex}, thick, blue!60] (s3) -- (api);
-  \draw[dashed, blue!50] (bud) -- (sg);
+  % Tres etapas
+  \draw[NavyBlue!42, line width=0.7pt, rounded corners=9pt, fill=white]
+    (0.02,-3.40) rectangle (3.62,2.08);
+  \draw[NavyBlue!42, line width=0.7pt, rounded corners=9pt, fill=white]
+    (4.42,-3.40) rectangle (9.52,2.08);
+  \draw[NavyBlue!42, line width=0.7pt, rounded corners=9pt, fill=white]
+    (10.32,-3.40) rectangle (13.22,2.08);
+
+  \begin{scope}
+    \clip[rounded corners=9pt] (0.02,-3.40) rectangle (3.62,2.08);
+    \fill[NavyBlue!13] (0.02,1.48) rectangle (3.62,2.08);
+  \end{scope}
+  \begin{scope}
+    \clip[rounded corners=9pt] (4.42,-3.40) rectangle (9.52,2.08);
+    \fill[NavyBlue!13] (4.42,1.48) rectangle (9.52,2.08);
+  \end{scope}
+  \begin{scope}
+    \clip[rounded corners=9pt] (10.32,-3.40) rectangle (13.22,2.08);
+    \fill[NavyBlue!13] (10.32,1.48) rectangle (13.22,2.08);
+  \end{scope}
+  \draw[NavyBlue!42, line width=0.7pt] (0.02,1.48) -- (3.62,1.48);
+  \draw[NavyBlue!42, line width=0.7pt] (4.42,1.48) -- (9.52,1.48);
+  \draw[NavyBlue!42, line width=0.7pt] (10.32,1.48) -- (13.22,1.48);
+  \draw[NavyBlue!42, line width=0.7pt, rounded corners=9pt]
+    (0.02,-3.40) rectangle (3.62,2.08);
+  \draw[NavyBlue!42, line width=0.7pt, rounded corners=9pt]
+    (4.42,-3.40) rectangle (9.52,2.08);
+  \draw[NavyBlue!42, line width=0.7pt, rounded corners=9pt]
+    (10.32,-3.40) rectangle (13.22,2.08);
+
+  \node[font=\scriptsize\sffamily\bfseries, NavyBlue] at (1.82, 1.78) {1. Origen ART};
+  \node[font=\scriptsize\sffamily\bfseries, NavyBlue] at (6.97, 1.78) {2. EC2 AWS Free Tier};
+  \node[font=\scriptsize\sffamily\bfseries, NavyBlue] at (11.77, 1.78) {3. Servicios AWS};
+
+  % Usuario fuera de la EC2
+  \node[card] (user) at (6.97, 2.85) {Usuario ART};
+
+  \node[card] (core) at (1.82, 0.25) {BD core de la ART\\on-prem};
+  \node[card] (pipe) at (1.82,-1.85) {Pipeline\\v\'{\i}a VPN};
+
+  \node[card] (sg)    at (6.97, 0.55) {Security Group\\puertos 80 y 443};
+  \node[card, minimum width=2.15cm] (nginx) at (5.55,-0.95) {Nginx\\React};
+  \node[card, minimum width=2.15cm] (api)   at (8.35,-0.95) {API .NET};
+  \node[card, minimum width=2.15cm] (sql)   at (8.35,-2.35) {SQL Express};
+
+  \node[card] (bud) at (11.77, 0.25) {Budgets};
+  \node[card] (s3)  at (11.77,-1.85) {S3\\rankings};
+
+  \draw[arr] (user) -- (sg);
+  \draw[arr] (sg.south west) -- ++(0,-0.18) -| (nginx.north);
+  \draw[arr] (sg.south east) -- ++(0,-0.18) -| (api.north);
+  \draw[arr] (api) -- (sql);
+  \draw[arr] (core) -- (pipe);
+
+  % Budgets por el pasillo derecho hasta el Security Group
+  \draw[NavyBlue!50, dashed, line width=0.75pt, rounded corners=3pt]
+    (bud.west) -- ++(-0.42,0) |- (sg.east);
+
+  % Import: pasillo origen-EC2, abajo de las tres columnas, entra a S3 por el sur
+  \draw[arr, rounded corners=3pt]
+    (pipe.east) -- (4.02,-1.85) -- (4.02,-4.55) -- (11.77,-4.55) -- (s3.south);
+  \node[pill] at (7.90, -4.82) {import};
+
+  % Lectura: S3 $\to$ API por el pasillo entre EC2 y servicios
+  \draw[arr, rounded corners=3pt]
+    (s3.west) -- ++(-0.55,0) |- (api.east);
+  \node[pill] at (9.90, -0.62) {lectura};
+
 \end{tikzpicture}
