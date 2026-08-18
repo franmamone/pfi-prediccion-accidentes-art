@@ -1,7 +1,5 @@
 \chapter{Descripci\'on del sistema}\label{ch:descripcion}
 
-\begin{contenidoNuevo}
-
 Este cap\'itulo describe el sistema propuesto desde la perspectiva de sus usuarios y de su dise\~no funcional.
 Se identifican los actores, se formalizan las historias de usuario y los requerimientos (funcionales y no funcionales) y se documenta la interfaz mediante mockups esquem\'aticos y el diagrama de casos de uso.
 Tambi\'en se incorporan los resultados de la investigaci\'on con usuarios (encuesta, entrevistas y personas) y un an\'alisis de competencias de mercado que incluye FODA, fuerzas de Porter y Triple P, para articular el prototipo con las necesidades reales del \'area de prevenci\'on en las ART.
@@ -134,10 +132,10 @@ La Figura~\ref{fig:wireframe-layout} muestra el esquema global; las Figuras~\ref
 
 El proyecto tiene usuarios finales identificables: prevencionistas y coordinadores del \'area de prevenci\'on, y el administrador del prototipo.
 Por eso se investig\'o con usuarios reales, para validar necesidades y no basar el dise\~no solo en supuestos.
-Se combin\'o una encuesta a trabajadores con entrevistas semiestructuradas a perfiles de ART.
+Se combin\'o una encuesta a trabajadores con entrevistas semiestructuradas a perfiles de ART y al responsable de producto del sistema core.
 A partir de esa evidencia se construyeron dos personas de usuario: el prevencionista de campo y la coordinaci\'on de prevenci\'on.
 La encuesta no describe a un usuario de Prevex: describe el contexto que esos perfiles enfrentan en el establecimiento.
-En este hito se presentan los 156 casos de la encuesta, las dos entrevistas y las personas que las condensan.
+En este hito se presentan los 156 casos de la encuesta, las tres entrevistas y las personas que las condensan.
 
 \subsection{Encuesta: percepci\'on de prevenci\'on y respuesta post-accidente}
 
@@ -180,7 +178,7 @@ Aun as\'{\i}, los patrones son consistentes entre s\'{\i} y convergen con lo que
 \subsection{Entrevista 1: perfil operativo y funcional ART}
 
 \begin{description}
-	\item[Entrevistado] Adri\'an El\'{\i}as, con trayectoria en gesti\'on de siniestros, ex\'amenes peri\'odicos, contratos, recaudaci\'on y liderazgo funcional del producto ART en el ecosistema del sistema core.
+	\item[Entrevistado] Adri\'an El\'{\i}as, con trayectoria en Plus ART (gesti\'on de siniestros, ex\'amenes peri\'odicos, contratos, recaudaci\'on) y liderazgo funcional del producto ART en el ecosistema del sistema core.
 	\item[Fecha y duraci\'on] 8 de julio de 2026; aproximadamente 20 minutos, en videollamada.
 	\item[Objetivo] Comprender criterios reales de priorizaci\'on de visitas, herramientas usadas hoy, ciclo de recomendaciones del preventor y datos percibidos como \'utiles para un sistema predictivo.
 \end{description}
@@ -234,11 +232,44 @@ La transcripci\'on depurada integra el Anexo~\ref{anexo:entrevista-diego-oviedo}
 \end{enumerate}
 
 Estos hallazgos refuerzan la ficha del establecimiento, la priorizaci\'on y el criterio de confidencialidad ya se\~nalado por Adri\'an El\'{\i}as.
-Se condensan, junto con la entrevista 1 y la encuesta, en las dos personas que siguen.
+
+\subsection{Entrevista 3: direcci\'on de producto del core ART}
+
+\begin{description}
+	\item[Entrevistado] Daniel Oscar, CEO de empresa desarrolladora del core ART, empresa que desarrolla sistemas de medicina laboral y el core de ART.
+	\item[Fecha y duraci\'on] 16 de julio de 2026; aproximadamente 12 minutos, en videollamada.
+	\item[Objetivo] Comprender, desde quien fabrica el core, la madurez de datos, la demanda de las ART, las barreras de adopci\'on y qu\'e recorte de priorizaci\'on predictiva ser\'{\i}a viable en el m\'odulo de prevenci\'on.
+\end{description}
+
+La transcripci\'on depurada integra el Anexo~\ref{anexo:entrevista-daniel-oscar}. A continuaci\'on se sintetizan los hallazgos accionables.
+
+\subsubsection{Hallazgos principales}
+
+\begin{enumerate}
+	\item \textbf{El m\'odulo de prevenci\'on ya cubre el circuito normativo.}
+	Se parte en dos: ex\'amenes peri\'odicos y visitas a empresas con ejecuci\'on de programas de prevenci\'on.
+	Cada empleador queda asociado a un programa dictado por la Superintendencia (pyme o gran empresa, siniestralidad elevada u otras caracter\'{\i}sticas).
+	El software administra visitas de preventores, incumplimientos, notificaciones al empleador y la comunicaci\'on con la SRT.
+	\item \textbf{Las ART piden eficiencia bajo la lupa de la SRT.}
+	Hay inter\'es concreto en inteligencia artificial y tecnolog\'{\i}as nuevas.
+	Todo lo que haga m\'as eficiente el cumplimiento normativo y evite siniestros futuros (y su costo) es bienvenido.
+	\item \textbf{La traba no es presupuestaria ni de ``prohibir'' la IA.}
+	El desaf\'{\i}o principal es la calidad de los datos: un conjunto que refleje la realidad, para que la herramienta acierte.
+	El presupuesto se destrabar\'{\i}a si se muestra el costo-beneficio.
+	\item \textbf{Primer recorte vendible: asignaci\'on inteligente y recomendaciones.}
+	Si se redise\~nara el m\'odulo desde cero, una primera versi\'on con IA ir\'{\i}a a asignar visitas a preventores sin depender solo de tablas de zona, y a redactar recomendaciones para el preventor.
+	Eso alinea con HU-03, HU-04, HU-08 y RF-03, RF-04 y RF-08.
+	\item \textbf{La intenci\'on es prevenir; la operaci\'on termina reactiva.}
+	Las \'areas de prevenci\'on existen para anticipar el accidente y la enfermedad profesional.
+	La cantidad y la diversidad de tareas, m\'as el volumen de datos, hacen que se reaccione a una inspecci\'on o a un problema m\'as que a un plan.
+	\item \textbf{El recorte predictivo se percibe in\'edito en el ramo.}
+	El entrevistado no hab\'{\i}a visto una propuesta equivalente en prevenci\'on, a diferencia de otras presiones del sistema (por ejemplo, en juicios).
+	Lo asocia a la evoluci\'on actual del r\'egimen de riesgos del trabajo.
+\end{enumerate}
 
 \subsection{Personas de usuario}\label{sec:personas}
 
-Las personas condensan encuesta y entrevistas.
+Las personas condensan la encuesta y las entrevistas a perfiles de ART.
 Cada ficha incluye lema, biograf\'{\i}a, contexto de uso, herramientas actuales, motivaciones, objetivos, frustraciones, h\'abitos, un escenario y criterios de \'exito.
 Mart\'{\i}n R\'{\i}os es la persona primaria (actor Prevencionista, HU-02 a HU-06); Laura Ferrero es la de coordinaci\'on (HU-07, HU-08, HU-12).
 El administrador reutiliza el tablero y no requiere una tercera ficha.
@@ -301,11 +332,11 @@ La encuesta ($n=156$) explica por qu\'e ese circuito importa: afuera la prevenci
 		\textbf{Fortalezas} & \textbf{Oportunidades} \\
 		\hline
 		Predicci\'on a nivel establecimiento con XGBoost validado en holdout 2025; explicabilidad SHAP accionable; app operativa (agenda + cobertura); desacople app/core ART. &
-		Marco Prevenci\'on 4.0 y Res.\ SRT 48/2025; demanda de priorizaci\'on eficiente; escalabilidad multi-ART. \\
+		Marco Prevenci\'on 4.0 y Res.\ SRT 48/2025; demanda de priorizaci\'on eficiente; inter\'es de las ART en IA bajo la lupa de la SRT, si se muestra costo-beneficio; escalabilidad multi-ART. \\
 		\hline
 		\textbf{Debilidades} & \textbf{Amenazas} \\
 		\hline
-		Dependencia de la calidad de los datos hist\'oricos.
+		Dependencia de la calidad de los datos hist\'oricos: sin un conjunto que refleje la operaci\'on real, la IA no acierta (entrevista a Daniel Oscar).
 		El prototipo no est\'a en producci\'on: la demo del hito es local y la arquitectura AWS queda como dise\~no.
 		El entrenamiento usa una sola ART, as\'{\i} que otra aseguradora exige adaptar vistas y reentrenar. &
 		Resistencia a modelos ``caja negra''; competencia de BI gen\'erico; cambios regulatorios; riesgo de malinterpretar el score como probabilidad; mal uso de alertas predictivas si se divulgan sin control. \\
@@ -324,7 +355,8 @@ La encuesta ($n=156$) explica por qu\'e ese circuito importa: afuera la prevenci
 	La barrera real no es el algoritmo, sino el acceso a datos hist\'oricos de una ART y el encaje con la normativa local, el sigilo del score y el circuito de visitas.
 	\item \textbf{Poder de proveedores.}
 	La infraestructura en la nube y las librer\'{\i}as de aprendizaje autom\'atico son est\'andar y f\'aciles de sustituir.
-	El prototipo usa stack abierto, .NET, React y XGBoost, as\'{\i} que la dependencia de un proveedor puntual es baja.
+	El prototipo usa stack abierto, .NET, React y XGBoost, as\'{\i} que la dependencia de un proveedor puntual de nube es baja.
+	La v\'{\i}a de adopci\'on en ART pasa por el m\'odulo de prevenci\'on del core y por demostrar costo-beneficio, seg\'un la entrevista a Daniel Oscar.
 	\item \textbf{Poder de clientes.}
 	Las ART concentran la demanda y exigen trazabilidad, seguridad de datos y utilidad concreta para el prevencionista de campo.
 	Si el ranking no se traduce en agenda y cobertura, no se adopta.
@@ -344,8 +376,7 @@ El diferencial del prototipo es juntar predicci\'on a horizonte trimestral, expl
 	\item[Precio]
 	El valor se mide en eficiencia del panel: mejor precisi\'on en el top de la lista, frente a visitar el mismo volumen al azar o por calendario.
 	En esta tesis el prototipo se valida sin comercializaci\'on.
+	La entrevista a Daniel Oscar coincide en que el presupuesto se mueve si se muestra el r\'edito de la herramienta.
 	\item[Plaza]
 	El canal es directo a equipos de prevenci\'on de ART, sobre una arquitectura en AWS de bajo costo, reutilizable por m\'as de una aseguradora.
 \end{description}
-
-\end{contenidoNuevo}
