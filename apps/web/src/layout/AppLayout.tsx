@@ -16,7 +16,6 @@ import {
   IconMoon,
   IconSun,
   IconUser,
-  IconX,
 } from "../icons";
 
 type NavItem = {
@@ -98,14 +97,6 @@ export function AppLayout() {
           <div className="brand-text">
             <strong>PREVEX</strong>
           </div>
-          <button
-            type="button"
-            className="icon-btn nav-close"
-            aria-label="Cerrar menú"
-            onClick={() => setMobileNavOpen(false)}
-          >
-            <IconX />
-          </button>
         </div>
 
         {nav.map((section) => (
@@ -138,9 +129,16 @@ export function AppLayout() {
             className="icon-btn"
             title={collapsed ? "Expandir menú" : "Colapsar menú"}
             aria-label={collapsed ? "Expandir menú" : "Colapsar menú"}
-            onClick={() => setCollapsed((v) => !v)}
+            onClick={() => {
+              // Móvil: cierra/abre el drawer. Escritorio: colapsa/expande el sidebar.
+              if (window.matchMedia("(max-width: 960px)").matches) {
+                setMobileNavOpen((v) => !v);
+              } else {
+                setCollapsed((v) => !v);
+              }
+            }}
           >
-            {collapsed ? <IconExpand /> : <IconCollapse />}
+            {mobileNavOpen || !collapsed ? <IconCollapse /> : <IconExpand />}
           </button>
         </div>
       </aside>

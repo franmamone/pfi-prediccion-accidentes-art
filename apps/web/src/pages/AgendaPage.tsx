@@ -321,7 +321,7 @@ export function AgendaPage() {
             ))}
           </div>
           {canAssign && (
-            <div style={{ minWidth: 220 }}>
+            <div className="agenda-responsable">
               <Select
                 value={usuarioId}
                 onChange={setUsuarioId}
@@ -371,8 +371,14 @@ export function AgendaPage() {
                   {riesgoLabel(selected.bandaOrigen ?? "medio")}
                 </span>
                 <h3 style={{ margin: "8px 0 2px" }}>{shortId(selected.idEstablecimiento)}</h3>
-                <p className="muted" style={{ margin: 0, fontSize: 12 }} title={selected.idEstablecimiento}>
-                  {selected.idEstablecimiento}
+                <p
+                  className="muted mono agenda-estab-id"
+                  style={{ margin: 0, fontSize: 12 }}
+                  title={selected.idEstablecimiento}
+                >
+                  {selected.idEstablecimiento.length > 20
+                    ? `${selected.idEstablecimiento.slice(0, 20)}…`
+                    : selected.idEstablecimiento}
                 </p>
               </div>
               <button type="button" className="icon-btn" onClick={() => setSelectedId(null)} aria-label="Cerrar">
@@ -479,7 +485,7 @@ export function AgendaPage() {
             )}
 
             <div className="agenda-drawer-links">
-              <Link className="btn ghost-btn" to={`/establecimientos/${selected.idEstablecimiento}`}>
+              <Link className="ghost-btn" to={`/establecimientos/${selected.idEstablecimiento}`}>
                 Ver ficha del establecimiento
               </Link>
               <button type="button" className="ghost-btn" onClick={() => toggleTimeline(selected)}>
@@ -514,10 +520,10 @@ export function AgendaPage() {
         )}
       </div>
 
-      {!loading && totalRango === 0 && (
-        <div className="panel" style={{ marginTop: 12 }}>
+      {!loading && totalRango === 0 && vista === "dia" && (
+        <div className="panel agenda-empty">
           <EmptyState
-            title="Sin visitas en este período"
+            title="Sin visitas para este día"
             detail={
               filtro === "programada"
                 ? canAssign
@@ -664,14 +670,10 @@ function DayView({
 }) {
   const iso = toIso(cursor);
   const eventos = porDia.get(iso) ?? [];
+  if (eventos.length === 0) return null;
   return (
     <div className="cal-day">
-      {eventos.length === 0 ? (
-        <p className="muted" style={{ padding: 16 }}>
-          No hay visitas para este día.
-        </p>
-      ) : (
-        eventos.map((it) => (
+      {eventos.map((it) => (
           <button
             key={it.id}
             type="button"
@@ -683,8 +685,7 @@ function DayView({
             <span className="muted">{motivoLabel(it.motivoOrigen ?? it.motivoVisita)}</span>
             <span className={`badge ${it.bandaOrigen ?? "medio"}`}>{riesgoLabel(it.bandaOrigen ?? "medio")}</span>
           </button>
-        ))
-      )}
+      ))}
     </div>
   );
 }

@@ -340,7 +340,6 @@ button {
 
 /* Elementos exclusivos del layout móvil: ocultos en escritorio. */
 .nav-toggle,
-.nav-close,
 .topbar-brand,
 .nav-overlay {
   display: none;
@@ -1637,14 +1636,9 @@ a.badge {
     padding-right: 10px;
   }
 
-  /* El botón de colapsar no aplica en móvil. */
+  /* En móvil el footer queda visible: el chevron cierra el drawer. */
   .sidebar-footer {
-    display: none;
-  }
-
-  .nav-close {
-    display: inline-flex;
-    margin-left: auto;
+    display: flex;
   }
 
   .nav-overlay {
@@ -1790,34 +1784,7 @@ a.badge {
     flex: 1 1 auto;
   }
 
-  /* —— Agenda / calendario —— */
-  .agenda-body {
-    flex-direction: column;
-  }
-
-  .agenda-drawer {
-    width: 100%;
-    position: static;
-  }
-
-  .agenda-controls,
-  .agenda-topbar {
-    align-items: stretch;
-  }
-
-  .agenda-nav {
-    justify-content: space-between;
-    width: 100%;
-  }
-
-  .cal-grid {
-    grid-auto-rows: minmax(68px, auto);
-    gap: 4px;
-  }
-
-  .cal-weekhead {
-    gap: 4px;
-  }
+  /* Agenda mobile: ver bloque al final de estilos de agenda (después de .agenda-*). */
 }
 
 /* —— Teléfonos angostos —— */
@@ -1872,33 +1839,6 @@ a.badge {
   .pagination-controls {
     justify-content: center;
     width: 100%;
-  }
-
-  /* Calendario mensual: mostrar sólo puntos de color por evento. */
-  .cal-grid {
-    grid-auto-rows: minmax(56px, auto);
-  }
-
-  .cal-event {
-    justify-content: center;
-    padding: 3px;
-    gap: 0;
-  }
-
-  .cal-event-label {
-    display: none;
-  }
-
-  .cal-daynum {
-    font-size: 11px;
-    padding: 1px 3px;
-  }
-
-  /* Vista semanal: columnas usables con scroll horizontal. */
-  .cal-week {
-    grid-template-columns: repeat(7, minmax(120px, 1fr));
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
   }
 }
 
@@ -2689,6 +2629,11 @@ table.data tbody tr:hover td {
   flex-wrap: wrap;
 }
 
+.agenda-responsable {
+  min-width: 220px;
+  flex: 1 1 220px;
+}
+
 .agenda-estado-chips {
   display: inline-flex;
   gap: 6px;
@@ -2973,6 +2918,18 @@ table.data tbody tr:hover td {
   gap: 8px;
 }
 
+.agenda-drawer-head > div {
+  min-width: 0;
+  flex: 1;
+}
+
+.agenda-estab-id {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
 .agenda-drawer-kv {
   display: flex;
   flex-direction: column;
@@ -3043,16 +3000,208 @@ table.data tbody tr:hover td {
   gap: 8px;
 }
 
-@media (max-width: 900px) {
+/* —— Agenda mobile (después de estilos base para que no los pisen) —— */
+@media (max-width: 960px) {
+  .agenda-layout {
+    gap: 10px;
+    width: 100%;
+  }
+
+  .agenda-topbar,
+  .agenda-controls,
+  .agenda-filtros,
+  .agenda-body,
+  .agenda-calendar,
+  .cal-month,
+  .cal-grid,
+  .cal-weekhead {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .agenda-topbar,
+  .agenda-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .agenda-nav {
+    display: grid;
+    grid-template-columns: auto auto auto 1fr;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .agenda-period {
+    margin-left: 0;
+    font-size: 13px;
+    text-align: right;
+    line-height: 1.25;
+  }
+
+  .agenda-filtros {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  /* Chips en una sola fila con scroll horizontal (ahorra alto). */
+  .agenda-estado-chips {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+  }
+
+  .agenda-estado-chips .chip {
+    flex: 0 0 auto;
+    width: auto;
+    white-space: nowrap;
+    padding: 7px 12px;
+  }
+
+  .agenda-responsable {
+    min-width: 0;
+    width: 100%;
+    flex: none;
+  }
+
   .agenda-body {
     flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
   }
+
+  .agenda-calendar {
+    flex: none;
+    width: 100%;
+  }
+
   .agenda-drawer {
     width: 100%;
     position: static;
   }
+
+  /* Mes: ancho completo, celdas bajas. */
+  .cal-weekhead {
+    gap: 2px;
+    margin-bottom: 4px;
+  }
+
+  .cal-weekhead > div {
+    font-size: 10px;
+  }
+
   .cal-grid {
-    grid-auto-rows: minmax(72px, auto);
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    grid-auto-rows: 44px;
+    gap: 3px;
+    width: 100%;
+  }
+
+  .cal-cell {
+    min-width: 0;
+    border-radius: 8px;
+    padding: 2px;
+    gap: 0;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .cal-daynum {
+    align-self: center;
+    font-size: 12px;
+    padding: 2px 0 0;
+  }
+
+  .cal-events {
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 3px;
+    min-height: 8px;
+    padding-bottom: 2px;
+  }
+
+  .cal-event {
+    width: auto;
+    padding: 0;
+    border: none;
+    background: transparent;
+    justify-content: center;
+  }
+
+  .cal-event-label,
+  .cal-more {
+    display: none;
+  }
+
+  .cal-event .cal-dot {
+    width: 6px;
+    height: 6px;
+  }
+
+  /* Semana: lista vertical a ancho completo (no 7 columnas apretadas). */
+  .cal-week {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    overflow: visible;
+  }
+
+  .cal-weekcol {
+    width: 100%;
+    min-height: 0;
+    min-width: 0;
+  }
+
+  .cal-weekhead-day {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .cal-weekcol-events {
+    padding: 8px 10px 10px;
+  }
+
+  .cal-event-label {
+    display: inline;
+  }
+
+  .cal-week .cal-event {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--stroke);
+    background: color-mix(in srgb, #3b82f6 10%, var(--bg-2));
+    justify-content: flex-start;
+  }
+
+  .cal-week .cal-event-label {
+    display: inline;
+  }
+
+  .agenda-empty {
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .cal-grid {
+    grid-auto-rows: 40px;
+    gap: 2px;
+  }
+
+  .cal-daynum {
+    font-size: 11px;
   }
 }
 
