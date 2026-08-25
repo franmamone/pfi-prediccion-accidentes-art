@@ -20,7 +20,6 @@ import { Reveal, SkeletonPanel, SkeletonStats } from "../components/UiKit";
 import { IconArrowLeft, IconCalendar } from "../icons";
 import { motivoBadgeClass, motivoLabel, riesgoLabel } from "../labels";
 import {
-  getDetalleTab,
   setDetalleTab,
   type DetalleSectionKey,
 } from "../prefs";
@@ -41,12 +40,18 @@ export function DetallePage() {
   const [showProgramar, setShowProgramar] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const [openInfo, setOpenInfo] = useState<InfoKey>(null);
-  const [tab, setTab] = useState<DetalleSectionKey>(() => getDetalleTab());
+  const [tab, setTab] = useState<DetalleSectionKey>("historial");
   const [dossier, setDossier] = useState<DossierEstablecimiento | null>(null);
   const [ia, setIa] = useState<ResumenIa | null>(null);
   const [iaLoading, setIaLoading] = useState(false);
   const [iaError, setIaError] = useState<string | null>(null);
   const [movimientos, setMovimientos] = useState<AgendaEvento[]>([]);
+
+  // Al abrir un establecimiento, siempre entrar por Historial de accidentes.
+  useEffect(() => {
+    setTab("historial");
+    setDetalleTab("historial");
+  }, [id]);
 
   useEffect(() => {
     let alive = true;

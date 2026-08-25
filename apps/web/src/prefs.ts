@@ -135,7 +135,7 @@ export function getDetalleTab(): DetalleSectionKey {
   } catch {
     /* ignore */
   }
-  return "resumenIa";
+  return "historial";
 }
 
 export function setDetalleTab(key: DetalleSectionKey) {

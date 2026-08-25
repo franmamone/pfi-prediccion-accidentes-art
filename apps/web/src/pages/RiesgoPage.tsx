@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { fetchRiesgo, HORIZONTE_OPERATIVO, shortId, type RankingItem } from "../api";
 import { ciiuDivisionLabel } from "../ciiu";
 import {
@@ -28,6 +28,7 @@ function Th({ id, children }: { id: string; children: ReactNode }) {
 
 export function RiesgoPage() {
   const toast = useToast();
+  const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const horizonte = HORIZONTE_OPERATIVO;
   const banda = params.get("banda") || "";
@@ -127,6 +128,15 @@ export function RiesgoPage() {
     saveRiesgoScroll(window.scrollY);
   }
 
+  function openDetalle(idEstablecimiento: string) {
+    rememberScroll();
+    navigate(`/establecimientos/${idEstablecimiento}`);
+  }
+
+  function isMobileLayout() {
+    return window.matchMedia("(max-width: 960px)").matches;
+  }
+
   return (
     <div className="riesgo-layout">
       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
@@ -194,7 +204,7 @@ export function RiesgoPage() {
           />
         </div>
         <div className="field" style={{ minWidth: 220, flex: 1 }}>
-          <label title={help("establecimiento")}>Buscar id</label>
+          <label title={help("establecimiento")}>Buscar</label>
           <input
             value={q}
             placeholder="establecimiento…"
@@ -272,7 +282,18 @@ export function RiesgoPage() {
                       : `Programada${item.agendaActiva ? ` · ${item.agendaActiva.fechaPlanificada}` : ""}. Abrir Agenda.`;
 
               return (
-              <tr key={item.id}>
+              <tr
+                key={item.id}
+                className="riesgo-row"
+                title="Doble clic para abrir el detalle"
+                onDoubleClick={() => openDetalle(item.idEstablecimiento)}
+                onClick={(e) => {
+                  if (!isMobileLayout()) return;
+                  const target = e.target as HTMLElement;
+                  if (target.closest("a, button")) return;
+                  openDetalle(item.idEstablecimiento);
+                }}
+              >
                 <td className="mono" title={tipRanking(item.ranking)}>
                   {item.ranking}
                 </td>

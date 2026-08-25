@@ -340,6 +340,7 @@ button {
 
 /* Elementos exclusivos del layout móvil: ocultos en escritorio. */
 .nav-toggle,
+.icon-btn.nav-toggle,
 .topbar-brand,
 .nav-overlay {
   display: none;
@@ -1668,7 +1669,8 @@ a.badge {
     gap: 8px;
   }
 
-  .nav-toggle {
+  .nav-toggle,
+  .icon-btn.nav-toggle {
     display: inline-flex;
   }
 
@@ -2220,6 +2222,10 @@ a.badge {
 
 table.data tbody tr {
   transition: background 0.12s ease;
+}
+
+table.data tbody tr.riesgo-row {
+  cursor: pointer;
 }
 
 table.data tbody tr:hover td {
