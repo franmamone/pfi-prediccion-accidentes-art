@@ -255,6 +255,38 @@ export function IconInfo(p: IconProps) {
   );
 }
 
+export function IconBookmark(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M6 4h12a1 1 0 0 1 1 1v16l-7-3.5L5 21V5a1 1 0 0 1 1-1z" />
+    </Svg>
+  );
+}
+
+export function IconBookmarkFilled(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path
+        d="M6 4h12a1 1 0 0 1 1 1v16l-7-3.5L5 21V5a1 1 0 0 1 1-1z"
+        fill="currentColor"
+        stroke="currentColor"
+      />
+    </Svg>
+  );
+}
+
+export function IconTrash(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M4 7h16" />
+      <path d="M9 7V5h6v2" />
+      <path d="M7 7l1 13h8l1-13" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
+    </Svg>
+  );
+}
+
 export function IconHistory(p: IconProps) {
   return (
     <Svg {...p}>

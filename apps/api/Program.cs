@@ -46,6 +46,7 @@ builder.Services.AddHttpClient<GeminiClient>(c =>
     if (timeoutSeconds < 30) timeoutSeconds = 30;
     c.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
 });
+builder.Services.AddScoped<CopilotoService>();
 
 var app = builder.Build();
 
@@ -283,7 +284,9 @@ app.MapGet("/api/riesgo", async (
     string? estadoOperativo,
     double? scoreMin,
     double? scoreMax,
-    int? top) =>
+    int? top,
+    int? page,
+    int? pageSize) =>
 {
     horizonte = NormalizeHorizonte(horizonte);
     RankingSnapshot? snapshot;
@@ -392,42 +395,90 @@ app.MapGet("/api/riesgo", async (
         query = query.Where(i => !ocupadasQuery.Contains(i.IdEstablecimiento));
     }
 
-    // Si hay realizadas recientes, igual queremos verlas en priorización: ampliar el tope
-    // un poco cuando se pide el cupo operativo completo.
-    var limit = Math.Clamp(top ?? 225, 1, 1000);
-    var rows = await query
-        .OrderBy(i => i.Ranking)
-        .Take(limit)
+    // Cupo máximo del ranking operativo; la grilla pagina sobre ese universo.
+    var limit = Math.Clamp(top ?? 1000, 1, 1000);
+    var take = Math.Clamp(pageSize ?? 50, 1, 200);
+    var pageNum = Math.Max(1, page ?? 1);
+    var skip = (pageNum - 1) * take;
+
+    // Divisiones CIIU del universo filtrado (barato; no requiere enriquecer agenda).
+    var sectores = await query
+        .Where(i => i.CiiuDivision != null && i.CiiuDivision != "")
+        .Select(i => i.CiiuDivision!)
+        .Distinct()
+        .OrderBy(s => s)
         .ToListAsync();
 
+    // programada/reprogramada se distinguen tras enriquecer agenda → materializar el
+    // subconjunto (ya prefiltrado por agenda activa) y paginar en memoria.
+    // En el resto de casos: Skip/Take en SQL y enriquecer solo la página.
+    List<RankingItem> rows;
+    int total;
+    var needsPostFilterEstado = estadoFiltro is "programada" or "reprogramada";
+    if (needsPostFilterEstado)
+    {
+        rows = await query
+            .OrderBy(i => i.Ranking)
+            .Take(limit)
+            .ToListAsync();
+        total = -1; // se recalcula tras filtrar estado
+    }
+    else
+    {
+        var totalUncapped = await query.CountAsync();
+        total = Math.Min(totalUncapped, limit);
+        var pageTake = skip >= limit ? 0 : Math.Min(take, limit - skip);
+        rows = pageTake == 0
+            ? new List<RankingItem>()
+            : await query
+                .OrderBy(i => i.Ranking)
+                .Skip(skip)
+                .Take(pageTake)
+                .ToListAsync();
+    }
+
     var ids = rows.Select(i => i.IdEstablecimiento).Distinct().ToList();
-    var agendasActivas = await db.AgendaItems.AsNoTracking()
-        .Include(a => a.Usuario)
-        .Where(a => a.Estado == "programada" && ids.Contains(a.IdEstablecimiento))
-        .ToListAsync();
+    var agendasActivas = ids.Count == 0
+        ? new List<AgendaItem>()
+        : await db.AgendaItems.AsNoTracking()
+            .Include(a => a.Usuario)
+            .Where(a => a.Estado == "programada" && ids.Contains(a.IdEstablecimiento))
+            .ToListAsync();
     var agendaByEst = agendasActivas
         .GroupBy(a => a.IdEstablecimiento)
         .ToDictionary(g => g.Key, g => g.OrderBy(a => a.FechaPlanificada).First());
 
-    var visitasRecientes = await db.VisitasApp.AsNoTracking()
-        .Where(v =>
-            v.Resultado == "realizada" &&
-            v.FechaHoraReal >= desdeReciente &&
-            ids.Contains(v.IdEstablecimiento))
-        .Select(v => new { v.IdEstablecimiento, v.FechaHoraReal, v.AgendaItemId })
-        .ToListAsync();
-    var visitaByEst = visitasRecientes
-        .GroupBy(v => v.IdEstablecimiento)
-        .ToDictionary(
-            g => g.Key,
-            g => g.OrderByDescending(x => x.FechaHoraReal).First());
+    Dictionary<string, (DateTime FechaHoraReal, int? AgendaItemId)> visitaByEst;
+    if (ids.Count == 0)
+    {
+        visitaByEst = new Dictionary<string, (DateTime, int?)>();
+    }
+    else
+    {
+        var visitasRecientes = await db.VisitasApp.AsNoTracking()
+            .Where(v =>
+                v.Resultado == "realizada" &&
+                v.FechaHoraReal >= desdeReciente &&
+                ids.Contains(v.IdEstablecimiento))
+            .Select(v => new { v.IdEstablecimiento, v.FechaHoraReal, v.AgendaItemId })
+            .ToListAsync();
+        visitaByEst = visitasRecientes
+            .GroupBy(v => v.IdEstablecimiento)
+            .ToDictionary(
+                g => g.Key,
+                g =>
+                {
+                    var first = g.OrderByDescending(x => x.FechaHoraReal).First();
+                    return (first.FechaHoraReal, first.AgendaItemId);
+                });
+    }
 
     var items = rows.Select(i =>
     {
         agendaByEst.TryGetValue(i.IdEstablecimiento, out var agenda);
-        visitaByEst.TryGetValue(i.IdEstablecimiento, out var visitaApp);
-        var enCooldownApp = visitaApp is not null || i.EnCooldown;
-        var estado = ResolveEstadoOperativo(agenda, visitaApp is not null);
+        var tieneVisita = visitaByEst.TryGetValue(i.IdEstablecimiento, out var visitaApp);
+        var enCooldownApp = tieneVisita || i.EnCooldown;
+        var estado = ResolveEstadoOperativo(agenda, tieneVisita);
         var efectividad = AciertoHistoricoLookup(snapshot.Horizonte, i.Ranking);
         return new
         {
@@ -450,22 +501,27 @@ app.MapGet("/api/riesgo", async (
             i.AlertaUmbral,
             i.MotivoPrincipalTexto,
             estadoOperativo = estado,
-            agendaId = agenda?.Id ?? visitaApp?.AgendaItemId,
+            agendaId = agenda?.Id ?? (tieneVisita ? visitaApp.AgendaItemId : null),
             agendaActiva = agenda is null ? null : ToAgendaResumen(agenda),
-            visitaAppRecienteEn = visitaApp?.FechaHoraReal,
+            visitaAppRecienteEn = tieneVisita ? (DateTime?)visitaApp.FechaHoraReal : null,
         };
     }).ToList();
 
-    if (estadoFiltro is "programada" or "reprogramada")
+    if (needsPostFilterEstado)
     {
         items = items.Where(x => x.estadoOperativo == estadoFiltro).ToList();
+        total = items.Count;
+        items = items.Skip(skip).Take(take).ToList();
     }
 
     return Results.Ok(new
     {
         periodo = snapshot.Periodo,
         horizonte = snapshot.Horizonte,
-        total = items.Count,
+        total,
+        page = pageNum,
+        pageSize = take,
+        sectores,
         items,
     });
 }).RequireAuthorization();
@@ -693,7 +749,7 @@ app.MapPost("/api/establecimientos/{id}/resumen-ia", async (
         };
         db.ResumenesIaEstablecimiento.Add(cache);
     }
-    cache.Modelo = gemini.Model;
+    cache.Modelo = resultado.Modelo;
     cache.PromptHash = promptHash;
     cache.Resumen = LimpiarResumenIa(resultado.Texto);
     cache.TokensPrompt = resultado.TokensPrompt;
@@ -709,6 +765,170 @@ app.MapPost("/api/establecimientos/{id}/resumen-ia", async (
         cache.Horizonte,
         desdeCache = false,
     });
+}).RequireAuthorization();
+
+app.MapPost("/api/establecimientos/{id}/copiloto", async (
+    string id,
+    CopilotoRequest body,
+    CopilotoService copiloto,
+    ClaimsPrincipal principal,
+    AppDbContext db) =>
+{
+    var user = await GetCurrentUserAsync(principal, db);
+    if (user is null) return Results.Unauthorized();
+
+    try
+    {
+        var resp = await copiloto.ResponderAsync(id, body);
+        return Results.Ok(resp);
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+    catch (GeminiException ex)
+    {
+        return Results.Json(new { error = ex.Message }, statusCode: 502);
+    }
+}).RequireAuthorization();
+
+app.MapGet("/api/establecimientos/{id}/copiloto/guardados", async (
+    string id,
+    ClaimsPrincipal principal,
+    AppDbContext db) =>
+{
+    var user = await GetCurrentUserAsync(principal, db);
+    if (user is null) return Results.Unauthorized();
+    await EnsureCopilotoGuardadoTableAsync(db);
+
+    var items = await db.CopilotoGuardados.AsNoTracking()
+        .Where(g => g.UsuarioId == user.Id && g.IdEstablecimiento == id)
+        .OrderByDescending(g => g.GuardadoEn)
+        .Select(g => new
+        {
+            g.Id,
+            g.Pregunta,
+            g.Respuesta,
+            g.Tema,
+            g.Seccion,
+            g.Modelo,
+            g.GuardadoEn,
+        })
+        .ToListAsync();
+
+    return Results.Ok(new { total = items.Count, items });
+}).RequireAuthorization();
+
+app.MapPost("/api/establecimientos/{id}/copiloto/guardados", async (
+    string id,
+    CopilotoGuardadoRequest body,
+    ClaimsPrincipal principal,
+    AppDbContext db) =>
+{
+    var user = await GetCurrentUserAsync(principal, db);
+    if (user is null) return Results.Unauthorized();
+    await EnsureCopilotoGuardadoTableAsync(db);
+
+    var pregunta = (body.Pregunta ?? "").Trim();
+    var respuesta = (body.Respuesta ?? "").Trim();
+    if (pregunta.Length < 3 || respuesta.Length < 3)
+    {
+        return Results.BadRequest(new { error = "Pregunta y respuesta son requeridas." });
+    }
+    if (pregunta.Length > 800) pregunta = pregunta[..800];
+
+    // Evitar duplicar la misma pregunta para el mismo preventor + establecimiento.
+    var existente = await db.CopilotoGuardados
+        .FirstOrDefaultAsync(g =>
+            g.UsuarioId == user.Id &&
+            g.IdEstablecimiento == id &&
+            g.Pregunta == pregunta);
+    if (existente is not null)
+    {
+        existente.Respuesta = respuesta;
+        existente.Tema = string.IsNullOrWhiteSpace(body.Tema) ? existente.Tema : body.Tema!.Trim();
+        existente.Seccion = string.IsNullOrWhiteSpace(body.Seccion) ? existente.Seccion : body.Seccion!.Trim();
+        existente.Modelo = string.IsNullOrWhiteSpace(body.Modelo) ? existente.Modelo : body.Modelo!.Trim();
+        existente.GuardadoEn = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+        return Results.Ok(new
+        {
+            existente.Id,
+            existente.Pregunta,
+            existente.Respuesta,
+            existente.Tema,
+            existente.Seccion,
+            existente.Modelo,
+            existente.GuardadoEn,
+            actualizado = true,
+        });
+    }
+
+    var row = new CopilotoGuardado
+    {
+        UsuarioId = user.Id,
+        IdEstablecimiento = id,
+        Pregunta = pregunta,
+        Respuesta = respuesta,
+        Tema = string.IsNullOrWhiteSpace(body.Tema) ? null : body.Tema!.Trim(),
+        Seccion = string.IsNullOrWhiteSpace(body.Seccion) ? null : body.Seccion!.Trim(),
+        Modelo = string.IsNullOrWhiteSpace(body.Modelo) ? null : body.Modelo!.Trim(),
+        GuardadoEn = DateTime.UtcNow,
+    };
+    db.CopilotoGuardados.Add(row);
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new
+    {
+        row.Id,
+        row.Pregunta,
+        row.Respuesta,
+        row.Tema,
+        row.Seccion,
+        row.Modelo,
+        row.GuardadoEn,
+        actualizado = false,
+    });
+}).RequireAuthorization();
+
+app.MapDelete("/api/establecimientos/{id}/copiloto/guardados/{guardadoId:int}", async (
+    string id,
+    int guardadoId,
+    ClaimsPrincipal principal,
+    AppDbContext db) =>
+{
+    var user = await GetCurrentUserAsync(principal, db);
+    if (user is null) return Results.Unauthorized();
+    await EnsureCopilotoGuardadoTableAsync(db);
+
+    var row = await db.CopilotoGuardados
+        .FirstOrDefaultAsync(g =>
+            g.Id == guardadoId &&
+            g.UsuarioId == user.Id &&
+            g.IdEstablecimiento == id);
+    if (row is null) return Results.NotFound(new { error = "Respuesta guardada no encontrada." });
+
+    db.CopilotoGuardados.Remove(row);
+    await db.SaveChangesAsync();
+    return Results.Ok(new { ok = true, id = guardadoId });
+}).RequireAuthorization();
+
+app.MapGet("/api/normativa/stats", async (AppDbContext db) =>
+{
+    var total = await db.NormativaChunks.AsNoTracking().CountAsync(c => c.Activo);
+    var porFuente = await db.NormativaChunks.AsNoTracking()
+        .Where(c => c.Activo)
+        .GroupBy(c => c.SourceId)
+        .Select(g => new { sourceId = g.Key, n = g.Count() })
+        .OrderByDescending(x => x.n)
+        .ToListAsync();
+    var porTema = await db.NormativaChunks.AsNoTracking()
+        .Where(c => c.Activo)
+        .GroupBy(c => c.Tema)
+        .Select(g => new { tema = g.Key, n = g.Count() })
+        .OrderByDescending(x => x.n)
+        .ToListAsync();
+    return Results.Ok(new { total, porFuente, porTema });
 }).RequireAuthorization();
 
 app.MapGet("/api/estadisticas", async (AppDbContext db, string? horizonte) =>
@@ -1430,6 +1650,30 @@ app.MapGet("/api/auditoria/agenda", async (
 app.MapFallbackToFile("/index.html");
 
 app.Run();
+
+static async Task EnsureCopilotoGuardadoTableAsync(AppDbContext db)
+{
+    await db.Database.ExecuteSqlRawAsync(
+        """
+        IF OBJECT_ID(N'app.CopilotoGuardado', N'U') IS NULL
+        BEGIN
+            CREATE TABLE app.CopilotoGuardado
+            (
+                Id                 int IDENTITY(1,1) NOT NULL PRIMARY KEY,
+                UsuarioId          int            NOT NULL,
+                IdEstablecimiento  varchar(64)    NOT NULL,
+                Pregunta           nvarchar(800)  NOT NULL,
+                Respuesta          nvarchar(max)  NOT NULL,
+                Tema               nvarchar(64)   NULL,
+                Seccion            nvarchar(80)   NULL,
+                Modelo             nvarchar(80)   NULL,
+                GuardadoEn         datetime2      NOT NULL CONSTRAINT DF_CopilotoGuardado_GuardadoEn DEFAULT SYSUTCDATETIME()
+            );
+            CREATE INDEX IX_CopilotoGuardado_User_Est
+                ON app.CopilotoGuardado (UsuarioId, IdEstablecimiento, GuardadoEn DESC);
+        END
+        """);
+}
 
 static object ToUserDto(Usuario user) => new
 {

@@ -19,6 +19,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<AgendaEvento> AgendaEventos => Set<AgendaEvento>();
     public DbSet<EstablecimientoDossier> EstablecimientoDossiers => Set<EstablecimientoDossier>();
     public DbSet<ResumenIaEstablecimiento> ResumenesIaEstablecimiento => Set<ResumenIaEstablecimiento>();
+    public DbSet<NormativaChunk> NormativaChunks => Set<NormativaChunk>();
+    public DbSet<CopilotoRespuestaCache> CopilotoRespuestasCache => Set<CopilotoRespuestaCache>();
+    public DbSet<CopilotoGuardado> CopilotoGuardados => Set<CopilotoGuardado>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -146,5 +149,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<ResumenIaEstablecimiento>()
             .HasIndex(r => new { r.IdEstablecimiento, r.Horizonte })
             .IsUnique();
+
+        modelBuilder.Entity<CopilotoRespuestaCache>()
+            .HasIndex(c => new { c.IdEstablecimiento, c.Seccion })
+            .IsUnique();
+
+        modelBuilder.Entity<CopilotoGuardado>()
+            .HasIndex(g => new { g.UsuarioId, g.IdEstablecimiento, g.GuardadoEn });
     }
 }

@@ -252,6 +252,51 @@ public class ResumenIaEstablecimiento
     public DateTime GeneradoEn { get; set; }
 }
 
+[Table("NormativaChunk", Schema = "app")]
+public class NormativaChunk
+{
+    public int Id { get; set; }
+    [MaxLength(32)] public string SourceId { get; set; } = "";
+    [MaxLength(200)] public string Titulo { get; set; } = "";
+    public string Texto { get; set; } = "";
+    [MaxLength(64)] public string Tema { get; set; } = "";
+    [MaxLength(16)] public string? Actividad { get; set; }
+    [MaxLength(120)] public string? NormaRef { get; set; }
+    public int Orden { get; set; }
+    public bool Activo { get; set; } = true;
+    public DateTime CreadoEn { get; set; }
+}
+
+[Table("CopilotoRespuestaCache", Schema = "app")]
+public class CopilotoRespuestaCache
+{
+    public int Id { get; set; }
+    [MaxLength(64)] public string IdEstablecimiento { get; set; } = "";
+    [MaxLength(80)] public string Seccion { get; set; } = "";
+    [MaxLength(800)] public string Pregunta { get; set; } = "";
+    [MaxLength(64)] public string Tema { get; set; } = "";
+    [MaxLength(16)] public string? Actividad { get; set; }
+    public string Respuesta { get; set; } = "";
+    [MaxLength(80)] public string Modelo { get; set; } = "";
+    public bool SinFundamento { get; set; }
+    public DateTime GeneradoEn { get; set; }
+}
+
+[Table("CopilotoGuardado", Schema = "app")]
+public class CopilotoGuardado
+{
+    public int Id { get; set; }
+    public int UsuarioId { get; set; }
+    public Usuario? Usuario { get; set; }
+    [MaxLength(64)] public string IdEstablecimiento { get; set; } = "";
+    [MaxLength(800)] public string Pregunta { get; set; } = "";
+    public string Respuesta { get; set; } = "";
+    [MaxLength(64)] public string? Tema { get; set; }
+    [MaxLength(80)] public string? Seccion { get; set; }
+    [MaxLength(80)] public string? Modelo { get; set; }
+    public DateTime GuardadoEn { get; set; }
+}
+
 [Table("VisitasApp", Schema = "app")]
 public class VisitaApp
 {

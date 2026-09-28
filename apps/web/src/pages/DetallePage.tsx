@@ -1,15 +1,19 @@
 import { useEffect, useState, type ReactElement } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
+  eliminarCopilotoGuardado,
   fetchAuditoriaAgenda,
+  fetchCopilotoGuardados,
   fetchDossier,
   fetchEstablecimiento,
-  generarResumenIa,
+  guardarCopilotoRespuesta,
+  preguntarCopiloto,
   HORIZONTE_OPERATIVO,
   type AgendaEvento,
+  type CopilotoGuardado,
+  type CopilotoRespuesta,
   type DetalleEstablecimiento,
   type DossierEstablecimiento,
-  type ResumenIa,
 } from "../api";
 import { useAuth } from "../auth";
 import { ciiuDivisionLabel } from "../ciiu";
@@ -17,7 +21,7 @@ import { help, tipMotivo, tipRiesgo } from "../columnHelp";
 import { InfoHint } from "../components/InfoHint";
 import { ProgramarVisitaDialog } from "../components/ProgramarVisitaDialog";
 import { Reveal, SkeletonPanel, SkeletonStats } from "../components/UiKit";
-import { IconArrowLeft, IconCalendar } from "../icons";
+import { IconArrowLeft, IconBookmark, IconBookmarkFilled, IconCalendar, IconTrash } from "../icons";
 import { motivoBadgeClass, motivoLabel, riesgoLabel } from "../labels";
 import {
   setDetalleTab,
@@ -30,7 +34,6 @@ type InfoKey = "shap" | "acierto" | null;
 export function DetallePage() {
   const toast = useToast();
   const { user } = useAuth();
-  const puedeRegenerar = user?.rol === "Admin" || user?.rol === "Coordinador";
   const esPreventor = user?.rol === "Prevencionista";
   const { id = "" } = useParams();
   const horizonte = HORIZONTE_OPERATIVO;
@@ -42,10 +45,85 @@ export function DetallePage() {
   const [openInfo, setOpenInfo] = useState<InfoKey>(null);
   const [tab, setTab] = useState<DetalleSectionKey>("historial");
   const [dossier, setDossier] = useState<DossierEstablecimiento | null>(null);
-  const [ia, setIa] = useState<ResumenIa | null>(null);
-  const [iaLoading, setIaLoading] = useState(false);
-  const [iaError, setIaError] = useState<string | null>(null);
+  const [copilotoPregunta, setCopilotoPregunta] = useState("");
+  const [copilotoUltimaPregunta, setCopilotoUltimaPregunta] = useState("");
+  const [copilotoLoading, setCopilotoLoading] = useState(false);
+  const [copilotoError, setCopilotoError] = useState<string | null>(null);
+  const [copilotoResp, setCopilotoResp] = useState<CopilotoRespuesta | null>(null);
+  const [copilotoGuardando, setCopilotoGuardando] = useState(false);
+  const [guardados, setGuardados] = useState<CopilotoGuardado[]>([]);
+  const [guardadosLoading, setGuardadosLoading] = useState(false);
+  const [guardadoSeleccionadoId, setGuardadoSeleccionadoId] = useState<number | null>(null);
   const [movimientos, setMovimientos] = useState<AgendaEvento[]>([]);
+
+  type CopilotoChip = {
+    label: string;
+    tema: string;
+    kind: "normativa" | "accidentes";
+    pregunta?: string;
+  };
+
+  const copilotoChips: CopilotoChip[] = [
+    {
+      label: "Qué verificar (RGRL)",
+      pregunta: "¿Qué debo verificar en esta visita según el RGRL?",
+      tema: "rgrl_checklist",
+      kind: "normativa",
+    },
+    {
+      label: "Accidentes previos",
+      pregunta:
+        "Armame un briefing de accidentes previos de este establecimiento para preparar la visita: patrones, gravedad e incumplimientos recurrentes.",
+      tema: "accidentes_previos",
+      kind: "accidentes",
+    },
+    {
+      label: "Frecuencia de visitas",
+      pregunta: "¿Qué frecuencia de visita aplica según la normativa?",
+      tema: "visitas_frecuencia",
+      kind: "normativa",
+    },
+    {
+      label: "Obligaciones PESE/PRS",
+      pregunta: "Si el establecimiento está en PESE o tiene PRS, ¿qué obligaciones hay?",
+      tema: "pese",
+      kind: "normativa",
+    },
+    {
+      label: "RAR / exámenes",
+      pregunta: "¿Qué implica el RAR y los exámenes médicos periódicos?",
+      tema: "rar_examenes",
+      kind: "normativa",
+    },
+  ];
+
+  /** Preguntas típicas de un preventor. Sin `tema`: cada una se cachea y responde por su texto. */
+  const copilotoEjemplos: { pregunta: string }[] = [
+    {
+      pregunta: "Mañana visito este establecimiento: ¿qué 8 puntos del RGRL no me puedo olvidar de verificar?",
+    },
+    {
+      pregunta: "Encontré andamios sin baranda: ¿qué le reclamo al empleador y con qué respaldo normativo?",
+    },
+    {
+      pregunta: "¿Cómo armo el recorrido de la visita si hay historial de caídas y cortes?",
+    },
+    {
+      pregunta: "El empleador dice que ya tiene HyS: ¿qué documentación le pido para comprobarlo en la visita?",
+    },
+    {
+      pregunta: "¿Cada cuánto tengo que volver a este tipo de establecimiento y qué dejo asentado al salir?",
+    },
+    {
+      pregunta: "Está en PESE/PRS: ¿qué tengo que controlar sí o sí en esta visita y qué denuncio si no cumple?",
+    },
+    {
+      pregunta: "Hay ruido fuerte en planta: ¿qué miro en campo y qué tiene que ver el RAR / exámenes periódicos?",
+    },
+    {
+      pregunta: "Cierro la visita con observaciones: ¿qué le comunico al empleador y qué plazos puedo plantear?",
+    },
+  ];
 
   // Al abrir un establecimiento, siempre entrar por Historial de accidentes.
   useEffect(() => {
@@ -91,13 +169,16 @@ export function DetallePage() {
   useEffect(() => {
     let alive = true;
     setDossier(null);
-    setIa(null);
-    setIaError(null);
+    setCopilotoResp(null);
+    setCopilotoError(null);
+    setCopilotoPregunta("");
+    setCopilotoUltimaPregunta("");
+    setGuardados([]);
+    setGuardadoSeleccionadoId(null);
     fetchDossier(id, horizonte)
       .then((res) => {
         if (!alive) return;
         setDossier(res);
-        if (res.resumenIa) setIa(res.resumenIa);
       })
       .catch(() => {
         if (alive) setDossier({ disponible: false });
@@ -107,17 +188,116 @@ export function DetallePage() {
     };
   }, [id, horizonte]);
 
-  async function handleResumenIa(refrescar = false) {
-    setIaLoading(true);
-    setIaError(null);
+  useEffect(() => {
+    let alive = true;
+    setGuardadosLoading(true);
+    fetchCopilotoGuardados(id)
+      .then((res) => {
+        if (!alive) return;
+        setGuardados(res.items);
+        setGuardadoSeleccionadoId((prev) => {
+          if (prev != null && res.items.some((g) => g.id === prev)) return prev;
+          return res.items[0]?.id ?? null;
+        });
+      })
+      .catch(() => {
+        if (alive) setGuardados([]);
+      })
+      .finally(() => {
+        if (alive) setGuardadosLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [id]);
+
+  async function handleCopiloto(pregunta: string, tema?: string, regenerar = false) {
+    const q = pregunta.trim();
+    if (q.length < 5) {
+      setCopilotoError("Escribí una pregunta un poco más concreta.");
+      return;
+    }
+    setCopilotoLoading(true);
+    setCopilotoError(null);
+    setCopilotoUltimaPregunta(q);
+    setCopilotoPregunta("");
     try {
-      const res = await generarResumenIa(id, horizonte, refrescar);
-      setIa(res);
-      toast.success(res.desdeCache ? "Resumen recuperado" : "Resumen generado");
+      const res = await preguntarCopiloto(id, {
+        pregunta: q,
+        tema,
+        refrescar: regenerar,
+      });
+      setCopilotoResp(res);
+      if (res.sinFundamento) {
+        toast.info("Sin fundamento suficiente en el corpus");
+      } else if (res.desdeCache) {
+        toast.info("Respuesta recuperada");
+      } else {
+        toast.success(regenerar ? "Respuesta regenerada" : "Respuesta generada");
+      }
     } catch (err) {
-      setIaError(err instanceof Error ? err.message : "No se pudo generar el resumen.");
+      // Si falló, devolver el texto al campo para que pueda reintentar.
+      setCopilotoPregunta(q);
+      setCopilotoError(err instanceof Error ? err.message : "No se pudo consultar el copiloto.");
     } finally {
-      setIaLoading(false);
+      setCopilotoLoading(false);
+    }
+  }
+
+  function handleChip(chip: CopilotoChip, regenerar = false) {
+    // Accidentes previos va por copiloto (sección propia + caché), no por Resumen IA.
+    void handleCopiloto(chip.pregunta ?? "", chip.tema, regenerar);
+  }
+
+  const guardadoActivoId =
+    copilotoResp &&
+    guardados.find(
+      (g) =>
+        g.pregunta === copilotoUltimaPregunta &&
+        g.respuesta === copilotoResp.respuesta,
+    )?.id;
+
+  async function handleGuardarRespuesta() {
+    if (!copilotoResp || !copilotoUltimaPregunta.trim()) {
+      toast.info("No hay respuesta para guardar");
+      return;
+    }
+    setCopilotoGuardando(true);
+    try {
+      const saved = await guardarCopilotoRespuesta(id, {
+        pregunta: copilotoUltimaPregunta,
+        respuesta: copilotoResp.respuesta,
+        tema: copilotoResp.tema,
+        seccion: copilotoResp.seccion,
+        modelo: copilotoResp.modelo,
+      });
+      setGuardados((prev) => {
+        const sinDup = prev.filter((g) => g.id !== saved.id && g.pregunta !== saved.pregunta);
+        return [saved, ...sinDup];
+      });
+      setGuardadoSeleccionadoId(saved.id);
+      toast.success(saved.actualizado ? "Respuesta actualizada" : "Respuesta guardada");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "No se pudo guardar");
+    } finally {
+      setCopilotoGuardando(false);
+    }
+  }
+
+  async function handleEliminarGuardado(guardadoId: number) {
+    try {
+      await eliminarCopilotoGuardado(id, guardadoId);
+      setGuardados((prev) => {
+        const next = prev.filter((g) => g.id !== guardadoId);
+        setGuardadoSeleccionadoId((sel) => {
+          if (sel !== guardadoId) return sel;
+          return next[0]?.id ?? null;
+        });
+        return next;
+      });
+      toast.success("Respuesta eliminada");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "No se pudo eliminar");
     }
   }
 
@@ -131,9 +311,8 @@ export function DetallePage() {
   if (dossier?.disponible && dossier.accidentes) {
     tabs.push({ key: "historial", label: "Historial de accidentes", count: dossier.accidentes.total });
   }
-  if (dossier?.disponible && (dossier.accidentes || dossier.visitas)) {
-    tabs.push({ key: "resumenIa", label: "Resumen IA" });
-  }
+  tabs.push({ key: "copiloto", label: "Copiloto normativo" });
+  tabs.push({ key: "guardadas", label: "Guardadas", count: guardados.length || undefined });
   tabs.push({ key: "ficha", label: "Ficha operativa" });
   if (data?.factoresShap) {
     tabs.push({ key: "shap", label: "Factores de priorización" });
@@ -322,23 +501,219 @@ export function DetallePage() {
               </>
             )}
 
-            {activeTab === "resumenIa" && (
+            {activeTab === "copiloto" && (
               <>
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 10 }}>
-                  {(!ia || puedeRegenerar) && (
+                <p className="muted" style={{ marginTop: 0, marginBottom: 12, fontSize: 13 }}>
+                  Chips de normativa (RGRL, PESE, RAR) y resumen de accidentes previos del establecimiento.
+                  No es asesoramiento legal: el preventor confirma en campo.
+                </p>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+                  {copilotoChips.map((chip) => {
+                    const activa = copilotoResp?.seccion === chip.tema;
+                    return (
+                      <button
+                        key={chip.tema + chip.label}
+                        type="button"
+                        className={activa ? "btn" : "ghost-btn"}
+                        disabled={copilotoLoading}
+                        onClick={() => handleChip(chip, false)}
+                      >
+                        {chip.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="form-stack" style={{ marginBottom: 12 }}>
+                  <div className="field">
+                    <label htmlFor="copiloto-pregunta">Tu pregunta</label>
+                    <textarea
+                      id="copiloto-pregunta"
+                      rows={2}
+                      placeholder="Ej.: Mañana visito: ¿qué puntos del RGRL priorizo?"
+                      value={copilotoPregunta}
+                      disabled={copilotoLoading}
+                      onChange={(e) => setCopilotoPregunta(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key !== "Enter" || e.shiftKey) return;
+                        e.preventDefault();
+                        if (copilotoLoading) return;
+                        void handleCopiloto(copilotoPregunta, undefined, false);
+                      }}
+                    />
+                  </div>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     <button
                       type="button"
                       className="btn"
-                      onClick={() => handleResumenIa(Boolean(ia))}
-                      disabled={iaLoading}
+                      disabled={copilotoLoading}
+                      onClick={() => void handleCopiloto(copilotoPregunta, undefined, false)}
                     >
-                      {iaLoading ? "Generando…" : ia ? "Regenerar resumen" : "Generar resumen con IA"}
+                      {copilotoLoading ? "Consultando…" : "Preguntar"}
                     </button>
+                    {copilotoResp && (
+                      <button
+                        type="button"
+                        className="ghost-btn"
+                        disabled={copilotoLoading}
+                        onClick={() => {
+                          const chip = copilotoChips.find((c) => c.tema === copilotoResp.seccion);
+                          if (chip) {
+                            handleChip(chip, true);
+                            return;
+                          }
+                          void handleCopiloto(
+                            copilotoPregunta.trim() || copilotoUltimaPregunta,
+                            undefined,
+                            true,
+                          );
+                        }}
+                      >
+                        Regenerar
+                      </button>
+                    )}
+                  </div>
+                </div>
+                {copilotoError && <div className="error" style={{ marginBottom: 10 }}>{copilotoError}</div>}
+                {copilotoLoading && (
+                  <p className="muted copiloto-escribiendo" style={{ marginBottom: 12, fontSize: 13 }}>
+                    El copiloto está preparando la respuesta…
+                  </p>
+                )}
+                {copilotoResp && !copilotoLoading && (
+                  <div className="copiloto-respuesta" style={{ marginBottom: 16 }}>
+                    <div className="copiloto-respuesta-toolbar">
+                      <button
+                        type="button"
+                        className={`copiloto-save-btn${guardadoActivoId ? " is-saved" : ""}`}
+                        disabled={copilotoGuardando}
+                        title={
+                          guardadoActivoId
+                            ? "Ya está en Guardadas (tocá para actualizar)"
+                            : "Guardar para la visita"
+                        }
+                        aria-label={
+                          guardadoActivoId ? "Respuesta guardada" : "Guardar respuesta"
+                        }
+                        onClick={() => void handleGuardarRespuesta()}
+                      >
+                        {guardadoActivoId ? (
+                          <IconBookmarkFilled size={15} />
+                        ) : (
+                          <IconBookmark size={15} />
+                        )}
+                        <span>{guardadoActivoId ? "Guardada" : "Guardar"}</span>
+                      </button>
+                    </div>
+                    <TypewriterIa
+                      key={`${copilotoResp.seccion}-${copilotoResp.generadoEn ?? ""}-${copilotoResp.desdeCache ? "cache" : "new"}`}
+                      texto={copilotoResp.respuesta}
+                      animar={!copilotoResp.desdeCache}
+                    />
+                  </div>
+                )}
+                <div className="copiloto-ejemplos" style={{ marginBottom: 8 }}>
+                  <div className="muted" style={{ fontSize: 12, marginBottom: 6 }}>
+                    Preguntas útiles para el preventor (tocá una para enviar):
+                  </div>
+                  <ul className="copiloto-ejemplos-list">
+                    {copilotoEjemplos.map((ej) => (
+                      <li key={ej.pregunta}>
+                        <button
+                          type="button"
+                          className="copiloto-ejemplo-btn"
+                          disabled={copilotoLoading}
+                          onClick={() => void handleCopiloto(ej.pregunta, undefined, false)}
+                        >
+                          {ej.pregunta}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </>
+            )}
+
+            {activeTab === "guardadas" && (
+              <div className="guardadas-layout">
+                <div className="guardadas-card">
+                  <div className="guardadas-card-head">
+                    <h3>Preguntas guardadas</h3>
+                    <span className="muted" style={{ fontSize: 12 }}>
+                      {guardados.length} {guardados.length === 1 ? "ítem" : "ítems"}
+                    </span>
+                  </div>
+                  {guardadosLoading ? (
+                    <p className="muted" style={{ fontSize: 13, margin: 0 }}>
+                      Cargando…
+                    </p>
+                  ) : guardados.length === 0 ? (
+                    <p className="muted" style={{ fontSize: 13, margin: 0, lineHeight: 1.45 }}>
+                      Todavía no guardaste respuestas. En el Copiloto normativo, tocá{" "}
+                      <strong>Guardar</strong> arriba de una respuesta que te sirva para la visita.
+                    </p>
+                  ) : (
+                    <ul className="guardadas-list">
+                      {guardados.map((g) => {
+                        const activa = g.id === guardadoSeleccionadoId;
+                        return (
+                          <li key={g.id}>
+                            <button
+                              type="button"
+                              className={`guardadas-list-item${activa ? " active" : ""}`}
+                              onClick={() => setGuardadoSeleccionadoId(g.id)}
+                            >
+                              <span className="guardadas-list-q">{g.pregunta}</span>
+                              <span className="guardadas-list-meta muted">
+                                {new Date(g.guardadoEn).toLocaleString("es-AR", {
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </span>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
                   )}
                 </div>
-                {iaError && <div className="error" style={{ marginBottom: 10 }}>{iaError}</div>}
-                {ia && <ResumenIaContenido texto={ia.resumen} />}
-              </>
+                <div className="guardadas-card guardadas-detail">
+                  <div className="guardadas-card-head">
+                    <h3>Respuesta</h3>
+                    {guardadoSeleccionadoId != null && (
+                      <button
+                        type="button"
+                        className="guardadas-delete-btn"
+                        title="Eliminar de guardadas"
+                        aria-label="Eliminar respuesta guardada"
+                        onClick={() => void handleEliminarGuardado(guardadoSeleccionadoId)}
+                      >
+                        <IconTrash size={15} />
+                        <span>Eliminar</span>
+                      </button>
+                    )}
+                  </div>
+                  {(() => {
+                    const sel = guardados.find((g) => g.id === guardadoSeleccionadoId);
+                    if (!sel) {
+                      return (
+                        <p className="muted" style={{ fontSize: 13, margin: 0 }}>
+                          Seleccioná una pregunta de la lista para ver la respuesta completa.
+                        </p>
+                      );
+                    }
+                    return (
+                      <div className="guardadas-detail-body">
+                        <p className="guardadas-detail-q">{sel.pregunta}</p>
+                        <div className="guardadas-detail-a">
+                          <ResumenIaContenido texto={sel.respuesta} />
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
             )}
 
             {activeTab === "ficha" && (
@@ -528,6 +903,81 @@ function renderInline(text: string): (string | ReactElement)[] {
   return nodes;
 }
 
+/** Detecta títulos de sección (azules) aunque el modelo agregue ":" o los mande como viñeta. */
+function parseHeading(line: string): string | null {
+  const t = line.trim();
+  if (!t) return null;
+
+  const hash = t.match(/^#{1,4}\s+(.+)$/);
+  if (hash) return cleanHeadingText(hash[1]);
+
+  const numbered = t.match(/^\d+[.)]\s+(.+)$/);
+  if (numbered && numbered[1].length <= 80 && !numbered[1].includes(". ")) {
+    return cleanHeadingText(numbered[1]);
+  }
+
+  // "**Título**" / "**Título:**" / "**Título**:"
+  const boldLine = t.match(/^\*\*(.+?)\*\*:?\s*$/);
+  if (boldLine) return cleanHeadingText(boldLine[1]);
+
+  // "- **Título:**" (sección disfrazada de viñeta)
+  const boldBullet = t.match(/^[-*]\s+\*\*(.+?)\*\*:?\s*$/);
+  if (boldBullet && boldBullet[1].length <= 90) return cleanHeadingText(boldBullet[1]);
+
+  return null;
+}
+
+function cleanHeadingText(raw: string): string {
+  return raw
+    .replace(/^\*\*|\*\*$/g, "")
+    .replace(/\*\*/g, "")
+    .replace(/:\s*$/, "")
+    .trim();
+}
+
+/** Efecto de escritura solo en generación nueva (no en respuestas desde caché). */
+function TypewriterIa({ texto, animar }: { texto: string; animar: boolean }) {
+  const [shown, setShown] = useState(animar ? "" : texto);
+  const [done, setDone] = useState(!animar);
+
+  useEffect(() => {
+    const full = texto ?? "";
+    if (!animar || !full) {
+      setShown(full);
+      setDone(true);
+      return;
+    }
+    setShown("");
+    setDone(false);
+    const step = Math.max(4, Math.ceil(full.length / 55));
+    let i = 0;
+    const id = window.setInterval(() => {
+      i += step;
+      if (i >= full.length) {
+        setShown(full);
+        setDone(true);
+        window.clearInterval(id);
+      } else {
+        setShown(full.slice(0, i));
+      }
+    }, 16);
+    return () => window.clearInterval(id);
+  }, [texto, animar]);
+
+  if (done || !animar) {
+    return <ResumenIaContenido texto={texto} />;
+  }
+
+  return (
+    <div className="ia-resumen ia-typing" aria-live="polite">
+      <pre className="ia-typing-text">
+        {shown}
+        <span className="ia-caret" aria-hidden="true" />
+      </pre>
+    </div>
+  );
+}
+
 function ResumenIaContenido({ texto }: { texto: string }) {
   const lines = texto.replace(/\r\n/g, "\n").split("\n");
   const blocks: ReactElement[] = [];
@@ -552,27 +1002,23 @@ function ResumenIaContenido({ texto }: { texto: string }) {
       flushBullets();
       continue;
     }
-    const isHeading =
-      /^\*\*.+\*\*$/.test(line) || /^#{1,4}\s+/.test(line) || /^\d+[.)]\s+/.test(line);
-    if (isHeading) {
+
+    const heading = parseHeading(line);
+    if (heading) {
       flushBullets();
-      const clean = line
-        .replace(/^#{1,4}\s+/, "")
-        .replace(/^\*\*|\*\*$/g, "")
-        .replace(/^\d+[.)]\s*/, "")
-        .replace(/\*\*/g, "")
-        .trim();
       blocks.push(
         <h4 key={`h-${key++}`} className="ia-heading">
-          {clean}
+          {heading}
         </h4>,
       );
       continue;
     }
+
     if (/^[-*]\s+/.test(line)) {
       bullets.push(line.replace(/^[-*]\s+/, ""));
       continue;
     }
+
     flushBullets();
     blocks.push(
       <p key={`p-${key++}`} className="ia-par">

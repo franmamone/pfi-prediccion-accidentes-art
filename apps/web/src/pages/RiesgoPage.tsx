@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { fetchRiesgo, HORIZONTE_OPERATIVO, shortId, type RankingItem } from "../api";
 import { ciiuDivisionLabel } from "../ciiu";
@@ -38,6 +38,8 @@ export function RiesgoPage() {
   const programada = params.get("programada") || "";
   const estadoOperativo = params.get("estado") || "";
   const [items, setItems] = useState<RankingItem[]>([]);
+  const [total, setTotal] = useState(0);
+  const [sectors, setSectors] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [programar, setProgramar] = useState<RankingItem | null>(null);
@@ -65,10 +67,16 @@ export function RiesgoPage() {
       programada: programada || undefined,
       estadoOperativo: estadoOperativo || undefined,
       top: 1000,
+      page,
+      pageSize,
     })
       .then((res) => {
         if (!alive) return;
         setItems(res.items);
+        setTotal(res.total);
+        if (res.sectores) {
+          setSectors(res.sectores.filter(Boolean) as string[]);
+        }
       })
       .catch((err: unknown) => {
         if (alive) setError(err instanceof Error ? err.message : "Error al cargar la lista de prioridad");
@@ -87,31 +95,21 @@ export function RiesgoPage() {
     obligacionPrs,
     programada,
     estadoOperativo,
+    page,
+    pageSize,
   ]);
 
   useEffect(() => {
     return load();
   }, [load, reloadKey]);
 
-  const sectors = useMemo(() => {
-    const set = new Set(items.map((i) => i.ciiuDivision).filter(Boolean) as string[]);
-    return Array.from(set).sort();
-  }, [items]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [banda, sector, q, obligacionPrs, programada, estadoOperativo, reloadKey]);
-
-  const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const currentPage = Math.min(page, totalPages);
-  const pagedItems = useMemo(
-    () => items.slice((currentPage - 1) * pageSize, currentPage * pageSize),
-    [items, currentPage],
-  );
-  const rangeStart = items.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
-  const rangeEnd = Math.min(currentPage * pageSize, items.length);
+  const rangeStart = total === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const rangeEnd = Math.min(currentPage * pageSize, total);
 
   function patch(next: Record<string, string>) {
+    setPage(1);
     const merged = new URLSearchParams(params);
     Object.entries(next).forEach(([k, v]) => {
       if (!v) merged.delete(k);
@@ -121,6 +119,7 @@ export function RiesgoPage() {
   }
 
   function clearFilters() {
+    setPage(1);
     setParams(new URLSearchParams());
   }
 
@@ -131,10 +130,6 @@ export function RiesgoPage() {
   function openDetalle(idEstablecimiento: string) {
     rememberScroll();
     navigate(`/establecimientos/${idEstablecimiento}`);
-  }
-
-  function isMobileLayout() {
-    return window.matchMedia("(max-width: 960px)").matches;
   }
 
   return (
@@ -232,7 +227,7 @@ export function RiesgoPage() {
         />
       )}
 
-      {!loading && items.length === 0 && !error ? (
+      {!loading && total === 0 && !error ? (
         <div className="panel">
           <EmptyState
             title="Ningún establecimiento con estos filtros"
@@ -264,7 +259,7 @@ export function RiesgoPage() {
             </tr>
           </thead>
           <tbody>
-            {pagedItems.map((item) => {
+            {items.map((item) => {
               const estado = item.estadoOperativo ?? "pendiente";
               const estadoLink =
                 estado === "pendiente"
@@ -285,10 +280,8 @@ export function RiesgoPage() {
               <tr
                 key={item.id}
                 className="riesgo-row"
-                title="Doble clic para abrir el detalle"
-                onDoubleClick={() => openDetalle(item.idEstablecimiento)}
+                title="Clic para abrir el detalle"
                 onClick={(e) => {
-                  if (!isMobileLayout()) return;
                   const target = e.target as HTMLElement;
                   if (target.closest("a, button")) return;
                   openDetalle(item.idEstablecimiento);
@@ -384,10 +377,10 @@ export function RiesgoPage() {
       </div>
       ) : null}
 
-      {!loading && items.length > 0 ? (
+      {!loading && total > 0 ? (
         <div className="pagination">
           <span className="pagination-info">
-            {rangeStart}–{rangeEnd} de {items.length.toLocaleString("es-AR")}
+            {rangeStart}–{rangeEnd} de {total.toLocaleString("es-AR")}
           </span>
           <div className="pagination-controls">
             <button

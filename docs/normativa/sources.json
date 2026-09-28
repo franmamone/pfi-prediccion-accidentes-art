@@ -1,0 +1,64 @@
+{
+  "sources": [
+    {
+      "id": "rgrl",
+      "titulo": "Anexo I — Relevamiento General de Riesgos Laborales",
+      "tipo": "formulario",
+      "archivo": "rgrl-anexo-i.pdf",
+      "url_oficial": null,
+      "version": "Anexo I (formularios Dec. 351 / 911 / 617)",
+      "fecha_captura": "2026-09-27",
+      "prioridad": 1
+    },
+    {
+      "id": "srt-463",
+      "titulo": "Res. SRT 463/2009 (texto actualizado)",
+      "tipo": "resolucion",
+      "archivo": "srt-463-2009-actualizada.pdf",
+      "url_oficial": "https://www.argentina.gob.ar/normativa/nacional/resoluci%C3%B3n-463-2009-153431/actualizacion",
+      "version": "actualizado Infoleg",
+      "fecha_captura": "2026-09-27",
+      "prioridad": 1
+    },
+    {
+      "id": "srt-741",
+      "titulo": "Res. SRT 741/2010 (texto actualizado)",
+      "tipo": "resolucion",
+      "archivo": "srt-741-2010-actualizada.pdf",
+      "url_oficial": "https://www.argentina.gob.ar/normativa/nacional/resoluci%C3%B3n-741-2010-167725/actualizacion",
+      "version": "actualizado Infoleg",
+      "fecha_captura": "2026-09-27",
+      "prioridad": 2
+    },
+    {
+      "id": "srt-37",
+      "titulo": "Res. SRT 37/2010",
+      "tipo": "resolucion",
+      "archivo": "srt-37-2010.pdf",
+      "url_oficial": "https://www.argentina.gob.ar/normativa/nacional/resoluci%C3%B3n-37-2010-163171/texto",
+      "version": "texto oficial",
+      "fecha_captura": "2026-09-27",
+      "prioridad": 2
+    },
+    {
+      "id": "srt-363",
+      "titulo": "Res. SRT 363/2016 (PESE)",
+      "tipo": "resolucion",
+      "archivo": "srt-363-2016.pdf",
+      "url_oficial": "https://www.argentina.gob.ar/normativa/nacional/265441/texto",
+      "version": "texto oficial",
+      "fecha_captura": "2026-09-27",
+      "prioridad": 1
+    },
+    {
+      "id": "srt-20",
+      "titulo": "Res. SRT 20/2018 (PESE-PyMES)",
+      "tipo": "resolucion",
+      "archivo": "srt-20-2018.pdf",
+      "url_oficial": "https://www.argentina.gob.ar/normativa/nacional/307746/texto",
+      "version": "texto oficial",
+      "fecha_captura": "2026-09-27",
+      "prioridad": 2
+    }
+  ]
+}

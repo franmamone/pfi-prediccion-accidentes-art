@@ -84,13 +84,15 @@ export type DetalleSectionKey =
   | "ficha"
   | "historial"
   | "visitas"
-  | "resumenIa"
+  | "copiloto"
+  | "guardadas"
   | "shap"
   | "movimientos";
 
 export function getDetalleSections(): Record<DetalleSectionKey, boolean> {
   const defaults: Record<DetalleSectionKey, boolean> = {
-    resumenIa: true,
+    copiloto: true,
+    guardadas: true,
     historial: true,
     visitas: false,
     ficha: false,
@@ -121,7 +123,8 @@ const DETALLE_TABS: DetalleSectionKey[] = [
   "ficha",
   "historial",
   "visitas",
-  "resumenIa",
+  "copiloto",
+  "guardadas",
   "shap",
   "movimientos",
 ];

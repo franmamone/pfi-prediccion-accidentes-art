@@ -270,6 +270,67 @@ export function generarResumenIa(id: string, horizonte: Horizonte, refrescar = f
   );
 }
 
+export type CopilotoRespuesta = {
+  respuesta: string;
+  tema: string;
+  seccion: string;
+  actividad: string | null;
+  modelo: string;
+  sinFundamento: boolean;
+  desdeCache: boolean;
+  generadoEn?: string | null;
+};
+
+export function preguntarCopiloto(
+  id: string,
+  body: { pregunta: string; tema?: string; actividad?: string; refrescar?: boolean },
+) {
+  return request<CopilotoRespuesta>(
+    `/api/establecimientos/${encodeURIComponent(id)}/copiloto`,
+    { method: "POST", body: JSON.stringify(body) },
+  );
+}
+
+export type CopilotoGuardado = {
+  id: number;
+  pregunta: string;
+  respuesta: string;
+  tema: string | null;
+  seccion: string | null;
+  modelo: string | null;
+  guardadoEn: string;
+  actualizado?: boolean;
+};
+
+export function fetchCopilotoGuardados(id: string) {
+  return request<{ total: number; items: CopilotoGuardado[] }>(
+    `/api/establecimientos/${encodeURIComponent(id)}/copiloto/guardados`,
+  );
+}
+
+export function guardarCopilotoRespuesta(
+  id: string,
+  body: {
+    pregunta: string;
+    respuesta: string;
+    tema?: string;
+    seccion?: string;
+    modelo?: string;
+  },
+) {
+  return request<CopilotoGuardado>(
+    `/api/establecimientos/${encodeURIComponent(id)}/copiloto/guardados`,
+    { method: "POST", body: JSON.stringify(body) },
+  );
+}
+
+export function eliminarCopilotoGuardado(id: string, guardadoId: number) {
+  return request<{ ok: boolean; id: number }>(
+    `/api/establecimientos/${encodeURIComponent(id)}/copiloto/guardados/${guardadoId}`,
+    { method: "DELETE" },
+  );
+}
+
 export type Serie = { clave: string; valor: number; scorePromedio?: number };
 
 export type ShapAgregadoFactor = {
@@ -469,6 +530,8 @@ export function fetchRiesgo(params: {
   scoreMin?: string;
   scoreMax?: string;
   top?: number;
+  page?: number;
+  pageSize?: number;
 }) {
   const qs = new URLSearchParams();
   qs.set("horizonte", params.horizonte);
@@ -484,9 +547,17 @@ export function fetchRiesgo(params: {
   if (params.scoreMin) qs.set("scoreMin", params.scoreMin);
   if (params.scoreMax) qs.set("scoreMax", params.scoreMax);
   if (params.top) qs.set("top", String(params.top));
-  return request<{ periodo: string; horizonte: Horizonte; total: number; items: RankingItem[] }>(
-    `/api/riesgo?${qs.toString()}`,
-  );
+  if (params.page) qs.set("page", String(params.page));
+  if (params.pageSize) qs.set("pageSize", String(params.pageSize));
+  return request<{
+    periodo: string;
+    horizonte: Horizonte;
+    total: number;
+    page: number;
+    pageSize: number;
+    sectores?: string[];
+    items: RankingItem[];
+  }>(`/api/riesgo?${qs.toString()}`);
 }
 
 export function fetchEstablecimiento(id: string, horizonte: Horizonte) {
