@@ -11,6 +11,7 @@ import { useAuth } from "../auth";
 import { motivoLabel, riesgoLabel } from "../labels";
 import { DateField } from "./DateField";
 import { Select } from "./Select";
+import { TimeField } from "./TimeField";
 
 type Props = {
   item: RankingItem;
@@ -31,6 +32,7 @@ export function ProgramarVisitaDialog({ item, horizonte, onClose, onDone }: Prop
   const { user } = useAuth();
   const [usuarios, setUsuarios] = useState<UsuarioAsignable[]>([]);
   const [fecha, setFecha] = useState(todayIso());
+  const [hora, setHora] = useState("09:00");
   const [usuarioId, setUsuarioId] = useState<number>(user?.id ?? 0);
   const [notas, setNotas] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -52,12 +54,17 @@ export function ProgramarVisitaDialog({ item, horizonte, onClose, onDone }: Prop
 
   async function submit(e: FormEvent) {
     e.preventDefault();
+    if (!fecha) {
+      setError("Elegí una fecha planificada.");
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
       await programarVisita({
         rankingItemId: item.id,
         fechaPlanificada: fecha,
+        horaPlanificada: hora,
         horizonte,
         usuarioId: usuarioId || undefined,
         notas: notas.trim() || undefined,
@@ -73,7 +80,7 @@ export function ProgramarVisitaDialog({ item, horizonte, onClose, onDone }: Prop
   return (
     <div className="modal-backdrop" role="presentation" onClick={onClose}>
       <div
-        className="modal panel"
+        className="modal panel programar-modal"
         role="dialog"
         aria-modal="true"
         aria-labelledby="programar-title"
@@ -88,14 +95,24 @@ export function ProgramarVisitaDialog({ item, horizonte, onClose, onDone }: Prop
         </p>
 
         <form onSubmit={submit} className="form-stack">
-          <div className="field">
-            <label htmlFor="fecha-planificada">Fecha planificada</label>
-            <DateField
-              ariaLabel="Fecha planificada"
-              min={todayIso()}
-              value={fecha}
-              onChange={setFecha}
-            />
+          <div className="fecha-hora-row">
+            <div className="field">
+              <label htmlFor="fecha-planificada">Fecha</label>
+              <DateField
+                ariaLabel="Fecha planificada"
+                min={todayIso()}
+                value={fecha}
+                onChange={setFecha}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="hora-planificada">Hora</label>
+              <TimeField
+                ariaLabel="Hora planificada"
+                value={hora}
+                onChange={setHora}
+              />
+            </div>
           </div>
           <div className="field">
             <label htmlFor="responsable">Responsable</label>

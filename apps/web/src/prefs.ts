@@ -81,9 +81,11 @@ export function setHorizontePref(_value: HorizontePref) {
 }
 
 export type DetalleSectionKey =
+  | "establecimiento"
   | "ficha"
   | "historial"
   | "visitas"
+  | "pendientes"
   | "copiloto"
   | "guardadas"
   | "shap"
@@ -91,10 +93,12 @@ export type DetalleSectionKey =
 
 export function getDetalleSections(): Record<DetalleSectionKey, boolean> {
   const defaults: Record<DetalleSectionKey, boolean> = {
+    establecimiento: true,
     copiloto: true,
     guardadas: true,
     historial: true,
-    visitas: false,
+    visitas: true,
+    pendientes: true,
     ficha: false,
     shap: false,
     movimientos: false,
@@ -120,25 +124,30 @@ export function setDetalleSection(key: DetalleSectionKey, open: boolean) {
 }
 
 const DETALLE_TABS: DetalleSectionKey[] = [
-  "ficha",
-  "historial",
+  "establecimiento",
   "visitas",
   "copiloto",
   "guardadas",
-  "shap",
-  "movimientos",
 ];
+
+const DETALLE_TABS_LEGACY: Record<string, DetalleSectionKey> = {
+  historial: "establecimiento",
+  ficha: "establecimiento",
+  shap: "establecimiento",
+  movimientos: "establecimiento",
+  pendientes: "visitas",
+};
 
 export function getDetalleTab(): DetalleSectionKey {
   try {
     const raw = localStorage.getItem(KEYS.detalleTab);
-    if (raw && (DETALLE_TABS as string[]).includes(raw)) {
-      return raw as DetalleSectionKey;
-    }
+    if (!raw) return "establecimiento";
+    if ((DETALLE_TABS as string[]).includes(raw)) return raw as DetalleSectionKey;
+    if (raw in DETALLE_TABS_LEGACY) return DETALLE_TABS_LEGACY[raw];
   } catch {
     /* ignore */
   }
-  return "historial";
+  return "establecimiento";
 }
 
 export function setDetalleTab(key: DetalleSectionKey) {

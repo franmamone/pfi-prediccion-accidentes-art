@@ -184,6 +184,7 @@ public class AgendaItem
     [MaxLength(7)] public string Periodo { get; set; } = "";
     [MaxLength(2)] public string Horizonte { get; set; } = "3m";
     public DateOnly FechaPlanificada { get; set; }
+    public TimeOnly HoraPlanificada { get; set; } = new(9, 0);
     [MaxLength(40)] public string MotivoVisita { get; set; } = "predictivo";
     [MaxLength(30)] public string Estado { get; set; } = "programada";
     public int? SnapshotId { get; set; }
@@ -312,5 +313,41 @@ public class VisitaApp
     [MaxLength(200)] public string? MotivoNoRealizada { get; set; }
     public string? Hallazgos { get; set; }
     public string? Acciones { get; set; }
+    public DateTime CreadoEn { get; set; }
+    public VisitaActa? Acta { get; set; }
+}
+
+[Table("VisitaActa", Schema = "app")]
+public class VisitaActa
+{
+    public int Id { get; set; }
+    public int VisitaAppId { get; set; }
+    public VisitaApp? VisitaApp { get; set; }
+    public int? AgendaItemId { get; set; }
+    [MaxLength(20)] public string ResultadoGlobal { get; set; } = "ok";
+    public bool Revisita { get; set; }
+    public int? PlazoRevisitaDias { get; set; }
+    public string? Notas { get; set; }
+    public string? ChecklistJson { get; set; }
+    public DateTime CreadoEn { get; set; }
+    public int? CreadoPorUsuarioId { get; set; }
+    public List<VisitaHallazgo> Hallazgos { get; set; } = [];
+}
+
+[Table("VisitaHallazgo", Schema = "app")]
+public class VisitaHallazgo
+{
+    public int Id { get; set; }
+    public int ActaId { get; set; }
+    public VisitaActa? Acta { get; set; }
+    [MaxLength(64)] public string IdEstablecimiento { get; set; } = "";
+    [MaxLength(16)] public string Severidad { get; set; } = "media";
+    public string Hallazgo { get; set; } = "";
+    public string? Recomendacion { get; set; }
+    public int? PlazoDias { get; set; }
+    [MaxLength(200)] public string? NormaRef { get; set; }
+    [MaxLength(120)] public string? ItemRgrl { get; set; }
+    [MaxLength(16)] public string Estado { get; set; } = "abierto";
+    [MaxLength(32)] public string Origen { get; set; } = "manual";
     public DateTime CreadoEn { get; set; }
 }

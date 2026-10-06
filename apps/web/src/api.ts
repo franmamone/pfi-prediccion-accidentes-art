@@ -58,6 +58,7 @@ export type UsuarioAsignable = {
 export type AgendaResumen = {
   id: number;
   fechaPlanificada: string;
+  horaPlanificada?: string | null;
   estado: EstadoAgenda;
   usuarioId: number;
   responsable: string | null;
@@ -73,6 +74,7 @@ export type AgendaItem = {
   periodo: string;
   horizonte: Horizonte;
   fechaPlanificada: string;
+  horaPlanificada?: string | null;
   motivoVisita: string;
   estado: EstadoAgenda;
   snapshotItemId: number | null;
@@ -92,6 +94,14 @@ export type AgendaItem = {
     resultado: string;
     hallazgos: string | null;
     acciones: string | null;
+    acta?: {
+      id: number;
+      resultadoGlobal: string;
+      revisita: boolean;
+      plazoRevisitaDias: number | null;
+      hallazgosTotal: number;
+      hallazgosAbiertos: number;
+    } | null;
   } | null;
 };
 
@@ -606,6 +616,7 @@ export function fetchAgenda(params: {
 export function programarVisita(body: {
   rankingItemId: number;
   fechaPlanificada: string;
+  horaPlanificada?: string;
   horizonte: Horizonte;
   usuarioId?: number;
   notas?: string;
@@ -618,7 +629,12 @@ export function programarVisita(body: {
 
 export function reprogramarVisita(
   id: number,
-  body: { fechaPlanificada?: string; usuarioId?: number; notas?: string },
+  body: {
+    fechaPlanificada?: string;
+    horaPlanificada?: string;
+    usuarioId?: number;
+    notas?: string;
+  },
 ) {
   return request<AgendaItem>(`/api/agenda/${id}`, {
     method: "PUT",
@@ -628,9 +644,133 @@ export function reprogramarVisita(
 
 export function realizarVisita(
   id: number,
-  body: { fechaHoraReal?: string; hallazgos?: string; acciones?: string; notas?: string },
+  body: {
+    fechaHoraReal?: string;
+    hallazgos?: string;
+    acciones?: string;
+    notas?: string;
+    resultadoGlobal?: "ok" | "observacion" | "critico" | string;
+    revisita?: boolean;
+    plazoRevisitaDias?: number;
+    fechaRevisita?: string;
+    horaRevisita?: string;
+    notasActa?: string;
+    checklist?: ChecklistItemActa[];
+    hallazgosActa?: HallazgoActaDraft[];
+  },
 ) {
   return request<AgendaItem>(`/api/agenda/${id}/realizar`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export type ChecklistItemActa = {
+  id: string;
+  label: string;
+  estado: "ok" | "observacion" | "no_aplica" | "no_verificado" | string;
+  origen?: string;
+};
+
+export type HallazgoActaDraft = {
+  severidad: "baja" | "media" | "alta" | string;
+  hallazgo: string;
+  recomendacion?: string;
+  plazoDias?: number;
+  normaRef?: string;
+  itemRgrl?: string;
+  estado?: "abierto" | "cerrado" | string;
+  origen?: "manual" | "sugerido_aceptado" | string;
+};
+
+export type HallazgoAbierto = {
+  id: number;
+  severidad: string;
+  hallazgo: string;
+  recomendacion: string | null;
+  plazoDias: number | null;
+  normaRef: string | null;
+  itemRgrl: string | null;
+  estado: string;
+  origen: string;
+  creadoEn: string;
+  actaId?: number;
+};
+
+export function fetchActaContextoCierre(idEstablecimiento: string) {
+  return request<{
+    idEstablecimiento: string;
+    hallazgosAbiertos: HallazgoAbierto[];
+    checklistSugerido: ChecklistItemActa[];
+  }>(`/api/establecimientos/${encodeURIComponent(idEstablecimiento)}/acta/contexto-cierre`);
+}
+
+export function fetchHallazgosAbiertos(idEstablecimiento: string) {
+  return request<{ total: number; items: HallazgoAbierto[] }>(
+    `/api/establecimientos/${encodeURIComponent(idEstablecimiento)}/hallazgos-abiertos`,
+  );
+}
+
+export type VisitaHistorialHallazgo = {
+  id: number;
+  severidad: string;
+  hallazgo: string;
+  recomendacion: string | null;
+  plazoDias: number | null;
+  normaRef: string | null;
+  itemRgrl: string | null;
+  estado: string;
+  origen: string;
+};
+
+export type VisitaHistorialItem = {
+  id: number;
+  fechaHoraReal: string;
+  tipo: string;
+  resultado: string;
+  hallazgos: string | null;
+  acciones: string | null;
+  agendaItemId: number | null;
+  responsable: { id: number; nombre: string; email: string } | null;
+  acta: {
+    id: number;
+    resultadoGlobal: string;
+    revisita: boolean;
+    plazoRevisitaDias: number | null;
+    notas: string | null;
+    checklist: ChecklistItemActa[] | null;
+    hallazgosTotal: number;
+    hallazgosAbiertos: number;
+    hallazgos: VisitaHistorialHallazgo[];
+  } | null;
+};
+
+export function fetchVisitasEstablecimiento(idEstablecimiento: string) {
+  return request<{ total: number; items: VisitaHistorialItem[] }>(
+    `/api/establecimientos/${encodeURIComponent(idEstablecimiento)}/visitas`,
+  );
+}
+
+export function patchHallazgo(id: number, body: { estado: "abierto" | "cerrado" | string }) {
+  return request<HallazgoAbierto>(`/api/hallazgos/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+}
+
+export function sugerirActaHallazgos(
+  idEstablecimiento: string,
+  body: {
+    checklist?: ChecklistItemActa[];
+    notas?: string;
+    hallazgosPrevios?: HallazgoActaDraft[];
+  },
+) {
+  return request<{
+    modelo: string;
+    hallazgos: HallazgoActaDraft[];
+    nota: string | null;
+  }>(`/api/establecimientos/${encodeURIComponent(idEstablecimiento)}/acta/sugerir`, {
     method: "POST",
     body: JSON.stringify(body),
   });

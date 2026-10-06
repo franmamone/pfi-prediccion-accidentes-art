@@ -16,6 +16,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<AppConfigEntry> AppConfig => Set<AppConfigEntry>();
     public DbSet<AgendaItem> AgendaItems => Set<AgendaItem>();
     public DbSet<VisitaApp> VisitasApp => Set<VisitaApp>();
+    public DbSet<VisitaActa> VisitasActa => Set<VisitaActa>();
+    public DbSet<VisitaHallazgo> VisitasHallazgos => Set<VisitaHallazgo>();
     public DbSet<AgendaEvento> AgendaEventos => Set<AgendaEvento>();
     public DbSet<EstablecimientoDossier> EstablecimientoDossiers => Set<EstablecimientoDossier>();
     public DbSet<ResumenIaEstablecimiento> ResumenesIaEstablecimiento => Set<ResumenIaEstablecimiento>();
@@ -129,6 +131,25 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .WithOne(a => a.Visita)
             .HasForeignKey<VisitaApp>(v => v.AgendaItemId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<VisitaActa>()
+            .HasOne(a => a.VisitaApp)
+            .WithOne(v => v.Acta)
+            .HasForeignKey<VisitaActa>(a => a.VisitaAppId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<VisitaActa>()
+            .HasIndex(a => a.VisitaAppId)
+            .IsUnique();
+
+        modelBuilder.Entity<VisitaHallazgo>()
+            .HasOne(h => h.Acta)
+            .WithMany(a => a.Hallazgos)
+            .HasForeignKey(h => h.ActaId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<VisitaHallazgo>()
+            .HasIndex(h => new { h.IdEstablecimiento, h.Estado, h.CreadoEn });
 
         modelBuilder.Entity<AgendaEvento>()
             .HasOne(e => e.AgendaItem)

@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 type Props = {
   value: string; // ISO yyyy-mm-dd ("" = sin fecha)
@@ -69,6 +70,8 @@ function capitalize(s: string): string {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 }
 
+type PopPos = { top: number; left: number; width: number; openUp: boolean };
+
 export function DateField({
   value,
   onChange,
@@ -80,6 +83,9 @@ export function DateField({
 }: Props) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const popRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<PopPos | null>(null);
 
   const selected = useMemo(() => parseIso(value), [value]);
   const minDate = useMemo(() => parseIso(min ?? ""), [min]);
@@ -95,10 +101,46 @@ export function DateField({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
+  useLayoutEffect(() => {
+    if (!open || !triggerRef.current) {
+      setPos(null);
+      return;
+    }
+    function update() {
+      const el = triggerRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const popH = popRef.current?.offsetHeight ?? 320;
+      const spaceBelow = window.innerHeight - r.bottom - 12;
+      const openUp = spaceBelow < popH && r.top > spaceBelow;
+      const width = Math.max(r.width, 280);
+      let left = r.left;
+      if (left + width > window.innerWidth - 8) left = Math.max(8, window.innerWidth - width - 8);
+      setPos({
+        top: openUp ? r.top - 6 : r.bottom + 6,
+        left,
+        width,
+        openUp,
+      });
+    }
+    update();
+    // Recalcular tras pintar el pop (altura real).
+    requestAnimationFrame(update);
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+    };
+  }, [open, view]);
+
   useEffect(() => {
     if (!open) return;
     function onDocClick(ev: MouseEvent) {
-      if (rootRef.current && !rootRef.current.contains(ev.target as Node)) setOpen(false);
+      const t = ev.target as Node;
+      if (rootRef.current?.contains(t)) return;
+      if (popRef.current?.contains(t)) return;
+      setOpen(false);
     }
     function onKey(ev: KeyboardEvent) {
       if (ev.key === "Escape") setOpen(false);
@@ -123,12 +165,104 @@ export function DateField({
     setOpen(false);
   }
 
+  const pop =
+    open && pos
+      ? createPortal(
+          <div
+            ref={popRef}
+            className={`ui-select-pop ui-date-pop ui-date-pop-portal${pos.openUp ? " open-up" : ""}`}
+            role="dialog"
+            aria-label={ariaLabel ?? "Calendario"}
+            style={{
+              position: "fixed",
+              top: pos.openUp ? undefined : pos.top,
+              bottom: pos.openUp ? window.innerHeight - pos.top : undefined,
+              left: pos.left,
+              width: pos.width,
+              zIndex: 120,
+            }}
+          >
+            <div className="ui-date-head">
+              <span className="ui-date-title">{capitalize(titleFmt.format(view))}</span>
+              <div className="ui-date-nav">
+                <button
+                  type="button"
+                  aria-label="Mes anterior"
+                  onClick={() => setView(new Date(view.getFullYear(), view.getMonth() - 1, 1))}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path
+                      d="M15 6l-6 6 6 6"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  aria-label="Mes siguiente"
+                  onClick={() => setView(new Date(view.getFullYear(), view.getMonth() + 1, 1))}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path
+                      d="M9 6l6 6-6 6"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="ui-date-grid">
+              {DOW.map((d) => (
+                <span key={d} className="ui-date-dow">
+                  {d}
+                </span>
+              ))}
+              {weeks.flat().map((d) => {
+                const fuera = d.getMonth() !== view.getMonth();
+                const dis = isDisabled(d);
+                const sel = selected != null && sameDay(d, selected);
+                const hoy = sameDay(d, today);
+                return (
+                  <button
+                    key={toIso(d)}
+                    type="button"
+                    disabled={dis}
+                    className={`ui-date-cell${fuera ? " out" : ""}${sel ? " selected" : ""}${hoy && !sel ? " today" : ""}`}
+                    onClick={() => commit(d)}
+                  >
+                    {d.getDate()}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="ui-date-foot">
+              <button type="button" onClick={() => onChange("")}>
+                Borrar
+              </button>
+              <button type="button" onClick={() => commit(today)} disabled={isDisabled(today)}>
+                Hoy
+              </button>
+            </div>
+          </div>,
+          document.body,
+        )
+      : null;
+
   return (
     <div
       ref={rootRef}
       className={`ui-select ui-date${open ? " open" : ""}${disabled ? " disabled" : ""}${className ? ` ${className}` : ""}`}
     >
       <button
+        ref={triggerRef}
         type="button"
         className="ui-select-trigger"
         aria-haspopup="dialog"
@@ -145,68 +279,7 @@ export function DateField({
           <path d="M3 9h18M8 3v3M16 3v3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
         </svg>
       </button>
-
-      {open && (
-        <div className="ui-select-pop ui-date-pop" role="dialog" aria-label={ariaLabel ?? "Calendario"}>
-          <div className="ui-date-head">
-            <span className="ui-date-title">{capitalize(titleFmt.format(view))}</span>
-            <div className="ui-date-nav">
-              <button
-                type="button"
-                aria-label="Mes anterior"
-                onClick={() => setView(new Date(view.getFullYear(), view.getMonth() - 1, 1))}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-              <button
-                type="button"
-                aria-label="Mes siguiente"
-                onClick={() => setView(new Date(view.getFullYear(), view.getMonth() + 1, 1))}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <div className="ui-date-grid">
-            {DOW.map((d) => (
-              <span key={d} className="ui-date-dow">
-                {d}
-              </span>
-            ))}
-            {weeks.flat().map((d) => {
-              const fuera = d.getMonth() !== view.getMonth();
-              const dis = isDisabled(d);
-              const sel = selected != null && sameDay(d, selected);
-              const hoy = sameDay(d, today);
-              return (
-                <button
-                  key={toIso(d)}
-                  type="button"
-                  disabled={dis}
-                  className={`ui-date-cell${fuera ? " out" : ""}${sel ? " selected" : ""}${hoy && !sel ? " today" : ""}`}
-                  onClick={() => commit(d)}
-                >
-                  {d.getDate()}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="ui-date-foot">
-            <button type="button" onClick={() => onChange("")}>
-              Borrar
-            </button>
-            <button type="button" onClick={() => commit(today)} disabled={isDisabled(today)}>
-              Hoy
-            </button>
-          </div>
-        </div>
-      )}
+      {pop}
     </div>
   );
 }

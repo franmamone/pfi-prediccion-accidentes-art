@@ -2,11 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   fetchAgenda,
-  fetchAgendaEventos,
   fetchUsuariosAsignables,
   reprogramarVisita,
   shortId,
-  type AgendaEvento,
   type AgendaItem,
   type EstadoAgenda,
   type UsuarioAsignable,
@@ -16,6 +14,7 @@ import { CancelarVisitaDialog } from "../components/CancelarVisitaDialog";
 import { DateField } from "../components/DateField";
 import { RealizarVisitaDialog } from "../components/RealizarVisitaDialog";
 import { Select } from "../components/Select";
+import { TimeField } from "../components/TimeField";
 import { EmptyState } from "../components/UiKit";
 import { motivoLabel, riesgoLabel } from "../labels";
 import { getAgendaVista, setAgendaVista, type AgendaVista } from "../prefs";
@@ -106,15 +105,10 @@ export function AgendaPage() {
   // Reprogramación (solo gestión)
   const [editando, setEditando] = useState(false);
   const [editFecha, setEditFecha] = useState("");
+  const [editHora, setEditHora] = useState("09:00");
   const [editUsuario, setEditUsuario] = useState(0);
   const [editNotas, setEditNotas] = useState("");
   const [busy, setBusy] = useState(false);
-
-  // Cronología
-  const [timeline, setTimeline] = useState<AgendaEvento[]>([]);
-  const [timelineLoading, setTimelineLoading] = useState(false);
-  const [timelineNota, setTimelineNota] = useState<string | null>(null);
-  const [verTimeline, setVerTimeline] = useState(false);
 
   const rango = useMemo(() => {
     if (vista === "mes") {
@@ -156,6 +150,12 @@ export function AgendaPage() {
       if (arr) arr.push(it);
       else map.set(key, [it]);
     }
+    for (const [, list] of map) {
+      list.sort(
+        (a, b) =>
+          (a.horaPlanificada ?? "09:00").localeCompare(b.horaPlanificada ?? "09:00") || a.id - b.id,
+      );
+    }
     return map;
   }, [items]);
 
@@ -165,11 +165,7 @@ export function AgendaPage() {
   );
 
   useEffect(() => {
-    // Al cambiar de ítem seleccionado, resetear edición/cronología.
     setEditando(false);
-    setVerTimeline(false);
-    setTimeline([]);
-    setTimelineNota(null);
   }, [selectedId]);
 
   function periodoLabel(): string {
@@ -203,6 +199,7 @@ export function AgendaPage() {
   function startEdit(item: AgendaItem) {
     setEditando(true);
     setEditFecha(item.fechaPlanificada.slice(0, 10));
+    setEditHora((item.horaPlanificada ?? "09:00").slice(0, 5));
     setEditUsuario(item.usuarioId);
     setEditNotas(item.notas ?? "");
   }
@@ -212,6 +209,7 @@ export function AgendaPage() {
     try {
       await reprogramarVisita(item.id, {
         fechaPlanificada: editFecha,
+        horaPlanificada: editHora,
         usuarioId: canAssign ? editUsuario : undefined,
         notas: editNotas,
       });
@@ -222,24 +220,6 @@ export function AgendaPage() {
       toast.error("No se pudo reprogramar", err instanceof Error ? err.message : undefined);
     } finally {
       setBusy(false);
-    }
-  }
-
-  async function toggleTimeline(item: AgendaItem) {
-    if (verTimeline) {
-      setVerTimeline(false);
-      return;
-    }
-    setVerTimeline(true);
-    setTimelineLoading(true);
-    try {
-      const res = await fetchAgendaEventos(item.id);
-      setTimeline(res.items);
-      setTimelineNota(res.nota);
-    } catch {
-      setTimelineNota("No se pudo cargar la cronología.");
-    } finally {
-      setTimelineLoading(false);
     }
   }
 
@@ -388,8 +368,11 @@ export function AgendaPage() {
 
             <dl className="agenda-drawer-kv">
               <div>
-                <dt>Fecha planificada</dt>
-                <dd>{selected.fechaPlanificada.slice(0, 10)}</dd>
+                <dt>Fecha y hora</dt>
+                <dd>
+                  {selected.fechaPlanificada.slice(0, 10)}
+                  {selected.horaPlanificada ? ` · ${selected.horaPlanificada.slice(0, 5)}` : ""}
+                </dd>
               </div>
               <div>
                 <dt>Motivo</dt>
@@ -424,7 +407,20 @@ export function AgendaPage() {
             {selected.estado === "realizada" && selected.visita && (
               <div className="agenda-resultado ok">
                 Realizada el {formatDateTime(selected.visita.fechaHoraReal)}
-                {selected.visita.hallazgos ? ` · ${selected.visita.hallazgos}` : ""}
+                {selected.visita.acta ? (
+                  <>
+                    {" · "}
+                    Resultado: {selected.visita.acta.resultadoGlobal}
+                    {selected.visita.acta.revisita ? " · revisita" : ""}
+                    {selected.visita.acta.hallazgosTotal > 0
+                      ? ` · ${selected.visita.acta.hallazgosTotal} hallazgos (${selected.visita.acta.hallazgosAbiertos} abiertos)`
+                      : ""}
+                  </>
+                ) : selected.visita.hallazgos ? (
+                  ` · ${selected.visita.hallazgos}`
+                ) : (
+                  ""
+                )}
               </div>
             )}
             {selected.estado === "cancelada" && (
@@ -435,14 +431,24 @@ export function AgendaPage() {
 
             {selected.estado === "programada" && editando && canAssign ? (
               <div className="agenda-reprogramar">
-                <div className="field">
-                  <label>Nueva fecha</label>
-                  <DateField
-                    ariaLabel="Nueva fecha"
-                    min={todayIso()}
-                    value={editFecha}
-                    onChange={setEditFecha}
-                  />
+                <div className="fecha-hora-row">
+                  <div className="field">
+                    <label>Nueva fecha</label>
+                    <DateField
+                      ariaLabel="Nueva fecha"
+                      min={todayIso()}
+                      value={editFecha}
+                      onChange={setEditFecha}
+                    />
+                  </div>
+                  <div className="field">
+                    <label>Hora</label>
+                    <TimeField
+                      ariaLabel="Nueva hora"
+                      value={editHora}
+                      onChange={setEditHora}
+                    />
+                  </div>
                 </div>
                 <div className="field">
                   <label>Responsable</label>
@@ -488,34 +494,7 @@ export function AgendaPage() {
               <Link className="ghost-btn" to={`/establecimientos/${selected.idEstablecimiento}`}>
                 Ver ficha del establecimiento
               </Link>
-              <button type="button" className="ghost-btn" onClick={() => toggleTimeline(selected)}>
-                {verTimeline ? "Ocultar cronología" : "Ver cronología"}
-              </button>
             </div>
-
-            {verTimeline && (
-              <div className="agenda-timeline">
-                {timelineLoading ? (
-                  <p className="muted">Cargando…</p>
-                ) : timeline.length === 0 ? (
-                  <p className="muted" style={{ margin: 0 }}>
-                    {timelineNota ?? "Sin eventos registrados."}
-                  </p>
-                ) : (
-                  timeline.map((ev) => (
-                    <div key={ev.id} className="timeline-item">
-                      <strong>{ev.tipo}</strong>{" "}
-                      <span className="mono muted">{formatDateTime(ev.ocurridoEn)}</span>
-                      <div className="muted" style={{ fontSize: 12 }}>
-                        {ev.actor ? `${ev.actor.nombre} (${ev.actor.rol})` : "sin actor"}
-                        {" · "}
-                        {(ev.estadoAnterior ?? "—") + " → " + (ev.estadoNuevo ?? "—")}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
           </aside>
         )}
       </div>
@@ -547,15 +526,32 @@ function EventChip({
   selected: boolean;
   onSelect: (id: number) => void;
 }) {
+  const acta = item.visita?.acta;
+  const hora = (item.horaPlanificada ?? "").slice(0, 5);
+  const titleParts = [
+    hora || null,
+    shortId(item.idEstablecimiento),
+    item.estado,
+    acta
+      ? `acta ${acta.resultadoGlobal}${acta.hallazgosTotal ? ` · ${acta.hallazgosTotal} hall.` : ""}`
+      : null,
+  ].filter(Boolean);
   return (
     <button
       type="button"
       className={`cal-event ${item.estado}${selected ? " selected" : ""}`}
-      title={`${shortId(item.idEstablecimiento)} · ${item.estado}`}
+      title={titleParts.join(" · ")}
       onClick={() => onSelect(item.id)}
     >
       <span className={`cal-dot ${item.estado}`} />
+      {hora ? <span className="cal-event-hora mono">{hora}</span> : null}
       <span className="cal-event-label">{shortId(item.idEstablecimiento)}</span>
+      {acta ? (
+        <span className="cal-event-acta muted">
+          {acta.resultadoGlobal}
+          {acta.hallazgosAbiertos > 0 ? ` · ${acta.hallazgosAbiertos} ab.` : ""}
+        </span>
+      ) : null}
     </button>
   );
 }
@@ -681,6 +677,7 @@ function DayView({
             onClick={() => onSelect(it.id)}
           >
             <span className={`cal-dot ${it.estado}`} />
+            <span className="cal-day-hora mono">{(it.horaPlanificada ?? "09:00").slice(0, 5)}</span>
             <span className="cal-day-est">{shortId(it.idEstablecimiento)}</span>
             <span className="muted">{motivoLabel(it.motivoOrigen ?? it.motivoVisita)}</span>
             <span className={`badge ${it.bandaOrigen ?? "medio"}`}>{riesgoLabel(it.bandaOrigen ?? "medio")}</span>

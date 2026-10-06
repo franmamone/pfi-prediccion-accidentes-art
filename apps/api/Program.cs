@@ -53,6 +53,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await EnsureAgendaHoraColumnAsync(db);
     await SeedAdminAsync(db);
 }
 
@@ -1200,10 +1201,13 @@ app.MapGet("/api/agenda", async (
 {
     var user = await GetCurrentUserAsync(principal, db);
     if (user is null) return Results.Unauthorized();
+    await EnsureAgendaHoraColumnAsync(db);
 
     var query = db.AgendaItems.AsNoTracking()
         .Include(a => a.Usuario)
-        .Include(a => a.Visita)
+        .Include(a => a.Visita!)
+            .ThenInclude(v => v.Acta!)
+            .ThenInclude(ac => ac.Hallazgos)
         .AsQueryable();
 
     if (!CanAssignAny(user))
@@ -1230,6 +1234,7 @@ app.MapGet("/api/agenda", async (
 
     var rows = await query
         .OrderBy(a => a.FechaPlanificada)
+        .ThenBy(a => a.HoraPlanificada)
         .ThenBy(a => a.Id)
         .Take(500)
         .ToListAsync();
@@ -1248,6 +1253,7 @@ app.MapPost("/api/agenda", async (
 {
     var user = await GetCurrentUserAsync(principal, db);
     if (user is null) return Results.Unauthorized();
+    await EnsureAgendaHoraColumnAsync(db);
 
     var horizonte = NormalizeHorizonte(request.Horizonte);
     if (request.RankingItemId <= 0)
@@ -1258,6 +1264,11 @@ app.MapPost("/api/agenda", async (
     if (request.FechaPlanificada < DateOnly.FromDateTime(DateTime.Today))
     {
         return Results.BadRequest(new { error = "La fecha planificada debe ser hoy o una fecha futura." });
+    }
+
+    if (!TryParseHoraPlanificada(request.HoraPlanificada, out var horaPlanificada))
+    {
+        return Results.BadRequest(new { error = "Indicá una hora válida (HH:mm)." });
     }
 
     var rankingItem = await db.RankingItems.AsNoTracking()
@@ -1296,6 +1307,7 @@ app.MapPost("/api/agenda", async (
         Periodo = rankingItem.Snapshot.Periodo,
         Horizonte = horizonte,
         FechaPlanificada = request.FechaPlanificada,
+        HoraPlanificada = horaPlanificada,
         MotivoVisita = motivoVisita,
         Estado = "programada",
         SnapshotId = rankingItem.SnapshotId,
@@ -1323,6 +1335,7 @@ app.MapPost("/api/agenda", async (
             datos: new
             {
                 fechaPlanificada = agenda.FechaPlanificada,
+                horaPlanificada = FormatHoraPlanificada(agenda.HoraPlanificada),
                 responsableId = agenda.UsuarioId,
                 responsableNombre = assignee.Nombre,
                 actorEsResponsable = user.Id == assignee.Id,
@@ -1351,6 +1364,7 @@ app.MapPut("/api/agenda/{id:int}", async (
 {
     var user = await GetCurrentUserAsync(principal, db);
     if (user is null) return Results.Unauthorized();
+    await EnsureAgendaHoraColumnAsync(db);
 
     var agenda = await db.AgendaItems
         .Include(a => a.Usuario)
@@ -1373,6 +1387,15 @@ app.MapPut("/api/agenda/{id:int}", async (
             return Results.BadRequest(new { error = "La fecha planificada debe ser hoy o una fecha futura." });
         }
         agenda.FechaPlanificada = request.FechaPlanificada.Value;
+    }
+
+    if (request.HoraPlanificada is not null)
+    {
+        if (!TryParseHoraPlanificada(request.HoraPlanificada, out var hora))
+        {
+            return Results.BadRequest(new { error = "Indicá una hora válida (HH:mm)." });
+        }
+        agenda.HoraPlanificada = hora;
     }
 
     if (request.UsuarioId is not null && request.UsuarioId != agenda.UsuarioId)
@@ -1418,6 +1441,8 @@ app.MapPost("/api/agenda/{id:int}/realizar", async (
 {
     var user = await GetCurrentUserAsync(principal, db);
     if (user is null) return Results.Unauthorized();
+    await EnsureVisitaActaTablesAsync(db);
+    await EnsureAgendaHoraColumnAsync(db);
 
     await using var tx = await db.Database.BeginTransactionAsync();
     var agenda = await db.AgendaItems
@@ -1444,6 +1469,51 @@ app.MapPost("/api/agenda/{id:int}/realizar", async (
         return Results.BadRequest(new { error = "La fecha de realización no puede ser futura." });
     }
 
+    var requiereRevisita = request.Revisita == true;
+    DateOnly? fechaRevisita = null;
+    TimeOnly horaRevisita = new(9, 0);
+    int? plazoRevisitaDias = null;
+    if (requiereRevisita)
+    {
+        if (request.FechaRevisita is null)
+        {
+            return Results.BadRequest(new { error = "Indicá la fecha de la revisita." });
+        }
+        if (request.FechaRevisita < DateOnly.FromDateTime(DateTime.Today))
+        {
+            return Results.BadRequest(new { error = "La fecha de revisita debe ser hoy o futura." });
+        }
+        if (!TryParseHoraPlanificada(request.HoraRevisita, out horaRevisita))
+        {
+            return Results.BadRequest(new { error = "Indicá una hora válida para la revisita (HH:mm)." });
+        }
+        fechaRevisita = request.FechaRevisita;
+        plazoRevisitaDias = Math.Max(
+            0,
+            fechaRevisita.Value.DayNumber - DateOnly.FromDateTime(DateTime.Today).DayNumber);
+        if (request.PlazoRevisitaDias is int plazoReq && plazoReq > 0)
+            plazoRevisitaDias = plazoReq;
+
+        var otraProgramada = await db.AgendaItems.AnyAsync(a =>
+            a.IdEstablecimiento == agenda.IdEstablecimiento &&
+            a.Estado == "programada" &&
+            a.Id != agenda.Id);
+        if (otraProgramada)
+        {
+            return Results.Conflict(new
+            {
+                error = "Ya hay otra visita programada para este establecimiento; no se puede crear la revisita.",
+            });
+        }
+    }
+
+    var resultadoGlobal = NormalizeResultadoGlobal(request.ResultadoGlobal);
+    var hallazgosActa = (request.HallazgosActa ?? [])
+        .Where(h => !string.IsNullOrWhiteSpace(h.Hallazgo))
+        .ToList();
+    var (hallazgosTexto, accionesTexto) = BuildResumenVisitaDesdeActa(
+        request.Hallazgos, request.Acciones, hallazgosActa);
+
     var visita = new VisitaApp
     {
         IdEstablecimiento = agenda.IdEstablecimiento,
@@ -1458,8 +1528,8 @@ app.MapPost("/api/agenda/{id:int}/realizar", async (
             _ => "predictiva",
         },
         Resultado = "realizada",
-        Hallazgos = string.IsNullOrWhiteSpace(request.Hallazgos) ? null : request.Hallazgos.Trim(),
-        Acciones = string.IsNullOrWhiteSpace(request.Acciones) ? null : request.Acciones.Trim(),
+        Hallazgos = hallazgosTexto,
+        Acciones = accionesTexto,
         CreadoEn = DateTime.UtcNow,
     };
 
@@ -1471,6 +1541,97 @@ app.MapPost("/api/agenda/{id:int}/realizar", async (
     }
 
     db.VisitasApp.Add(visita);
+    await db.SaveChangesAsync();
+
+    var checklistJson = request.Checklist is { Count: > 0 }
+        ? JsonSerializer.Serialize(request.Checklist.Select(c => new
+        {
+            id = c.Id,
+            label = c.Label,
+            estado = NormalizeChecklistEstado(c.Estado),
+        }))
+        : null;
+    var acta = new VisitaActa
+    {
+        VisitaAppId = visita.Id,
+        AgendaItemId = agenda.Id,
+        ResultadoGlobal = resultadoGlobal,
+        Revisita = requiereRevisita,
+        PlazoRevisitaDias = plazoRevisitaDias,
+        Notas = string.IsNullOrWhiteSpace(request.NotasActa) ? null : request.NotasActa.Trim(),
+        ChecklistJson = checklistJson,
+        CreadoEn = DateTime.UtcNow,
+        CreadoPorUsuarioId = user.Id,
+    };
+    db.VisitasActa.Add(acta);
+    await db.SaveChangesAsync();
+
+    var abiertos = 0;
+    foreach (var h in hallazgosActa)
+    {
+        var estado = NormalizeHallazgoEstado(h.Estado);
+        if (estado == "abierto") abiertos++;
+        db.VisitasHallazgos.Add(new VisitaHallazgo
+        {
+            ActaId = acta.Id,
+            IdEstablecimiento = agenda.IdEstablecimiento,
+            Severidad = NormalizeSeveridad(h.Severidad),
+            Hallazgo = h.Hallazgo!.Trim(),
+            Recomendacion = string.IsNullOrWhiteSpace(h.Recomendacion) ? null : h.Recomendacion.Trim(),
+            PlazoDias = h.PlazoDias,
+            NormaRef = string.IsNullOrWhiteSpace(h.NormaRef) ? null : h.NormaRef.Trim(),
+            ItemRgrl = string.IsNullOrWhiteSpace(h.ItemRgrl) ? null : h.ItemRgrl.Trim(),
+            Estado = estado,
+            Origen = NormalizeOrigen(h.Origen),
+            CreadoEn = DateTime.UtcNow,
+        });
+    }
+
+    int? revisitaAgendaId = null;
+    if (requiereRevisita && fechaRevisita is not null)
+    {
+        var revisitaAgenda = new AgendaItem
+        {
+            UsuarioId = agenda.UsuarioId,
+            IdEstablecimiento = agenda.IdEstablecimiento,
+            Periodo = agenda.Periodo,
+            Horizonte = agenda.Horizonte,
+            FechaPlanificada = fechaRevisita.Value,
+            HoraPlanificada = horaRevisita,
+            MotivoVisita = "seguimiento",
+            Estado = "programada",
+            SnapshotId = agenda.SnapshotId,
+            SnapshotItemId = agenda.SnapshotItemId,
+            RankingOrigen = agenda.RankingOrigen,
+            ScoreOrigen = agenda.ScoreOrigen,
+            BandaOrigen = agenda.BandaOrigen,
+            MotivoOrigen = "Revisita por hallazgos / seguimiento",
+            Notas = string.IsNullOrWhiteSpace(request.NotasActa)
+                ? $"Revisita de la visita #{agenda.Id}"
+                : $"Revisita de #{agenda.Id}: {request.NotasActa.Trim()}",
+            CreadoEn = DateTime.UtcNow,
+            ActualizadoEn = DateTime.UtcNow,
+        };
+        db.AgendaItems.Add(revisitaAgenda);
+        await db.SaveChangesAsync();
+        revisitaAgendaId = revisitaAgenda.Id;
+        AddAgendaEvento(
+            db,
+            revisitaAgenda,
+            user,
+            tipo: "programada",
+            estadoAnterior: null,
+            estadoNuevo: "programada",
+            datos: new
+            {
+                fechaPlanificada = revisitaAgenda.FechaPlanificada,
+                horaPlanificada = FormatHoraPlanificada(revisitaAgenda.HoraPlanificada),
+                origen = "revisita",
+                visitaOrigenId = agenda.Id,
+                responsableId = revisitaAgenda.UsuarioId,
+            });
+    }
+
     AddAgendaEvento(
         db,
         agenda,
@@ -1485,6 +1646,14 @@ app.MapPost("/api/agenda/{id:int}/realizar", async (
             hallazgos = visita.Hallazgos,
             acciones = visita.Acciones,
             notas = agenda.Notas,
+            resultadoGlobal,
+            revisita = acta.Revisita,
+            fechaRevisita,
+            horaRevisita = requiereRevisita ? FormatHoraPlanificada(horaRevisita) : null,
+            plazoRevisitaDias,
+            revisitaAgendaId,
+            hallazgosTotal = hallazgosActa.Count,
+            hallazgosAbiertos = abiertos,
             responsableId = agenda.UsuarioId,
             actorEsResponsable = user.Id == agenda.UsuarioId,
         });
@@ -1492,6 +1661,12 @@ app.MapPost("/api/agenda/{id:int}/realizar", async (
     await tx.CommitAsync();
 
     await db.Entry(agenda).Reference(a => a.Visita).LoadAsync();
+    if (agenda.Visita is not null)
+    {
+        await db.Entry(agenda.Visita).Reference(v => v.Acta).LoadAsync();
+        if (agenda.Visita.Acta is not null)
+            await db.Entry(agenda.Visita.Acta).Collection(ac => ac.Hallazgos).LoadAsync();
+    }
     return Results.Ok(ToAgendaDto(agenda));
 }).RequireAuthorization();
 
@@ -1545,6 +1720,258 @@ app.MapPost("/api/agenda/{id:int}/cancelar", async (
     await db.SaveChangesAsync();
     await tx.CommitAsync();
     return Results.Ok(ToAgendaDto(agenda));
+}).RequireAuthorization();
+
+app.MapGet("/api/establecimientos/{id}/acta/contexto-cierre", async (
+    string id,
+    ClaimsPrincipal principal,
+    AppDbContext db) =>
+{
+    var user = await GetCurrentUserAsync(principal, db);
+    if (user is null) return Results.Unauthorized();
+    await EnsureVisitaActaTablesAsync(db);
+
+    var estId = id.Trim();
+    var abiertos = await db.VisitasHallazgos.AsNoTracking()
+        .Where(h => h.IdEstablecimiento == estId && h.Estado == "abierto")
+        .OrderByDescending(h => h.Severidad == "alta")
+        .ThenByDescending(h => h.CreadoEn)
+        .Take(40)
+        .Select(h => new
+        {
+            h.Id,
+            h.Severidad,
+            h.Hallazgo,
+            h.Recomendacion,
+            h.PlazoDias,
+            h.NormaRef,
+            h.ItemRgrl,
+            h.Estado,
+            h.Origen,
+            h.CreadoEn,
+        })
+        .ToListAsync();
+
+    var checklist = await BuildChecklistSugeridoAsync(db, estId);
+
+    return Results.Ok(new
+    {
+        idEstablecimiento = estId,
+        hallazgosAbiertos = abiertos,
+        checklistSugerido = checklist,
+    });
+}).RequireAuthorization();
+
+app.MapGet("/api/establecimientos/{id}/hallazgos-abiertos", async (
+    string id,
+    ClaimsPrincipal principal,
+    AppDbContext db) =>
+{
+    var user = await GetCurrentUserAsync(principal, db);
+    if (user is null) return Results.Unauthorized();
+    await EnsureVisitaActaTablesAsync(db);
+
+    var estId = id.Trim();
+    var items = await db.VisitasHallazgos.AsNoTracking()
+        .Where(h => h.IdEstablecimiento == estId && h.Estado == "abierto")
+        .OrderByDescending(h => h.Severidad == "alta")
+        .ThenByDescending(h => h.CreadoEn)
+        .Take(100)
+        .Select(h => new
+        {
+            h.Id,
+            h.Severidad,
+            h.Hallazgo,
+            h.Recomendacion,
+            h.PlazoDias,
+            h.NormaRef,
+            h.ItemRgrl,
+            h.Estado,
+            h.Origen,
+            h.CreadoEn,
+            h.ActaId,
+        })
+        .ToListAsync();
+
+    return Results.Ok(new { total = items.Count, items });
+}).RequireAuthorization();
+
+app.MapGet("/api/establecimientos/{id}/visitas", async (
+    string id,
+    ClaimsPrincipal principal,
+    AppDbContext db) =>
+{
+    var user = await GetCurrentUserAsync(principal, db);
+    if (user is null) return Results.Unauthorized();
+    await EnsureVisitaActaTablesAsync(db);
+
+    var estId = id.Trim();
+    var rows = await db.VisitasApp.AsNoTracking()
+        .Include(v => v.Usuario)
+        .Include(v => v.Acta!)
+            .ThenInclude(a => a.Hallazgos)
+        .Where(v => v.IdEstablecimiento == estId && v.Resultado == "realizada")
+        .OrderByDescending(v => v.FechaHoraReal)
+        .ThenByDescending(v => v.Id)
+        .Take(50)
+        .ToListAsync();
+
+    var items = rows.Select(v =>
+    {
+        object? checklist = null;
+        if (!string.IsNullOrWhiteSpace(v.Acta?.ChecklistJson))
+        {
+            try { checklist = JsonSerializer.Deserialize<object>(v.Acta.ChecklistJson); }
+            catch { checklist = null; }
+        }
+
+        var hallazgos = (v.Acta?.Hallazgos ?? [])
+            .OrderByDescending(h => h.Severidad == "alta")
+            .ThenBy(h => h.Id)
+            .Select(h => new
+            {
+                h.Id,
+                h.Severidad,
+                h.Hallazgo,
+                h.Recomendacion,
+                h.PlazoDias,
+                h.NormaRef,
+                h.ItemRgrl,
+                h.Estado,
+                h.Origen,
+            })
+            .ToList();
+
+        return new
+        {
+            v.Id,
+            v.FechaHoraReal,
+            v.Tipo,
+            v.Resultado,
+            v.Hallazgos,
+            v.Acciones,
+            v.AgendaItemId,
+            responsable = v.Usuario is null
+                ? null
+                : new { v.Usuario.Id, v.Usuario.Nombre, v.Usuario.Email },
+            acta = v.Acta is null
+                ? null
+                : new
+                {
+                    v.Acta.Id,
+                    v.Acta.ResultadoGlobal,
+                    v.Acta.Revisita,
+                    v.Acta.PlazoRevisitaDias,
+                    v.Acta.Notas,
+                    checklist,
+                    hallazgosTotal = hallazgos.Count,
+                    hallazgosAbiertos = hallazgos.Count(h => h.Estado == "abierto"),
+                    hallazgos,
+                },
+        };
+    }).ToList();
+
+    return Results.Ok(new { total = items.Count, items });
+}).RequireAuthorization();
+
+app.MapPatch("/api/hallazgos/{id:int}", async (
+    int id,
+    PatchHallazgoRequest request,
+    ClaimsPrincipal principal,
+    AppDbContext db) =>
+{
+    var user = await GetCurrentUserAsync(principal, db);
+    if (user is null) return Results.Unauthorized();
+    await EnsureVisitaActaTablesAsync(db);
+
+    var hallazgo = await db.VisitasHallazgos.FirstOrDefaultAsync(h => h.Id == id);
+    if (hallazgo is null) return Results.NotFound(new { error = "Hallazgo no encontrado." });
+
+    var estado = NormalizeHallazgoEstado(request.Estado);
+    hallazgo.Estado = estado;
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new
+    {
+        hallazgo.Id,
+        hallazgo.Severidad,
+        hallazgo.Hallazgo,
+        hallazgo.Recomendacion,
+        hallazgo.PlazoDias,
+        hallazgo.NormaRef,
+        hallazgo.ItemRgrl,
+        hallazgo.Estado,
+        hallazgo.Origen,
+        hallazgo.CreadoEn,
+        hallazgo.IdEstablecimiento,
+    });
+}).RequireAuthorization();
+
+app.MapPost("/api/establecimientos/{id}/acta/sugerir", async (
+    string id,
+    SugerirActaRequest request,
+    ClaimsPrincipal principal,
+    AppDbContext db,
+    GeminiClient gemini) =>
+{
+    var user = await GetCurrentUserAsync(principal, db);
+    if (user is null) return Results.Unauthorized();
+    if (!gemini.Configurado)
+    {
+        return Results.Json(new { error = "El servicio de IA no está configurado." }, statusCode: 503);
+    }
+
+    var estId = id.Trim();
+    var dossier = await db.EstablecimientoDossiers.AsNoTracking()
+        .FirstOrDefaultAsync(d => d.IdEstablecimiento == estId);
+    var contexto = ExtractContextoCortoDossier(dossier?.DossierJson);
+
+    var checklistObs = (request.Checklist ?? [])
+        .Where(c => string.Equals(c.Estado, "observacion", StringComparison.OrdinalIgnoreCase))
+        .Select(c => c.Label ?? c.Id ?? "")
+        .Where(s => !string.IsNullOrWhiteSpace(s))
+        .Take(12)
+        .ToList();
+
+    var sb = new StringBuilder();
+    sb.AppendLine("Sos un asistente de prevención de riesgos laborales (Argentina, SRT).");
+    sb.AppendLine("Proponé entre 1 y 5 hallazgos BORRADOR a partir del checklist marcado y las notas.");
+    sb.AppendLine("Respondé SOLO un JSON array (sin markdown) con objetos:");
+    sb.AppendLine("""{"severidad":"baja|media|alta","hallazgo":"...","recomendacion":"...","plazoDias":30,"normaRef":"Res. SRT …","itemRgrl":"opcional"}""");
+    sb.AppendLine("No inventes datos del empleador. Sé concreto y accionable.");
+    sb.AppendLine();
+    if (!string.IsNullOrWhiteSpace(contexto))
+    {
+        sb.AppendLine("=== CONTEXTO HISTÓRICO (anonimizado) ===");
+        sb.AppendLine(contexto);
+        sb.AppendLine();
+    }
+    if (checklistObs.Count > 0)
+    {
+        sb.AppendLine("Ítems del checklist con observación:");
+        foreach (var c in checklistObs) sb.Append("- ").AppendLine(c);
+    }
+    if (!string.IsNullOrWhiteSpace(request.Notas))
+    {
+        sb.AppendLine("Notas del preventor:");
+        sb.AppendLine(request.Notas.Trim());
+    }
+
+    try
+    {
+        var result = await gemini.GenerarAsync(sb.ToString());
+        var hallazgos = ParseHallazgosSugeridos(result.Texto);
+        return Results.Ok(new
+        {
+            modelo = result.Modelo,
+            hallazgos,
+            nota = "Borradores efímeros: no se guardan hasta confirmar el cierre de la visita.",
+        });
+    }
+    catch (GeminiException ex)
+    {
+        return Results.Json(new { error = ex.Message }, statusCode: 502);
+    }
 }).RequireAuthorization();
 
 app.MapGet("/api/agenda/{id:int}/eventos", async (
@@ -1675,6 +2102,425 @@ static async Task EnsureCopilotoGuardadoTableAsync(AppDbContext db)
         """);
 }
 
+static async Task EnsureAgendaHoraColumnAsync(AppDbContext db)
+{
+    await db.Database.ExecuteSqlRawAsync(
+        """
+        IF COL_LENGTH(N'app.AgendaItems', N'HoraPlanificada') IS NULL
+        BEGIN
+            ALTER TABLE app.AgendaItems
+                ADD HoraPlanificada time NOT NULL
+                    CONSTRAINT DF_AgendaItems_HoraPlanificada DEFAULT ('09:00:00');
+        END
+        """);
+}
+
+static bool TryParseHoraPlanificada(string? value, out TimeOnly hora)
+{
+    hora = new TimeOnly(9, 0);
+    if (string.IsNullOrWhiteSpace(value)) return true;
+    var t = value.Trim();
+    if (TimeOnly.TryParse(t, out hora)) return true;
+    if (t.Length >= 5 && TimeOnly.TryParse(t[..5], out hora)) return true;
+    return false;
+}
+
+static string FormatHoraPlanificada(TimeOnly hora) => hora.ToString("HH\\:mm");
+
+static async Task EnsureVisitaActaTablesAsync(AppDbContext db)
+{
+    await db.Database.ExecuteSqlRawAsync(
+        """
+        IF OBJECT_ID(N'app.VisitaActa', N'U') IS NULL
+        BEGIN
+            CREATE TABLE app.VisitaActa
+            (
+                Id                   int IDENTITY(1,1) NOT NULL PRIMARY KEY,
+                VisitaAppId          int            NOT NULL,
+                AgendaItemId         int            NULL,
+                ResultadoGlobal      nvarchar(20)   NOT NULL,
+                Revisita             bit            NOT NULL CONSTRAINT DF_VisitaActa_Revisita DEFAULT 0,
+                PlazoRevisitaDias    int            NULL,
+                Notas                nvarchar(max)  NULL,
+                ChecklistJson        nvarchar(max)  NULL,
+                CreadoEn             datetime2      NOT NULL CONSTRAINT DF_VisitaActa_CreadoEn DEFAULT SYSUTCDATETIME(),
+                CreadoPorUsuarioId   int            NULL,
+                CONSTRAINT UQ_VisitaActa_VisitaAppId UNIQUE (VisitaAppId),
+                CONSTRAINT FK_VisitaActa_VisitaApp FOREIGN KEY (VisitaAppId) REFERENCES app.VisitasApp (Id),
+                CONSTRAINT CK_VisitaActa_Resultado CHECK (ResultadoGlobal IN (N'ok', N'observacion', N'critico'))
+            );
+            CREATE INDEX IX_VisitaActa_Agenda ON app.VisitaActa (AgendaItemId);
+        END
+        """);
+    await db.Database.ExecuteSqlRawAsync(
+        """
+        IF OBJECT_ID(N'app.VisitaHallazgo', N'U') IS NULL
+        BEGIN
+            CREATE TABLE app.VisitaHallazgo
+            (
+                Id                   int IDENTITY(1,1) NOT NULL PRIMARY KEY,
+                ActaId               int            NOT NULL,
+                IdEstablecimiento    varchar(64)    NOT NULL,
+                Severidad            nvarchar(16)   NOT NULL,
+                Hallazgo             nvarchar(max)  NOT NULL,
+                Recomendacion        nvarchar(max)  NULL,
+                PlazoDias            int            NULL,
+                NormaRef             nvarchar(200)  NULL,
+                ItemRgrl             nvarchar(120)  NULL,
+                Estado               nvarchar(16)   NOT NULL CONSTRAINT DF_VisitaHallazgo_Estado DEFAULT N'abierto',
+                Origen               nvarchar(32)   NOT NULL CONSTRAINT DF_VisitaHallazgo_Origen DEFAULT N'manual',
+                CreadoEn             datetime2      NOT NULL CONSTRAINT DF_VisitaHallazgo_CreadoEn DEFAULT SYSUTCDATETIME(),
+                CONSTRAINT FK_VisitaHallazgo_Acta FOREIGN KEY (ActaId) REFERENCES app.VisitaActa (Id) ON DELETE CASCADE,
+                CONSTRAINT CK_VisitaHallazgo_Severidad CHECK (Severidad IN (N'baja', N'media', N'alta')),
+                CONSTRAINT CK_VisitaHallazgo_Estado CHECK (Estado IN (N'abierto', N'cerrado')),
+                CONSTRAINT CK_VisitaHallazgo_Origen CHECK (Origen IN (N'manual', N'sugerido_aceptado'))
+            );
+            CREATE INDEX IX_VisitaHallazgo_Est_Estado
+                ON app.VisitaHallazgo (IdEstablecimiento, Estado, CreadoEn DESC);
+        END
+        """);
+}
+
+static string NormalizeResultadoGlobal(string? value) =>
+    (value ?? "").Trim().ToLowerInvariant() switch
+    {
+        "ok" => "ok",
+        "critico" => "critico",
+        _ => "observacion",
+    };
+
+static string NormalizeSeveridad(string? value) =>
+    (value ?? "").Trim().ToLowerInvariant() switch
+    {
+        "baja" => "baja",
+        "alta" => "alta",
+        _ => "media",
+    };
+
+static string NormalizeHallazgoEstado(string? value) =>
+    string.Equals(value?.Trim(), "cerrado", StringComparison.OrdinalIgnoreCase) ? "cerrado" : "abierto";
+
+static string NormalizeOrigen(string? value) =>
+    string.Equals(value?.Trim(), "sugerido_aceptado", StringComparison.OrdinalIgnoreCase)
+        ? "sugerido_aceptado"
+        : "manual";
+
+static string NormalizeChecklistEstado(string? value) =>
+    (value ?? "").Trim().ToLowerInvariant() switch
+    {
+        "ok" => "ok",
+        "observacion" => "observacion",
+        "no_aplica" => "no_aplica",
+        _ => "no_verificado",
+    };
+
+static (string? Hallazgos, string? Acciones) BuildResumenVisitaDesdeActa(
+    string? hallazgosTexto,
+    string? accionesTexto,
+    List<HallazgoActaDto> hallazgosActa)
+{
+    if (!string.IsNullOrWhiteSpace(hallazgosTexto) || !string.IsNullOrWhiteSpace(accionesTexto))
+    {
+        return (
+            string.IsNullOrWhiteSpace(hallazgosTexto) ? null : hallazgosTexto.Trim(),
+            string.IsNullOrWhiteSpace(accionesTexto) ? null : accionesTexto.Trim());
+    }
+
+    if (hallazgosActa.Count == 0) return (null, null);
+
+    var hallazgos = string.Join(
+        "; ",
+        hallazgosActa.Select(h =>
+        {
+            var sev = NormalizeSeveridad(h.Severidad);
+            var txt = (h.Hallazgo ?? "").Trim();
+            return $"[{sev}] {txt}";
+        }).Where(s => s.Length > 4).Take(12));
+
+    var acciones = string.Join(
+        "; ",
+        hallazgosActa
+            .Where(h => !string.IsNullOrWhiteSpace(h.Recomendacion))
+            .Select(h =>
+            {
+                var rec = h.Recomendacion!.Trim();
+                return h.PlazoDias is int d ? $"{rec} (plazo {d} d)" : rec;
+            })
+            .Take(12));
+
+    return (
+        string.IsNullOrWhiteSpace(hallazgos) ? null : hallazgos,
+        string.IsNullOrWhiteSpace(acciones) ? null : acciones);
+}
+
+static async Task<List<object>> BuildChecklistSugeridoAsync(AppDbContext db, string idEstablecimiento)
+{
+    var items = new List<object>();
+    var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    void Add(string id, string label, string origen)
+    {
+        var key = FormatChecklistLabel(label);
+        if (key.Length < 4 || !seen.Add(key)) return;
+        if (items.Count >= 12) return;
+        items.Add(new { id, label = key, estado = "ok", origen });
+    }
+
+    var dossier = await db.EstablecimientoDossiers.AsNoTracking()
+        .FirstOrDefaultAsync(d => d.IdEstablecimiento == idEstablecimiento);
+    if (dossier?.DossierJson is { Length: > 0 } json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            if (root.TryGetProperty("visitas", out var vis) &&
+                vis.TryGetProperty("incumplimientos_frecuentes", out var inc) &&
+                inc.ValueKind == JsonValueKind.Array)
+            {
+                var i = 0;
+                foreach (var e in inc.EnumerateArray())
+                {
+                    if (i >= 5) break;
+                    var k = e.TryGetProperty("k", out var kv) ? kv.GetString() : null;
+                    if (string.IsNullOrWhiteSpace(k)) continue;
+                    Add($"inc-{i}", k, "incumplimiento");
+                    i++;
+                }
+            }
+            if (root.TryGetProperty("accidentes", out var acc) &&
+                acc.TryGetProperty("top_forma", out var formas) &&
+                formas.ValueKind == JsonValueKind.Array)
+            {
+                var i = 0;
+                foreach (var e in formas.EnumerateArray())
+                {
+                    if (i >= 3) break;
+                    var k = e.TryGetProperty("k", out var kv) ? kv.GetString() : null;
+                    if (string.IsNullOrWhiteSpace(k)) continue;
+                    Add($"acc-{i}", $"Verificar controles frente a: {k}", "accidente");
+                    i++;
+                }
+            }
+        }
+        catch
+        {
+            // checklist parcial sin dossier
+        }
+    }
+
+    var chunks = await db.NormativaChunks.AsNoTracking()
+        .Where(c => c.Activo && (c.Tema == "rgrl_checklist" || c.Tema == "rgrl_obligacion"))
+        .OrderBy(c => c.Id)
+        .Take(40)
+        .Select(c => new { c.Id, c.Titulo, c.Texto })
+        .ToListAsync();
+
+    var rgrlAdded = 0;
+    foreach (var c in chunks)
+    {
+        if (rgrlAdded >= 5 || items.Count >= 12) break;
+        var label = !string.IsNullOrWhiteSpace(c.Titulo)
+            ? c.Titulo!
+            : (c.Texto ?? "");
+        if (string.IsNullOrWhiteSpace(label)) continue;
+        Add($"rgrl-{c.Id}", label, "rgrl");
+        rgrlAdded++;
+    }
+
+    if (items.Count < 6)
+    {
+        string[] fallback =
+        [
+            "Orden y limpieza de áreas de trabajo",
+            "Uso y estado de EPP",
+            "Señalización de riesgos y vías de evacuación",
+            "Estado de extintores y medios de lucha contra incendio",
+            "Protecciones de máquinas / resguardos",
+            "Capacitación / inducción vigente del personal",
+            "Botiquín y primeros auxilios",
+            "Registro de entregas de EPP",
+        ];
+        var i = 0;
+        foreach (var f in fallback)
+        {
+            if (items.Count >= 10) break;
+            Add($"base-{i++}", f, "base");
+        }
+    }
+
+    return items;
+}
+
+static string FormatChecklistLabel(string s, int max = 0)
+{
+    var t = (s ?? "").Trim()
+        .Replace('\n', ' ')
+        .Replace('\r', ' ');
+    t = System.Text.RegularExpressions.Regex.Replace(t, @"(\d)[\u2014\u2013—–-](\d)", "$1-$2");
+    t = t
+        .Replace('\u2014', ':') // —
+        .Replace('\u2013', ':'); // –
+    // Separador de sección tipo "TEMA - subtítulo"
+    t = System.Text.RegularExpressions.Regex.Replace(t, @"\s+[-–—]\s+", ": ");
+    while (t.Contains("  ", StringComparison.Ordinal)) t = t.Replace("  ", " ", StringComparison.Ordinal);
+    while (t.Contains("::", StringComparison.Ordinal)) t = t.Replace("::", ":", StringComparison.Ordinal);
+    t = t.Replace(": :", ": ").Trim().TrimStart(':').Trim();
+
+    var parts = t.Split(':', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+    for (var i = 0; i < parts.Length; i++)
+        parts[i] = FormatChecklistSegment(parts[i]);
+    t = string.Join(": ", parts);
+
+    if (max <= 0 || t.Length <= max) return t;
+    var cut = t[..max];
+    var lastSpace = cut.LastIndexOf(' ');
+    if (lastSpace > max / 2) cut = cut[..lastSpace];
+    return cut.TrimEnd(',', '.', ':', ';') + "…";
+}
+
+static string FormatChecklistSegment(string segment)
+{
+    var s = segment.Trim();
+    if (s.Length == 0) return s;
+    var letters = s.Where(char.IsLetter).ToArray();
+    if (letters.Length < 3) return s;
+    var upper = letters.Count(char.IsUpper);
+    // Formatear si está mayormente en mayúsculas o si tiene una ráfaga larga en mayúsculas.
+    var needsFix = upper >= letters.Length * 0.45
+        || System.Text.RegularExpressions.Regex.IsMatch(s, @"[A-ZÁÉÍÓÚÑ]{5,}");
+    return needsFix ? ToSentenceCaseEs(s) : s;
+}
+
+static string ToSentenceCaseEs(string s)
+{
+    var lower = s.ToLowerInvariant();
+    var chars = lower.ToCharArray();
+    var capitalizeNext = true;
+    for (var i = 0; i < chars.Length; i++)
+    {
+        if (capitalizeNext && char.IsLetter(chars[i]))
+        {
+            chars[i] = char.ToUpperInvariant(chars[i]);
+            capitalizeNext = false;
+        }
+        else if (chars[i] is '.' or '!' or '?')
+        {
+            capitalizeNext = true;
+        }
+    }
+    var result = new string(chars);
+    string[] acros = ["rgrl", "epp", "prs", "pese", "srt", "art", "rar", "ige"];
+    foreach (var a in acros)
+    {
+        result = System.Text.RegularExpressions.Regex.Replace(
+            result,
+            $@"\b{a}\b",
+            a.ToUpperInvariant(),
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+    }
+    return result;
+}
+
+static string TruncateLabel(string s, int max)
+{
+    return FormatChecklistLabel(s, max);
+}
+
+static string ExtractContextoCortoDossier(string? dossierJson)
+{
+    if (string.IsNullOrWhiteSpace(dossierJson)) return "";
+    try
+    {
+        using var doc = JsonDocument.Parse(dossierJson);
+        var root = doc.RootElement;
+        var sb = new StringBuilder();
+        if (root.TryGetProperty("visitas", out var vis) &&
+            vis.TryGetProperty("incumplimientos_frecuentes", out var inc) &&
+            inc.ValueKind == JsonValueKind.Array)
+        {
+            sb.AppendLine("Incumplimientos frecuentes:");
+            var i = 0;
+            foreach (var e in inc.EnumerateArray())
+            {
+                if (i++ >= 6) break;
+                var k = e.TryGetProperty("k", out var kv) ? kv.GetString() : null;
+                if (!string.IsNullOrWhiteSpace(k)) sb.Append("- ").AppendLine(TruncateLabel(k, 160));
+            }
+        }
+        if (root.TryGetProperty("accidentes", out var acc) &&
+            acc.TryGetProperty("top_forma", out var formas) &&
+            formas.ValueKind == JsonValueKind.Array)
+        {
+            sb.AppendLine("Formas de accidente frecuentes:");
+            var i = 0;
+            foreach (var e in formas.EnumerateArray())
+            {
+                if (i++ >= 4) break;
+                var k = e.TryGetProperty("k", out var kv) ? kv.GetString() : null;
+                if (!string.IsNullOrWhiteSpace(k)) sb.Append("- ").AppendLine(TruncateLabel(k, 120));
+            }
+        }
+        var ctx = sb.ToString().Trim();
+        return ctx.Length > 1200 ? ctx[..1200] + "…" : ctx;
+    }
+    catch
+    {
+        return "";
+    }
+}
+
+static List<object> ParseHallazgosSugeridos(string texto)
+{
+    var raw = (texto ?? "").Trim();
+    if (raw.StartsWith("```", StringComparison.Ordinal))
+    {
+        var end = raw.LastIndexOf("```", StringComparison.Ordinal);
+        if (end > 3)
+        {
+            raw = raw[3..end].Trim();
+            if (raw.StartsWith("json", StringComparison.OrdinalIgnoreCase))
+                raw = raw[4..].Trim();
+        }
+    }
+    var start = raw.IndexOf('[');
+    var endArr = raw.LastIndexOf(']');
+    if (start < 0 || endArr <= start) return [];
+
+    try
+    {
+        using var doc = JsonDocument.Parse(raw[start..(endArr + 1)]);
+        var list = new List<object>();
+        foreach (var e in doc.RootElement.EnumerateArray())
+        {
+            if (list.Count >= 5) break;
+            var hallazgo = e.TryGetProperty("hallazgo", out var h) ? h.GetString() : null;
+            if (string.IsNullOrWhiteSpace(hallazgo)) continue;
+            var sev = e.TryGetProperty("severidad", out var s) ? s.GetString() : "media";
+            var rec = e.TryGetProperty("recomendacion", out var r) ? r.GetString() : null;
+            int? plazo = e.TryGetProperty("plazoDias", out var p) && p.TryGetInt32(out var pd) ? pd : null;
+            var norma = e.TryGetProperty("normaRef", out var n) ? n.GetString() : null;
+            var item = e.TryGetProperty("itemRgrl", out var ir) ? ir.GetString() : null;
+            list.Add(new
+            {
+                severidad = NormalizeSeveridad(sev),
+                hallazgo = hallazgo.Trim(),
+                recomendacion = string.IsNullOrWhiteSpace(rec) ? null : rec.Trim(),
+                plazoDias = plazo,
+                normaRef = string.IsNullOrWhiteSpace(norma) ? null : norma.Trim(),
+                itemRgrl = string.IsNullOrWhiteSpace(item) ? null : item.Trim(),
+                estado = "abierto",
+                origen = "sugerido_aceptado",
+            });
+        }
+        return list;
+    }
+    catch
+    {
+        return [];
+    }
+}
+
 static object ToUserDto(Usuario user) => new
 {
     user.Id,
@@ -1688,6 +2534,7 @@ static object ToAgendaResumen(AgendaItem a) => new
 {
     a.Id,
     a.FechaPlanificada,
+    horaPlanificada = FormatHoraPlanificada(a.HoraPlanificada),
     a.Estado,
     a.UsuarioId,
     responsable = a.Usuario?.Nombre,
@@ -1711,6 +2558,7 @@ static string ResolveEstadoOperativo(AgendaItem? agendaProgramada, bool tieneVis
 static object SnapshotAgendaDatos(AgendaItem a) => new
 {
     a.FechaPlanificada,
+    horaPlanificada = FormatHoraPlanificada(a.HoraPlanificada),
     a.UsuarioId,
     a.Notas,
     a.Estado,
@@ -1814,6 +2662,7 @@ static object ToAgendaDto(AgendaItem a) => new
     a.Periodo,
     a.Horizonte,
     a.FechaPlanificada,
+    horaPlanificada = FormatHoraPlanificada(a.HoraPlanificada),
     a.MotivoVisita,
     a.Estado,
     a.SnapshotId,
@@ -1837,6 +2686,17 @@ static object ToAgendaDto(AgendaItem a) => new
             a.Visita.Resultado,
             a.Visita.Hallazgos,
             a.Visita.Acciones,
+            acta = a.Visita.Acta is null
+                ? null
+                : new
+                {
+                    a.Visita.Acta.Id,
+                    a.Visita.Acta.ResultadoGlobal,
+                    a.Visita.Acta.Revisita,
+                    a.Visita.Acta.PlazoRevisitaDias,
+                    hallazgosTotal = a.Visita.Acta.Hallazgos?.Count ?? 0,
+                    hallazgosAbiertos = a.Visita.Acta.Hallazgos?.Count(h => h.Estado == "abierto") ?? 0,
+                },
         },
 };
 
@@ -2483,9 +3343,37 @@ record ChangePasswordRequest(string Actual, string Nueva);
 record ProgramarVisitaRequest(
     long RankingItemId,
     DateOnly FechaPlanificada,
+    string? HoraPlanificada,
     string? Horizonte,
     int? UsuarioId,
     string? Notas);
-record ReprogramarVisitaRequest(DateOnly? FechaPlanificada, int? UsuarioId, string? Notas);
-record RealizarVisitaRequest(DateTime? FechaHoraReal, string? Hallazgos, string? Acciones, string? Notas);
+record ReprogramarVisitaRequest(DateOnly? FechaPlanificada, string? HoraPlanificada, int? UsuarioId, string? Notas);
+record ChecklistItemDto(string? Id, string? Label, string? Estado);
+record HallazgoActaDto(
+    string? Severidad,
+    string? Hallazgo,
+    string? Recomendacion,
+    int? PlazoDias,
+    string? NormaRef,
+    string? ItemRgrl,
+    string? Estado,
+    string? Origen);
+record RealizarVisitaRequest(
+    DateTime? FechaHoraReal,
+    string? Hallazgos,
+    string? Acciones,
+    string? Notas,
+    string? ResultadoGlobal,
+    bool? Revisita,
+    int? PlazoRevisitaDias,
+    DateOnly? FechaRevisita,
+    string? HoraRevisita,
+    string? NotasActa,
+    List<ChecklistItemDto>? Checklist,
+    List<HallazgoActaDto>? HallazgosActa);
+record SugerirActaRequest(
+    List<ChecklistItemDto>? Checklist,
+    string? Notas,
+    List<HallazgoActaDto>? HallazgosPrevios);
+record PatchHallazgoRequest(string? Estado);
 record CancelarVisitaRequest(string MotivoCancelacion);

@@ -391,90 +391,130 @@ public sealed class CopilotoService(AppDbContext db, GeminiClient gemini)
     {
         var dossier = await db.EstablecimientoDossiers.AsNoTracking()
             .FirstOrDefaultAsync(d => d.IdEstablecimiento == id, ct);
-        if (dossier is null) return ("Sin dossier histórico cargado.", false);
+
+        var sb = new StringBuilder();
+        var tiene = false;
+
+        if (dossier is null)
+        {
+            sb.AppendLine("Sin dossier histórico cargado.");
+        }
+        else
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(dossier.DossierJson);
+                var root = doc.RootElement;
+
+                if (root.TryGetProperty("accidentes", out var acc) && acc.ValueKind == JsonValueKind.Object)
+                {
+                    tiene = true;
+                    sb.AppendLine("ACCIDENTES:");
+                    if (acc.TryGetProperty("total", out var tot))
+                        sb.Append("- Total período: ").Append(tot.GetRawText()).AppendLine();
+                    if (acc.TryGetProperty("ultimos_12m", out var u12))
+                        sb.Append("- Últimos 12 meses: ").Append(u12.GetRawText()).AppendLine();
+                    if (acc.TryGetProperty("por_anio", out var anio) && anio.ValueKind == JsonValueKind.Object)
+                    {
+                        sb.Append("- Por año:");
+                        foreach (var p in anio.EnumerateObject())
+                            sb.Append(' ').Append(p.Name).Append(':').Append(p.Value.GetRawText());
+                        sb.AppendLine();
+                    }
+                    AppendTopKeyCount(sb, acc, "top_forma", "- Formas más frecuentes");
+                    AppendTopKeyCount(sb, acc, "top_zona", "- Zonas del cuerpo");
+                    AppendTopKeyCount(sb, acc, "top_naturaleza", "- Naturaleza de la lesión");
+                    AppendTopKeyCount(sb, acc, "top_gravedad", "- Gravedad");
+                    if (acc.TryGetProperty("recientes", out var recientes) && recientes.ValueKind == JsonValueKind.Array)
+                    {
+                        sb.AppendLine("- Relatos / casos recientes:");
+                        var n = 0;
+                        foreach (var r in recientes.EnumerateArray())
+                        {
+                            if (n++ >= 8) break;
+                            var fecha = r.TryGetProperty("fecha", out var f) ? f.GetString() : null;
+                            var forma = r.TryGetProperty("forma", out var fo) ? fo.GetString() : null;
+                            var relato = r.TryGetProperty("relato", out var re) ? re.GetString() : null;
+                            if (string.IsNullOrWhiteSpace(relato) && string.IsNullOrWhiteSpace(forma)) continue;
+                            sb.Append("  * [").Append(fecha).Append("] ");
+                            if (!string.IsNullOrWhiteSpace(forma)) sb.Append(Sanitize(forma)).Append(": ");
+                            sb.AppendLine(Sanitize(relato));
+                        }
+                    }
+                }
+
+                if (root.TryGetProperty("visitas", out var vis) && vis.ValueKind == JsonValueKind.Object)
+                {
+                    tiene = true;
+                    sb.AppendLine("VISITAS PREVENTIVAS PREVIAS:");
+                    if (vis.TryGetProperty("total", out var vt))
+                        sb.Append("- Total visitas: ").Append(vt.GetRawText()).AppendLine();
+                    if (vis.TryGetProperty("incumplimientos_frecuentes", out var inc) &&
+                        inc.ValueKind == JsonValueKind.Array && inc.GetArrayLength() > 0)
+                    {
+                        sb.AppendLine("- Incumplimientos recurrentes (n = en cuántas visitas apareció):");
+                        var i = 0;
+                        foreach (var e in inc.EnumerateArray())
+                        {
+                            if (i++ >= 12) break;
+                            var k = e.TryGetProperty("k", out var kv) ? kv.GetString() : null;
+                            if (string.IsNullOrWhiteSpace(k)) continue;
+                            var n = e.TryGetProperty("n", out var nv) ? nv.GetRawText() : null;
+                            var ultima = e.TryGetProperty("ultima", out var uv) && uv.ValueKind == JsonValueKind.String
+                                ? uv.GetString()
+                                : null;
+                            sb.Append("  * ").Append(Sanitize(k));
+                            if (n is not null) sb.Append(" (n=").Append(n);
+                            if (!string.IsNullOrWhiteSpace(ultima)) sb.Append(", última ").Append(ultima);
+                            if (n is not null) sb.Append(')');
+                            sb.AppendLine();
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                sb.AppendLine("Dossier no parseable.");
+            }
+        }
 
         try
         {
-            using var doc = JsonDocument.Parse(dossier.DossierJson);
-            var root = doc.RootElement;
-            var sb = new StringBuilder();
-            var tiene = false;
-
-            if (root.TryGetProperty("accidentes", out var acc) && acc.ValueKind == JsonValueKind.Object)
+            var abiertos = await db.VisitasHallazgos.AsNoTracking()
+                .Where(h => h.IdEstablecimiento == id && h.Estado == "abierto")
+                .OrderByDescending(h => h.Severidad == "alta")
+                .ThenByDescending(h => h.CreadoEn)
+                .Take(15)
+                .Select(h => new { h.Severidad, h.Hallazgo, h.PlazoDias, h.NormaRef })
+                .ToListAsync(ct);
+            if (abiertos.Count > 0)
             {
                 tiene = true;
-                sb.AppendLine("ACCIDENTES:");
-                if (acc.TryGetProperty("total", out var tot))
-                    sb.Append("- Total período: ").Append(tot.GetRawText()).AppendLine();
-                if (acc.TryGetProperty("ultimos_12m", out var u12))
-                    sb.Append("- Últimos 12 meses: ").Append(u12.GetRawText()).AppendLine();
-                if (acc.TryGetProperty("por_anio", out var anio) && anio.ValueKind == JsonValueKind.Object)
+                sb.AppendLine("HALLAZGOS ABIERTOS (app):");
+                foreach (var h in abiertos)
                 {
-                    sb.Append("- Por año:");
-                    foreach (var p in anio.EnumerateObject())
-                        sb.Append(' ').Append(p.Name).Append(':').Append(p.Value.GetRawText());
+                    sb.Append("- [").Append(h.Severidad).Append("] ").Append(Sanitize(h.Hallazgo));
+                    if (h.PlazoDias is int plazo) sb.Append(" (plazo ").Append(plazo).Append(" días");
+                    if (!string.IsNullOrWhiteSpace(h.NormaRef))
+                    {
+                        sb.Append(h.PlazoDias is null ? " (" : "; ");
+                        sb.Append("norma ").Append(Sanitize(h.NormaRef));
+                    }
+                    if (h.PlazoDias is not null || !string.IsNullOrWhiteSpace(h.NormaRef))
+                        sb.Append(')');
                     sb.AppendLine();
                 }
-                AppendTopKeyCount(sb, acc, "top_forma", "- Formas más frecuentes");
-                AppendTopKeyCount(sb, acc, "top_zona", "- Zonas del cuerpo");
-                AppendTopKeyCount(sb, acc, "top_naturaleza", "- Naturaleza de la lesión");
-                AppendTopKeyCount(sb, acc, "top_gravedad", "- Gravedad");
-                if (acc.TryGetProperty("recientes", out var recientes) && recientes.ValueKind == JsonValueKind.Array)
-                {
-                    sb.AppendLine("- Relatos / casos recientes:");
-                    var n = 0;
-                    foreach (var r in recientes.EnumerateArray())
-                    {
-                        if (n++ >= 8) break;
-                        var fecha = r.TryGetProperty("fecha", out var f) ? f.GetString() : null;
-                        var forma = r.TryGetProperty("forma", out var fo) ? fo.GetString() : null;
-                        var relato = r.TryGetProperty("relato", out var re) ? re.GetString() : null;
-                        if (string.IsNullOrWhiteSpace(relato) && string.IsNullOrWhiteSpace(forma)) continue;
-                        sb.Append("  * [").Append(fecha).Append("] ");
-                        if (!string.IsNullOrWhiteSpace(forma)) sb.Append(Sanitize(forma)).Append(": ");
-                        sb.AppendLine(Sanitize(relato));
-                    }
-                }
             }
-
-            if (root.TryGetProperty("visitas", out var vis) && vis.ValueKind == JsonValueKind.Object)
-            {
-                tiene = true;
-                sb.AppendLine("VISITAS PREVENTIVAS PREVIAS:");
-                if (vis.TryGetProperty("total", out var vt))
-                    sb.Append("- Total visitas: ").Append(vt.GetRawText()).AppendLine();
-                if (vis.TryGetProperty("incumplimientos_frecuentes", out var inc) &&
-                    inc.ValueKind == JsonValueKind.Array && inc.GetArrayLength() > 0)
-                {
-                    sb.AppendLine("- Incumplimientos recurrentes (n = en cuántas visitas apareció):");
-                    var i = 0;
-                    foreach (var e in inc.EnumerateArray())
-                    {
-                        if (i++ >= 12) break;
-                        var k = e.TryGetProperty("k", out var kv) ? kv.GetString() : null;
-                        if (string.IsNullOrWhiteSpace(k)) continue;
-                        var n = e.TryGetProperty("n", out var nv) ? nv.GetRawText() : null;
-                        var ultima = e.TryGetProperty("ultima", out var uv) && uv.ValueKind == JsonValueKind.String
-                            ? uv.GetString()
-                            : null;
-                        sb.Append("  * ").Append(Sanitize(k));
-                        if (n is not null) sb.Append(" (n=").Append(n);
-                        if (!string.IsNullOrWhiteSpace(ultima)) sb.Append(", última ").Append(ultima);
-                        if (n is not null) sb.Append(')');
-                        sb.AppendLine();
-                    }
-                }
-            }
-
-            var ctx = sb.ToString().Trim();
-            if (!tiene || string.IsNullOrWhiteSpace(ctx))
-                return ("Dossier sin detalle usable de accidentes/visitas.", false);
-            return (ctx.Length > 4500 ? ctx[..4500] + "…" : ctx, true);
         }
         catch
         {
-            return ("Dossier no parseable.", false);
+            // tabla aún no creada: el dossier histórico alcanza
         }
+
+        var ctx = sb.ToString().Trim();
+        if (!tiene || string.IsNullOrWhiteSpace(ctx))
+            return ("Dossier sin detalle usable de accidentes/visitas.", false);
+        return (ctx.Length > 4500 ? ctx[..4500] + "…" : ctx, true);
     }
 
     private static void AppendTopKeyCount(StringBuilder sb, JsonElement parent, string prop, string label)
