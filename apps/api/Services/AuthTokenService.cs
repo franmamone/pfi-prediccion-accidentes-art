@@ -76,7 +76,7 @@ public class AuthTokenService(
         bool reprogramacion,
         CancellationToken ct = default)
     {
-        if (preventor.Rol != "Prevencionista") return;
+        if (preventor.Rol != "Preventor") return;
         if (!email.IsConfigured)
         {
             logger.LogWarning(

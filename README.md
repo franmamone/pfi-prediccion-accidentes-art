@@ -22,7 +22,7 @@ tests/          Tests unitarios (targets, splits)
 2. **Export** — Parquet en `data/raw/`
 3. **Panel** — Agregación establecimiento × mes con targets 1m y 3m
 4. **Modelo** — XGBoost dual (horizontes `1m` / `3m`)
-5. **Ranking** — Lista maestra de establecimientos en riesgo para prevencionistas
+5. **Ranking** — Lista maestra de establecimientos en riesgo para Preventores
 
 Split oficial: **train 2022–2023 · calibración 2024 · holdout 2025**.
 

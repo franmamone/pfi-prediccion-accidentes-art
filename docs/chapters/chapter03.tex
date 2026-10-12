@@ -7,7 +7,7 @@ Tambi\'en se incorporan los resultados de la investigaci\'on con usuarios (encue
 \section{Actores del sistema}
 
 \begin{itemize}
-	\item \textbf{Prevencionista:} consulta el ranking y el detalle de establecimientos, gestiona su agenda de visitas y accede a estad\'isticas para contextualizar su trabajo en campo.
+	\item \textbf{Preventor:} consulta el ranking y el detalle de establecimientos, gestiona su agenda de visitas y accede a estad\'isticas para contextualizar su trabajo en campo.
 	\item \textbf{Coordinador:} supervisa cobertura y prioridades entre zonas, consulta estad\'isticas (incluido SHAP agregado) y rebalancea el plan de visitas.
 	\item \textbf{Administrador:} gestiona usuarios y roles, y accede al mismo tablero de estad\'isticas y a las funciones operativas.
 \end{itemize}
@@ -15,15 +15,15 @@ Tambi\'en se incorporan los resultados de la investigaci\'on con usuarios (encue
 \section{Historias de usuario}
 
 \begin{enumerate}
-	\item \textbf{HU-01.} Como prevencionista, quiero autenticarme de forma segura para acceder solo a la informaci\'on de mi rol.
-	\item \textbf{HU-02.} Como prevencionista, quiero ver en la lista de priorizaci\'on qu\'e establecimientos cr\'iticos todav\'{\i}a no tienen visita programada, para orientar el trabajo del trimestre.
-	\item \textbf{HU-03.} Como prevencionista, quiero priorizar establecimientos para el pr\'oximo trimestre para planificar visitas con un horizonte operativo \'util.
-	\item \textbf{HU-04.} Como prevencionista, quiero abrir el detalle de un establecimiento y entender por qu\'e est\'a priorizado, con explicaci\'on en lenguaje claro y factores SHAP.
-	\item \textbf{HU-05.} Como prevencionista, quiero programar una visita desde la lista de riesgo o desde el detalle para convertir la predicci\'on en acci\'on.
-	\item \textbf{HU-06.} Como prevencionista, quiero gestionar mi agenda (programadas, realizadas y canceladas) para cerrar el ciclo operativo.
+	\item \textbf{HU-01.} Como Preventor, quiero autenticarme de forma segura para acceder solo a la informaci\'on de mi rol.
+	\item \textbf{HU-02.} Como Preventor, quiero ver en la lista de priorizaci\'on qu\'e establecimientos cr\'iticos todav\'{\i}a no tienen visita programada, para orientar el trabajo del trimestre.
+	\item \textbf{HU-03.} Como Preventor, quiero priorizar establecimientos para el pr\'oximo trimestre para planificar visitas con un horizonte operativo \'util.
+	\item \textbf{HU-04.} Como Preventor, quiero abrir el detalle de un establecimiento y entender por qu\'e est\'a priorizado, con explicaci\'on en lenguaje claro y factores SHAP.
+	\item \textbf{HU-05.} Como Preventor, quiero programar una visita desde la lista de riesgo o desde el detalle para convertir la predicci\'on en acci\'on.
+	\item \textbf{HU-06.} Como Preventor, quiero gestionar mi agenda (programadas, realizadas y canceladas) para cerrar el ciclo operativo.
 	\item \textbf{HU-07.} Como coordinador, quiero ver estad\'isticas de cobertura, precisi\'on observada y factores SHAP agregados para evaluar el uso real del ranking.
-	\item \textbf{HU-08.} Como coordinador, quiero asignar visitas a un prevencionista para distribuir la capacidad del equipo.
-	\item \textbf{HU-09.} Como prevencionista, coordinador o administrador, quiero consultar el panel de estad\'isticas para interpretar el desempe\~no del modelo sin depender de un rol espec\'ifico de an\'alisis.
+	\item \textbf{HU-08.} Como coordinador, quiero asignar visitas a un Preventor para distribuir la capacidad del equipo.
+	\item \textbf{HU-09.} Como Preventor, coordinador o administrador, quiero consultar el panel de estad\'isticas para interpretar el desempe\~no del modelo sin depender de un rol espec\'ifico de an\'alisis.
 	\item \textbf{HU-10.} Como administrador, quiero administrar usuarios y roles para controlar el acceso al prototipo.
 	\item \textbf{HU-11.} Como usuario, quiero alternar tema claro/oscuro y colapsar el men\'u para trabajar con comodidad en jornadas largas.
 	\item \textbf{HU-12.} Como coordinador, quiero distinguir motivos predictivos de obligaciones regulatorias (PRS) para no mezclar prioridades.
@@ -38,10 +38,10 @@ Tambi\'en se incorporan los resultados de la investigaci\'on con usuarios (encue
 	\item[RF-04 Detalle] Ficha del establecimiento con score, banda, motivo, factores SHAP individuales y, si hay dossier, un resumen en lenguaje claro generado sin enviar identificadores.
 	\item[RF-05 Agenda] Alta, realizaci\'on y cancelaci\'on de visitas vinculadas al ranking vigente.
 	\item[RF-06 Auditor\'ia operativa] Registro append-only de eventos del ciclo de visitas.
-	\item[RF-07 Estad\'isticas] Cobertura hist\'orica y SHAP agregado sobre la lista top-1000, consultables por prevencionista, coordinador y administrador.
-	\item[RF-08 Asignaci\'on] Al programar una visita, el coordinador o el administrador puede asignarla a un prevencionista.
+	\item[RF-07 Estad\'isticas] Cobertura hist\'orica y SHAP agregado sobre la lista top-1000, consultables por Preventor, coordinador y administrador.
+	\item[RF-08 Asignaci\'on] Al programar una visita, el coordinador o el administrador puede asignarla a un Preventor.
 	\item[RF-09 Perfil] Consulta de datos de usuario y cambio de contrase\~na.
-	\item[RF-10 Roles] Control de acceso por rol (Prevencionista, Coordinador, Administrador).
+	\item[RF-10 Roles] Control de acceso por rol (Preventor, Coordinador, Administrador).
 	\item[RF-11 Snapshots] Consumo de rankings versionados e inmutables importados desde el pipeline.
 	\item[RF-12 Horizonte trimestral] El ranking operativo predice accidentaci\'on en los tres meses siguientes al per\'{\i}odo de decisi\'on, alineado a la planificaci\'on de visitas.
 \end{description}
@@ -63,7 +63,7 @@ Tambi\'en se incorporan los resultados de la investigaci\'on con usuarios (encue
 \section{Diagrama de casos de uso}
 
 La Figura~\ref{fig:casos-uso} resume las interacciones entre actores y el sistema.
-Un actor abstracto \emph{Usuario autenticado} concentra los casos compartidos; Prevencionista, Coordinador y Administrador lo especializan (generalizaci\'on UML).
+Un actor abstracto \emph{Usuario autenticado} concentra los casos compartidos; Preventor, Coordinador y Administrador lo especializan (generalizaci\'on UML).
 Los tres roles heredan autenticaci\'on, priorizaci\'on, detalle, agenda, estad\'isticas y perfil; solo el administrador administra usuarios.
 
 \begin{figure}[htbp]
@@ -130,10 +130,10 @@ La Figura~\ref{fig:wireframe-layout} muestra el esquema global; las Figuras~\ref
 
 \section{Investigaci\'on con usuarios}\label{sec:user-research}
 
-El proyecto tiene usuarios finales identificables: prevencionistas y coordinadores del \'area de prevenci\'on, y el administrador del prototipo.
+El proyecto tiene usuarios finales identificables: Preventores y coordinadores del \'area de prevenci\'on, y el administrador del prototipo.
 Por eso se investig\'o con usuarios reales, para validar necesidades y no basar el dise\~no solo en supuestos.
 Se combin\'o una encuesta a trabajadores con entrevistas semiestructuradas a perfiles de ART y al responsable de producto del sistema core.
-A partir de esa evidencia se construyeron dos personas de usuario: el prevencionista de campo y la coordinaci\'on de prevenci\'on.
+A partir de esa evidencia se construyeron dos personas de usuario: el Preventor de campo y la coordinaci\'on de prevenci\'on.
 La encuesta no describe a un usuario de Prevex: describe el contexto que esos perfiles enfrentan en el establecimiento.
 En este hito se presentan los 156 casos de la encuesta, las tres entrevistas y las personas que las condensan.
 
@@ -271,14 +271,14 @@ La transcripci\'on depurada integra el Anexo~\ref{anexo:entrevista-daniel-oscar}
 
 Las personas condensan la encuesta y las entrevistas a perfiles de ART.
 Cada ficha incluye lema, biograf\'{\i}a, contexto de uso, herramientas actuales, motivaciones, objetivos, frustraciones, h\'abitos, un escenario y criterios de \'exito.
-Mart\'{\i}n R\'{\i}os es la persona primaria (actor Prevencionista, HU-02 a HU-06); Laura Ferrero es la de coordinaci\'on (HU-07, HU-08, HU-12).
+Mart\'{\i}n R\'{\i}os es la persona primaria (actor Preventor, HU-02 a HU-06); Laura Ferrero es la de coordinaci\'on (HU-07, HU-08, HU-12).
 El administrador reutiliza el tablero y no requiere una tercera ficha.
 
 \clearpage
 \begin{figure}[H]
 	\centering
 	\input{figures/diagramas/persona_preventor}
-	\caption{Persona primaria: Mart\'{\i}n R\'{\i}os, prevencionista de campo.}
+	\caption{Persona primaria: Mart\'{\i}n R\'{\i}os, Preventor de campo.}
 	\label{fig:persona-preventor}
 \end{figure}
 
@@ -358,7 +358,7 @@ La encuesta ($n=156$) explica por qu\'e ese circuito importa: afuera la prevenci
 	El prototipo usa stack abierto, .NET, React y XGBoost, as\'{\i} que la dependencia de un proveedor puntual de nube es baja.
 	La v\'{\i}a de adopci\'on en ART pasa por el m\'odulo de prevenci\'on del core y por demostrar costo-beneficio, seg\'un la entrevista a Daniel Oscar.
 	\item \textbf{Poder de clientes.}
-	Las ART concentran la demanda y exigen trazabilidad, seguridad de datos y utilidad concreta para el prevencionista de campo.
+	Las ART concentran la demanda y exigen trazabilidad, seguridad de datos y utilidad concreta para el Preventor de campo.
 	Si el ranking no se traduce en agenda y cobertura, no se adopta.
 	\item \textbf{Sustitutos.}
 	Hoy se sustituye con ranking manual por actividad o PESE, planillas y criterio experto, sin modelo predictivo.

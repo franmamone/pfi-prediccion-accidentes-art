@@ -62,7 +62,7 @@ function rolBadgeClass(rol: string): string {
   const r = rol.toLowerCase();
   if (r === "admin") return "badge rol-admin";
   if (r === "coordinador") return "badge rol-coordinador";
-  return "badge rol-prevencionista";
+  return "badge rol-preventor";
 }
 
 function estadoBadge(u: UsuarioAdmin): { label: string; className: string } {
@@ -91,7 +91,7 @@ export function UsuariosPage() {
 
   const [email, setEmail] = useState("");
   const [nombre, setNombre] = useState("");
-  const [rol, setRol] = useState("Prevencionista");
+  const [rol, setRol] = useState("Preventor");
   const [lat, setLat] = useState(String(CABA_DEFAULT.lat));
   const [lon, setLon] = useState(String(CABA_DEFAULT.lon));
   const [disp, setDisp] = useState<DispDraft>(emptyDisp);
@@ -126,7 +126,7 @@ export function UsuariosPage() {
     setEditing(null);
     setEmail("");
     setNombre("");
-    setRol("Prevencionista");
+    setRol("Preventor");
     setLat(String(CABA_DEFAULT.lat));
     setLon(String(CABA_DEFAULT.lon));
     setDisp(emptyDisp());
@@ -165,14 +165,14 @@ export function UsuariosPage() {
     try {
       const latN = Number(lat);
       const lonN = Number(lon);
-      const disponibilidad = rol === "Prevencionista" ? toDisponibilidad(disp) : undefined;
+      const disponibilidad = rol === "Preventor" ? toDisponibilidad(disp) : undefined;
       if (creating) {
         await createUsuario({
           email: email.trim(),
           nombre: nombre.trim(),
           rol,
-          latitud: rol === "Prevencionista" ? latN : null,
-          longitud: rol === "Prevencionista" ? lonN : null,
+          latitud: rol === "Preventor" ? latN : null,
+          longitud: rol === "Preventor" ? lonN : null,
           mfaRequired,
           disponibilidad,
         });
@@ -185,8 +185,8 @@ export function UsuariosPage() {
         await updateUsuario(editing.id, {
           nombre: nombre.trim(),
           rol,
-          latitud: rol === "Prevencionista" ? latN : null,
-          longitud: rol === "Prevencionista" ? lonN : null,
+          latitud: rol === "Preventor" ? latN : null,
+          longitud: rol === "Preventor" ? lonN : null,
           mfaRequired,
           resetMfa: mfaRequired && resetMfa ? true : undefined,
           disponibilidad,
@@ -258,7 +258,7 @@ export function UsuariosPage() {
                     options={[
                       { value: "Admin", label: "Admin" },
                       { value: "Coordinador", label: "Coordinador" },
-                      { value: "Prevencionista", label: "Prevencionista" },
+                      { value: "Preventor", label: "Preventor" },
                     ]}
                   />
                 </div>
@@ -287,7 +287,7 @@ export function UsuariosPage() {
                     </label>
                   </div>
                 )}
-                {rol === "Prevencionista" && (
+                {rol === "Preventor" && (
                   <>
                     <CabaLocationPicker
                       lat={Number(lat) || CABA_DEFAULT.lat}
@@ -381,7 +381,7 @@ export function UsuariosPage() {
               { value: "", label: "Todos" },
               { value: "Admin", label: "Admin" },
               { value: "Coordinador", label: "Coordinador" },
-              { value: "Prevencionista", label: "Prevencionista" },
+              { value: "Preventor", label: "Preventor" },
             ]}
           />
         </div>
@@ -443,7 +443,7 @@ export function UsuariosPage() {
                       <span className={mfa.className}>{mfa.label}</span>
                     </td>
                     <td className="muted" title={dias}>
-                      {u.rol === "Prevencionista" ? dias : "—"}
+                      {u.rol === "Preventor" ? dias : "—"}
                     </td>
                     <td>
                       <div className="usuarios-actions">

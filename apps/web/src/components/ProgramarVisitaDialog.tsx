@@ -293,7 +293,7 @@ export function ProgramarVisitaDialog({ item, horizonte, onClose, onDone }: Prop
                 rows={3}
                 value={notas}
                 onChange={(e) => setNotas(e.target.value)}
-                placeholder="Observaciones para el prevencionista…"
+                placeholder="Observaciones para el preventor…"
               />
             </div>
 

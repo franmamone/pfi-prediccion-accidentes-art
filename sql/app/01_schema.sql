@@ -31,13 +31,13 @@ CREATE TABLE app.Usuarios (
     Email           NVARCHAR(256) NOT NULL,
     Nombre          NVARCHAR(200) NOT NULL,
     PasswordHash    NVARCHAR(500) NOT NULL,
-    Rol             NVARCHAR(40) NOT NULL,  -- Prevencionista | Coordinador | Analista | Admin
+    Rol             NVARCHAR(40) NOT NULL,  -- Preventor | Coordinador | Analista | Admin
     ZonaId          INT NULL,
     Activo          BIT NOT NULL CONSTRAINT DF_Usuarios_Activo DEFAULT (1),
     CreadoEn        DATETIME2(0) NOT NULL CONSTRAINT DF_Usuarios_CreadoEn DEFAULT (SYSUTCDATETIME()),
     CONSTRAINT UQ_Usuarios_Email UNIQUE (Email),
     CONSTRAINT FK_Usuarios_Zonas FOREIGN KEY (ZonaId) REFERENCES app.Zonas (Id),
-    CONSTRAINT CK_Usuarios_Rol CHECK (Rol IN (N'Prevencionista', N'Coordinador', N'Analista', N'Admin'))
+    CONSTRAINT CK_Usuarios_Rol CHECK (Rol IN (N'Preventor', N'Coordinador', N'Analista', N'Admin'))
 );
 GO
 

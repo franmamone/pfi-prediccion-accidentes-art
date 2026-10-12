@@ -157,12 +157,12 @@ public static class AuthUsersEndpoints
             var rol = (req.Rol ?? "").Trim();
             if (mailAddr.Length < 5 || nombre.Length < 2)
                 return Results.BadRequest(new { error = "Email y nombre son obligatorios." });
-            if (rol is not ("Admin" or "Coordinador" or "Prevencionista"))
+            if (rol is not ("Admin" or "Coordinador" or "Preventor"))
                 return Results.BadRequest(new { error = "Rol inválido." });
             if (await db.Usuarios.AnyAsync(u => u.Email == mailAddr))
                 return Results.Conflict(new { error = "Ya existe un usuario con ese email." });
 
-            if (rol == "Prevencionista")
+            if (rol == "Preventor")
             {
                 if (req.Latitud is null || req.Longitud is null)
                     return Results.BadRequest(new { error = "El preventor necesita latitud/longitud (CABA)." });
@@ -171,7 +171,7 @@ public static class AuthUsersEndpoints
             }
 
             var (lat, lon) = (req.Latitud, req.Longitud);
-            if (rol == "Prevencionista" && (lat is null || lon is null))
+            if (rol == "Preventor" && (lat is null || lon is null))
             {
                 var r = GeoHelper.RandomCaba(Random.Shared);
                 lat = r.Lat; lon = r.Lon;
@@ -194,7 +194,7 @@ public static class AuthUsersEndpoints
             db.Usuarios.Add(user);
             await db.SaveChangesAsync();
 
-            if (rol == "Prevencionista" && req.Disponibilidad is { Count: > 0 })
+            if (rol == "Preventor" && req.Disponibilidad is { Count: > 0 })
             {
                 foreach (var d in req.Disponibilidad)
                 {
@@ -230,7 +230,7 @@ public static class AuthUsersEndpoints
 
             if (!string.IsNullOrWhiteSpace(req.Nombre))
                 user.Nombre = req.Nombre.Trim();
-            if (!string.IsNullOrWhiteSpace(req.Rol) && req.Rol is "Admin" or "Coordinador" or "Prevencionista")
+            if (!string.IsNullOrWhiteSpace(req.Rol) && req.Rol is "Admin" or "Coordinador" or "Preventor")
                 user.Rol = req.Rol;
             if (req.Activo is not null) user.Activo = req.Activo.Value;
             if (req.ZonaId is not null) user.ZonaId = req.ZonaId;
@@ -327,7 +327,7 @@ public static class AuthUsersEndpoints
             var dia = GeoHelper.ToIsoDiaSemana(fecha);
             var preventores = await db.Usuarios.AsNoTracking()
                 .Include(u => u.Disponibilidades)
-                .Where(u => u.Activo && u.Rol == "Prevencionista"
+                .Where(u => u.Activo && u.Rol == "Preventor"
                     && u.Latitud != null && u.Longitud != null)
                 .ToListAsync();
 
@@ -455,7 +455,7 @@ public static class AuthUsersEndpoints
             if (me is null) return Results.Unauthorized();
             if (!CanManage(me)) return Results.Json(new { error = "Sin permiso." }, statusCode: 403);
 
-            var nPrev = await db.Usuarios.CountAsync(u => u.Activo && u.Rol == "Prevencionista");
+            var nPrev = await db.Usuarios.CountAsync(u => u.Activo && u.Rol == "Preventor");
             var hoy = DateOnly.FromDateTime(DateTime.Today);
             var hasta = hoy.AddDays(6);
             var porDia = await db.AgendaItems.AsNoTracking()
@@ -559,7 +559,7 @@ public static class AuthUsersEndpoints
     public static async Task<string?> ValidateAssigneeForSlotAsync(
         AppDbContext db, Usuario assignee, DateOnly fecha, TimeOnly hora, string idEstablecimiento)
     {
-        if (assignee.Rol != "Prevencionista")
+        if (assignee.Rol != "Preventor")
             return null; // gestores pueden autoasignarse sin franja
 
         var dias = await db.UsuarioDisponibilidades.AsNoTracking()
@@ -653,7 +653,7 @@ public static class AuthUsersEndpoints
 
         // Preventores demo sin coords
         var prevs = await db.Usuarios
-            .Where(u => u.Rol == "Prevencionista" && (u.Latitud == null || u.Longitud == null))
+            .Where(u => u.Rol == "Preventor" && (u.Latitud == null || u.Longitud == null))
             .ToListAsync();
         foreach (var p in prevs)
         {
@@ -664,7 +664,7 @@ public static class AuthUsersEndpoints
         if (prevs.Count > 0) await db.SaveChangesAsync();
 
         // Disponibilidad default Lun-Vie 9-17 para preventores sin franjas
-        var prevIds = await db.Usuarios.Where(u => u.Rol == "Prevencionista" && u.Activo)
+        var prevIds = await db.Usuarios.Where(u => u.Rol == "Preventor" && u.Activo)
             .Select(u => u.Id).ToListAsync();
         var conDisp = await db.UsuarioDisponibilidades.Select(d => d.UsuarioId).Distinct().ToListAsync();
         var sin = prevIds.Except(conDisp).ToList();
@@ -714,7 +714,7 @@ public static class AuthUsersEndpoints
                 Email = d.Email,
                 Nombre = d.Nombre,
                 PasswordHash = hash,
-                Rol = "Prevencionista",
+                Rol = "Preventor",
                 ZonaId = zonaId,
                 Activo = true,
                 DebeCambiarPassword = false,

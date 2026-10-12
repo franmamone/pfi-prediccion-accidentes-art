@@ -111,4 +111,4 @@ Sin SMTP configurado, el alta de usuarios falla con error explícito (no se sile
 | `Jwt__Key` | Firma JWT (rotar; ≥32 chars) |
 | `ConnectionStrings__PfiPrevencion` | RDS SQL Server |
 
-MFA TOTP no depende de AWS (secreto en SQL). Lo exige un Admin al crear/editar usuario; el QR se completa en el primer login. Al programar/reprogramar una visita a un Prevencionista se envía mail con link a `/agenda?visita={id}` (requiere SMTP + `App:PublicBaseUrl`). Leaflet/OSM no necesita API key.
+MFA TOTP no depende de AWS (secreto en SQL). Lo exige un Admin al crear/editar usuario; el QR se completa en el primer login. Al programar/reprogramar una visita a un Preventor se envía mail con link a `/agenda?visita={id}` (requiere SMTP + `App:PublicBaseUrl`). Leaflet/OSM no necesita API key.

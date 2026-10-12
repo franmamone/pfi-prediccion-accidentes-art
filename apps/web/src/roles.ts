@@ -1,5 +1,5 @@
 export function esPreventor(rol: string | undefined | null): boolean {
-  return rol === "Prevencionista";
+  return rol === "Preventor";
 }
 
 export function puedeGestionar(rol: string | undefined | null): boolean {
@@ -10,9 +10,9 @@ export function esAdmin(rol: string | undefined | null): boolean {
   return rol === "Admin";
 }
 
-/** Marcar realizada / cancelar: Admin o Prevencionista (no Coordinador). */
+/** Marcar realizada / cancelar: Admin o Preventor (no Coordinador). */
 export function puedeCerrarVisita(rol: string | undefined | null): boolean {
-  return rol === "Admin" || rol === "Prevencionista";
+  return rol === "Admin" || rol === "Preventor";
 }
 
 export function landingFor(rol: string | undefined | null): string {

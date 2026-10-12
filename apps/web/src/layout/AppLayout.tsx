@@ -28,7 +28,7 @@ type NavItem = {
 };
 
 function buildNav(rol: string | undefined): { group: string; items: NavItem[] }[] {
-  const esPreventor = rol === "Prevencionista";
+  const esPreventor = rol === "Preventor";
   const esAdmin = rol === "Admin";
   const operacion: NavItem[] = [];
   if (!esPreventor) {

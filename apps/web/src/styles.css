@@ -2118,7 +2118,7 @@ table.usuarios-table td.usuarios-nombre {
   color: #0369a1;
 }
 
-.badge.rol-prevencionista {
+.badge.rol-preventor {
   background: rgba(18, 183, 106, 0.16);
   color: #047857;
 }
@@ -2133,7 +2133,7 @@ table.usuarios-table td.usuarios-nombre {
   color: #7dd3fc;
 }
 
-[data-theme="dark"] .badge.rol-prevencionista {
+[data-theme="dark"] .badge.rol-preventor {
   background: rgba(18, 183, 106, 0.22);
   color: #6ee7b7;
 }
@@ -3429,7 +3429,7 @@ table.data tbody tr:hover td {
 .profile-role.coordinador {
   background: #0ea5e9;
 }
-.profile-role.prevencionista {
+.profile-role.preventor {
   background: #12b76a;
 }
 

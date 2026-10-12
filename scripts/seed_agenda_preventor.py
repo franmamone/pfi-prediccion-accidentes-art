@@ -1,8 +1,8 @@
-"""Siembra visitas de agenda demo asignadas al preventor (Prevencionista Demo).
+"""Siembra visitas de agenda demo asignadas al preventor (Preventor Demo).
 
 Toma los primeros establecimientos del snapshot vigente 1m y crea visitas
 'programada' con fechas futuras, para que al iniciar sesión como
-prevencionista@pfi.local se vean 'Mis visitas'.
+Preventor@pfi.local se vean 'Mis visitas'.
 
 Idempotente: no crea una visita si el establecimiento ya tiene una programada.
 """
@@ -25,11 +25,11 @@ def main() -> None:
     cur = cn.cursor()
 
     cur.execute(
-        "SELECT TOP 1 Id, Nombre FROM app.Usuarios WHERE Email = 'prevencionista@pfi.local' AND Activo = 1"
+        "SELECT TOP 1 Id, Nombre FROM app.Usuarios WHERE Email = 'Preventor@pfi.local' AND Activo = 1"
     )
     row = cur.fetchone()
     if not row:
-        raise SystemExit("No existe el usuario prevencionista@pfi.local (arrancá la API una vez para el seed).")
+        raise SystemExit("No existe el usuario Preventor@pfi.local (arrancá la API una vez para el seed).")
     usuario_id, usuario_nombre = row
 
     cur.execute(

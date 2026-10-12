@@ -18,7 +18,7 @@ public class Usuario
     [MaxLength(256)] public string Email { get; set; } = "";
     [MaxLength(200)] public string Nombre { get; set; } = "";
     [MaxLength(500)] public string PasswordHash { get; set; } = "";
-    [MaxLength(40)] public string Rol { get; set; } = "Prevencionista";
+    [MaxLength(40)] public string Rol { get; set; } = "Preventor";
     public int? ZonaId { get; set; }
     public Zona? Zona { get; set; }
     public bool Activo { get; set; } = true;

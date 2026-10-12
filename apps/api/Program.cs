@@ -1267,7 +1267,7 @@ app.MapGet("/api/usuarios/asignables", async (ClaimsPrincipal principal, AppDbCo
     else
     {
         query = query.Where(u =>
-            u.Rol == "Prevencionista" || u.Rol == "Coordinador" || u.Rol == "Admin");
+            u.Rol == "Preventor" || u.Rol == "Coordinador" || u.Rol == "Admin");
     }
 
     var rows = await query
@@ -2294,7 +2294,7 @@ app.MapGet("/api/auditoria/agenda", async (
 
     if (!CanAssignAny(user))
     {
-        // Prevencionista: ve eventos de agendas propias o donde fue actor.
+        // Preventor: ve eventos de agendas propias o donde fue actor.
         var propias = db.AgendaItems.AsNoTracking()
             .Where(a => a.UsuarioId == user.Id)
             .Select(a => a.Id);
@@ -3250,10 +3250,10 @@ static bool CanAssignAny(Usuario user) =>
 static bool CanManageAgenda(Usuario user, AgendaItem agenda) =>
     CanAssignAny(user) || agenda.UsuarioId == user.Id;
 
-/// <summary>Marcar realizada / cancelar: Admin (cualquiera) o Prevencionista (solo la propia). Coordinador no.</summary>
+/// <summary>Marcar realizada / cancelar: Admin (cualquiera) o Preventor (solo la propia). Coordinador no.</summary>
 static bool CanCerrarOCancelarVisita(Usuario user, AgendaItem agenda) =>
     user.Rol == "Admin"
-    || (user.Rol == "Prevencionista" && agenda.UsuarioId == user.Id);
+    || (user.Rol == "Preventor" && agenda.UsuarioId == user.Id);
 
 static string InferMotivoVisita(RankingItem item)
 {

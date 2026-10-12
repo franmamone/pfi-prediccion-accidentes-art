@@ -38,7 +38,7 @@ type InfoKey = "shap" | "acierto" | null;
 export function DetallePage() {
   const toast = useToast();
   const { user } = useAuth();
-  const esPreventor = user?.rol === "Prevencionista";
+  const esPreventor = user?.rol === "Preventor";
   const { id = "" } = useParams();
   const horizonte = HORIZONTE_OPERATIVO;
   const [data, setData] = useState<DetalleEstablecimiento | null>(null);
