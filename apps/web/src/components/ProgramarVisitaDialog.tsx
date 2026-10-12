@@ -34,6 +34,19 @@ function horasDe(c: CandidatoAsignacion | undefined): string[] {
   return (c?.huecosDisponibles ?? []).map((h) => h.slice(0, 5));
 }
 
+function anclaLabel(origen: string | undefined): string {
+  switch (origen) {
+    case "visita_anterior":
+      return "desde visita anterior";
+    case "visita_siguiente":
+      return "desde visita siguiente";
+    case "visita_ruta":
+      return "desde ruta del día";
+    default:
+      return "desde base";
+  }
+}
+
 export function ProgramarVisitaDialog({ item, horizonte, onClose, onDone }: Props) {
   useLockBodyScroll(true);
   const { user } = useAuth();
@@ -49,6 +62,7 @@ export function ProgramarVisitaDialog({ item, horizonte, onClose, onDone }: Prop
   const [candidatos, setCandidatos] = useState<CandidatoAsignacion[]>([]);
   const [recomendadoId, setRecomendadoId] = useState<number | null>(null);
   const [gapHoras, setGapHoras] = useState(2);
+  const [tamanoEst, setTamanoEst] = useState<string | null>(null);
   const [establecimiento, setEstablecimiento] = useState<{
     latitud: number;
     longitud: number;
@@ -62,14 +76,15 @@ export function ProgramarVisitaDialog({ item, horizonte, onClose, onDone }: Prop
     let cancelled = false;
     setLoadingCand(true);
     setError(null);
-    // La hora del request solo ordena la recomendación; los huecos del día no dependen de ella.
+    // La hora afecta ancla (visita anterior/siguiente) y disponibilidad en ese slot.
     fetchCandidatosAsignacion(fecha, hora || "09:00", item.idEstablecimiento)
       .then((res) => {
         if (cancelled) return;
         setCandidatos(res.candidatos);
         setRecomendadoId(res.recomendadoId);
         setEstablecimiento(res.establecimiento);
-        setGapHoras(res.gapHoras ?? 2);
+        setGapHoras(res.gapHoras ?? res.establecimiento.duracionEstimadaHoras ?? 2);
+        setTamanoEst(res.establecimiento.tamano ?? null);
         setUsuarioId((prev) => {
           if (prev && res.candidatos.some((c) => c.id === prev)) return prev;
           return res.recomendadoId ?? res.candidatos[0]?.id ?? 0;
@@ -79,6 +94,7 @@ export function ProgramarVisitaDialog({ item, horizonte, onClose, onDone }: Prop
         if (cancelled) return;
         setCandidatos([]);
         setEstablecimiento(null);
+        setTamanoEst(null);
         setError(err instanceof Error ? err.message : "No se pudieron cargar candidatos");
       })
       .finally(() => {
@@ -87,8 +103,7 @@ export function ProgramarVisitaDialog({ item, horizonte, onClose, onDone }: Prop
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- no refetch al cambiar hora del combo
-  }, [fecha, item.idEstablecimiento, canAssign, user?.id]);
+  }, [fecha, hora, item.idEstablecimiento, canAssign, user?.id]);
 
   const focoId = hoverId ?? usuarioId;
   const foco = useMemo(
@@ -196,20 +211,23 @@ export function ProgramarVisitaDialog({ item, horizonte, onClose, onDone }: Prop
               <>
                 {recomendado && (
                   <div className="recomendado-banner">
-                    Recomendado: {recomendado.nombre} ({recomendado.distanciaKm} km
+                    Recomendado: {recomendado.nombre} ({recomendado.distanciaKm} km{" "}
+                    {anclaLabel(recomendado.anclaOrigen)}
                     {horasDe(recomendado).includes(hora) ? `, disponible a las ${hora}` : ""})
                   </div>
                 )}
                 <p className="muted" style={{ margin: 0, fontSize: 12 }}>
-                  Separación mínima entre visitas: {gapHoras} h. El combo Hora muestra los huecos del
-                  preventor seleccionado (o sobre el que estás parado).
+                  Duración estimada de esta visita: {gapHoras} h
+                  {tamanoEst ? ` (${tamanoEst})` : ""} por cápitas. Distancia desde la visita
+                  anterior del día si ya hay agenda; si no, desde la base. El combo Hora muestra
+                  huecos del preventor (sin solapar duraciones).
                 </p>
                 {loadingCand ? (
                   <p className="muted">Buscando preventores disponibles…</p>
                 ) : candidatos.length === 0 ? (
                   <div className="error">
-                    No hay preventores con huecos libres ese día (franja laboral + {gapHoras} h entre
-                    visitas).
+                    No hay preventores con huecos libres ese día (franja laboral + duración estimada
+                    de {gapHoras} h).
                   </div>
                 ) : (
                   <div className="asignacion-layout">
@@ -249,10 +267,11 @@ export function ProgramarVisitaDialog({ item, horizonte, onClose, onDone }: Prop
                                 {c.id === recomendadoId ? " · top" : ""}
                               </span>
                               <span className="candidato-meta">
-                                {c.distanciaKm} km · {c.visitasDelDia} visita
-                                {c.visitasDelDia === 1 ? "" : "s"}
+                                {c.distanciaKm} km {anclaLabel(c.anclaOrigen)} ·{" "}
+                                {c.horasCargaDia ?? 0} h cargadas
+                                {c.visitasDelDia > 0 ? ` (${c.visitasDelDia})` : ""}
                                 {c.horasOcupadas.length > 0
-                                  ? ` · ocupadas ${c.horasOcupadas.join(", ")}`
+                                  ? ` · ${c.horasOcupadas.join(", ")}`
                                   : ""}
                               </span>
                             </button>

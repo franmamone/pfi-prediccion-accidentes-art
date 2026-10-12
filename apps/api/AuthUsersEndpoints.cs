@@ -334,11 +334,31 @@ public static class AuthUsersEndpoints
             var agendaDia = await db.AgendaItems.AsNoTracking()
                 .Where(a => a.FechaPlanificada == fecha
                     && (a.Estado == "programada" || a.Estado == "realizada"))
-                .Select(a => new { a.UsuarioId, a.HoraPlanificada })
+                .Select(a => new { a.UsuarioId, a.HoraPlanificada, a.IdEstablecimiento })
                 .ToListAsync();
-            var ocupadasPorUsuario = agendaDia
-                .GroupBy(a => a.UsuarioId)
-                .ToDictionary(g => g.Key, g => g.Select(x => x.HoraPlanificada).OrderBy(t => t).ToList());
+
+            var estIdsAgenda = agendaDia.Select(a => a.IdEstablecimiento).Distinct().ToList();
+            Dictionary<string, (double Lat, double Lon)> ubicAgenda;
+            if (estIdsAgenda.Count == 0)
+            {
+                ubicAgenda = new Dictionary<string, (double Lat, double Lon)>(StringComparer.OrdinalIgnoreCase);
+            }
+            else
+            {
+                var ubicRows = await db.EstablecimientoUbicaciones.AsNoTracking()
+                    .Where(e => estIdsAgenda.Contains(e.IdEstablecimiento))
+                    .Select(e => new { e.IdEstablecimiento, e.Latitud, e.Longitud })
+                    .ToListAsync();
+                ubicAgenda = ubicRows.ToDictionary(
+                    e => e.IdEstablecimiento,
+                    e => (e.Latitud, e.Longitud),
+                    StringComparer.OrdinalIgnoreCase);
+            }
+
+            var capitasByEst = await LoadCapitasByEstAsync(db, estIdsAgenda.Append(estId).Distinct().ToList());
+            var duracionCandidata = GeoHelper.DuracionEstimadaHoras(
+                capitasByEst.GetValueOrDefault(estId));
+            var tamanoCandidata = GeoHelper.TamanoEtiqueta(capitasByEst.GetValueOrDefault(estId));
 
             var list = new List<CandidatoDto>();
             foreach (var p in preventores)
@@ -349,30 +369,48 @@ public static class AuthUsersEndpoints
                     .ToList();
                 if (franjas.Count == 0) continue;
 
-                ocupadasPorUsuario.TryGetValue(p.Id, out var ocupadas);
-                ocupadas ??= [];
-                var huecos = GeoHelper.CalcularHuecos(franjas, ocupadas);
+                var delPreventor = agendaDia.Where(a => a.UsuarioId == p.Id).ToList();
+                var slots = delPreventor
+                    .Select(a => new GeoHelper.SlotOcupado(
+                        a.HoraPlanificada,
+                        GeoHelper.DuracionEstimadaHoras(capitasByEst.GetValueOrDefault(a.IdEstablecimiento))))
+                    .OrderBy(s => s.Hora)
+                    .ToList();
+
+                var huecos = GeoHelper.CalcularHuecos(franjas, slots, duracionCandidata);
                 if (huecos.Count == 0) continue;
 
                 var enFranja = GeoHelper.HoraEnFranjas(horaT, franjas);
-                var libreGap = GeoHelper.RespetaGap(horaT, ocupadas);
-                var disponibleEnHora = enFranja && libreGap && !ocupadas.Contains(horaT);
+                var libreGap = GeoHelper.RespetaGap(horaT, duracionCandidata, slots);
+                var disponibleEnHora = enFranja && libreGap && slots.All(s => s.Hora != horaT);
 
-                var n = ocupadas.Count;
-                var dist = GeoHelper.HaversineKm(p.Latitud!.Value, p.Longitud!.Value, ubic.Latitud, ubic.Longitud);
-                var score = GeoHelper.Score(dist, n);
+                var visitasDia = delPreventor
+                    .Where(a => ubicAgenda.ContainsKey(a.IdEstablecimiento))
+                    .Select(a =>
+                    {
+                        var u = ubicAgenda[a.IdEstablecimiento];
+                        return new GeoHelper.VisitaDia(a.HoraPlanificada, u.Lat, u.Lon);
+                    })
+                    .ToList();
+
+                var (anclaLat, anclaLon, anclaOrigen) = GeoHelper.ResolverAncla(
+                    p.Latitud!.Value, p.Longitud!.Value, horaT, visitasDia);
+                var dist = GeoHelper.HaversineKm(anclaLat, anclaLon, ubic.Latitud, ubic.Longitud);
+                var horasCarga = Math.Round(slots.Sum(s => s.DuracionHoras), 1);
+                var score = GeoHelper.Score(dist, horasCarga);
+
                 list.Add(new CandidatoDto(
                     p.Id, p.Email, p.Nombre, p.Latitud.Value, p.Longitud.Value,
-                    n, Math.Round(dist, 2), Math.Round(score, 2),
-                    disponibleEnHora,
-                    ocupadas.Select(t => t.ToString("HH\\:mm")).ToList(),
+                    slots.Count, horasCarga, Math.Round(dist, 2), Math.Round(score, 2),
+                    anclaOrigen, disponibleEnHora,
+                    slots.Select(s => s.Hora.ToString("HH\\:mm")).ToList(),
                     huecos.Select(t => t.ToString("HH\\:mm")).ToList()));
             }
 
             var ordenados = list
                 .OrderByDescending(x => x.DisponibleEnHora)
                 .ThenBy(x => x.Score)
-                .ThenBy(x => x.VisitasDelDia)
+                .ThenBy(x => x.HorasCargaDia)
                 .ThenBy(x => x.DistanciaKm)
                 .ToList();
 
@@ -385,8 +423,12 @@ public static class AuthUsersEndpoints
                     idEstablecimiento = estId,
                     latitud = ubic.Latitud,
                     longitud = ubic.Longitud,
+                    duracionEstimadaHoras = duracionCandidata,
+                    tamano = tamanoCandidata,
+                    cantidadCapitas = capitasByEst.GetValueOrDefault(estId),
                 },
-                gapHoras = GeoHelper.GapEntreVisitas.TotalHours,
+                gapHoras = duracionCandidata,
+                duracionDefaultHoras = GeoHelper.DuracionDefaultHoras,
                 pasoMinutos = (int)GeoHelper.PasoHueco.TotalMinutes,
                 recomendadoId = recomendado?.Id,
                 candidatos = ordenados.Select(c => new
@@ -397,7 +439,9 @@ public static class AuthUsersEndpoints
                     latitud = c.Latitud,
                     longitud = c.Longitud,
                     visitasDelDia = c.VisitasDelDia,
+                    horasCargaDia = c.HorasCargaDia,
                     distanciaKm = c.DistanciaKm,
+                    anclaOrigen = c.AnclaOrigen,
                     disponibleEnHora = c.DisponibleEnHora,
                     horasOcupadas = c.HorasOcupadas,
                     huecosDisponibles = c.HuecosDisponibles,
@@ -424,7 +468,7 @@ public static class AuthUsersEndpoints
             return Results.Ok(new
             {
                 preventoresActivos = nPrev,
-                nota = "Asignación por cercanía (Haversine) + carga del día; sin tope duro de visitas. Referencia operativa típica: 2–5 visitas/día.",
+                nota = "Asignación: distancia al ancla del día (visita anterior si hay; si no, base) + horas estimadas por cápitas (1/2/3 h). Sin tope duro de visitas.",
                 semana = porDia.OrderBy(x => x.fecha),
             });
         }).RequireAuthorization();
@@ -528,19 +572,46 @@ public static class AuthUsersEndpoints
         if (franjas.Count > 0 && !GeoHelper.HoraEnFranjas(hora, franjas))
             return "El preventor no tiene disponibilidad en ese día/hora.";
 
-        var ocupadas = await db.AgendaItems.AsNoTracking()
+        var agenda = await db.AgendaItems.AsNoTracking()
             .Where(a => a.UsuarioId == assignee.Id
                 && a.FechaPlanificada == fecha
                 && (a.Estado == "programada" || a.Estado == "realizada"))
-            .Select(a => a.HoraPlanificada)
+            .Select(a => new { a.HoraPlanificada, a.IdEstablecimiento })
             .ToListAsync();
-        if (ocupadas.Contains(hora))
+        if (agenda.Any(a => a.HoraPlanificada == hora))
             return "El preventor ya tiene una visita a esa hora.";
-        if (!GeoHelper.RespetaGap(hora, ocupadas))
-            return $"Se requieren al menos {(int)GeoHelper.GapEntreVisitas.TotalHours} h entre visitas del mismo preventor.";
 
-        _ = idEstablecimiento;
+        var estIds = agenda.Select(a => a.IdEstablecimiento).Append(idEstablecimiento).Distinct().ToList();
+        var capitas = await LoadCapitasByEstAsync(db, estIds);
+        var duracionCandidata = GeoHelper.DuracionEstimadaHoras(capitas.GetValueOrDefault(idEstablecimiento));
+        var slots = agenda
+            .Select(a => new GeoHelper.SlotOcupado(
+                a.HoraPlanificada,
+                GeoHelper.DuracionEstimadaHoras(capitas.GetValueOrDefault(a.IdEstablecimiento))))
+            .ToList();
+        if (!GeoHelper.RespetaGap(hora, duracionCandidata, slots))
+            return $"El turno se solapa con otra visita (duración estimada {duracionCandidata:0} h según tamaño/cápitas).";
+
         return null;
+    }
+
+    static async Task<Dictionary<string, double?>> LoadCapitasByEstAsync(AppDbContext db, List<string> ids)
+    {
+        var dict = new Dictionary<string, double?>(StringComparer.OrdinalIgnoreCase);
+        if (ids.Count == 0) return dict;
+        var snapId = await db.RankingSnapshots.AsNoTracking()
+            .Where(s => s.EsVigente)
+            .OrderByDescending(s => s.Id)
+            .Select(s => (int?)s.Id)
+            .FirstOrDefaultAsync();
+        if (snapId is null) return dict;
+        var rows = await db.RankingItems.AsNoTracking()
+            .Where(i => i.SnapshotId == snapId.Value && ids.Contains(i.IdEstablecimiento))
+            .Select(i => new { i.IdEstablecimiento, i.CantidadCapitas })
+            .ToListAsync();
+        foreach (var r in rows)
+            dict[r.IdEstablecimiento] = r.CantidadCapitas;
+        return dict;
     }
 
     static async Task SeedCabaUbicacionesAsync(AppDbContext db)
@@ -803,6 +874,7 @@ public static class AuthUsersEndpoints
 
     sealed record CandidatoDto(
         int Id, string Email, string Nombre, double Latitud, double Longitud,
-        int VisitasDelDia, double DistanciaKm, double Score,
-        bool DisponibleEnHora, List<string> HorasOcupadas, List<string> HuecosDisponibles);
+        int VisitasDelDia, double HorasCargaDia, double DistanciaKm, double Score,
+        string AnclaOrigen, bool DisponibleEnHora,
+        List<string> HorasOcupadas, List<string> HuecosDisponibles);
 }

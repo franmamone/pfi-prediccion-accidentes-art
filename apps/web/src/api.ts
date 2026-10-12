@@ -35,7 +35,10 @@ export type CandidatoAsignacion = {
   latitud: number;
   longitud: number;
   visitasDelDia: number;
+  horasCargaDia: number;
   distanciaKm: number;
+  /** base | visita_anterior | visita_siguiente | visita_ruta */
+  anclaOrigen: string;
   disponibleEnHora: boolean;
   horasOcupadas: string[];
   huecosDisponibles: string[];
@@ -665,8 +668,16 @@ export function confirmMfa(code: string) {
 export function fetchCandidatosAsignacion(fecha: string, hora: string, idEstablecimiento: string) {
   const qs = new URLSearchParams({ fecha, hora, idEstablecimiento });
   return request<{
-    establecimiento: { idEstablecimiento: string; latitud: number; longitud: number };
+    establecimiento: {
+      idEstablecimiento: string;
+      latitud: number;
+      longitud: number;
+      duracionEstimadaHoras?: number;
+      tamano?: string;
+      cantidadCapitas?: number | null;
+    };
     gapHoras: number;
+    duracionDefaultHoras?: number;
     pasoMinutos: number;
     recomendadoId: number | null;
     candidatos: CandidatoAsignacion[];
