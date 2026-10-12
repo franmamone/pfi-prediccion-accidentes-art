@@ -9,12 +9,12 @@ type ThemeState = {
 };
 
 const ThemeContext = createContext<ThemeState | null>(null);
-const STORAGE_KEY = "pfi_theme";
+const STORAGE_KEY = "pfi_theme_v2";
 
 function readInitial(): ThemeMode {
   const stored = localStorage.getItem(STORAGE_KEY);
   if (stored === "light" || stored === "dark") return stored;
-  return "dark";
+  return "light";
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {

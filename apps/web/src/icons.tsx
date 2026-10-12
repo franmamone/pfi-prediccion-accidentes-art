@@ -287,6 +287,17 @@ export function IconTrash(p: IconProps) {
   );
 }
 
+export function IconMic(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z" />
+      <path d="M5 11a7 7 0 0 0 14 0" />
+      <path d="M12 18v3" />
+      <path d="M8 21h8" />
+    </Svg>
+  );
+}
+
 export function IconHistory(p: IconProps) {
   return (
     <Svg {...p}>

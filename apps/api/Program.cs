@@ -1762,6 +1762,37 @@ app.MapGet("/api/establecimientos/{id}/acta/contexto-cierre", async (
     });
 }).RequireAuthorization();
 
+// Catálogo de ítems del formulario RGRL (para agregar hallazgos fuera de los focos precargados).
+app.MapGet("/api/acta/items-rgrl", async (
+    ClaimsPrincipal principal,
+    AppDbContext db,
+    string? q) =>
+{
+    var user = await GetCurrentUserAsync(principal, db);
+    if (user is null) return Results.Unauthorized();
+
+    var items = await GetRgrlCatalogItemsAsync(db);
+    if (!string.IsNullOrWhiteSpace(q))
+    {
+        var needle = q.Trim();
+        items = items
+            .Where(i => i.Label.Contains(needle, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
+
+    return Results.Ok(new
+    {
+        total = items.Count,
+        items = items.Select(i => new
+        {
+            id = i.Id,
+            label = i.Label,
+            actividad = i.Actividad,
+            normaRef = i.NormaRef,
+        }),
+    });
+}).RequireAuthorization();
+
 app.MapGet("/api/establecimientos/{id}/hallazgos-abiertos", async (
     string id,
     ClaimsPrincipal principal,
@@ -1966,6 +1997,82 @@ app.MapPost("/api/establecimientos/{id}/acta/sugerir", async (
             modelo = result.Modelo,
             hallazgos,
             nota = "Borradores efímeros: no se guardan hasta confirmar el cierre de la visita.",
+        });
+    }
+    catch (GeminiException ex)
+    {
+        return Results.Json(new { error = ex.Message }, statusCode: 502);
+    }
+}).RequireAuthorization();
+
+/// <summary>
+/// Mejora el borrador de un hallazgo escrito por el preventor y completa campos
+/// (recomendación, severidad, plazo, norma). No inventa hechos nuevos.
+/// </summary>
+app.MapPost("/api/establecimientos/{id}/acta/mejorar-hallazgo", async (
+    string id,
+    MejorarHallazgoRequest request,
+    ClaimsPrincipal principal,
+    AppDbContext db,
+    GeminiClient gemini) =>
+{
+    var user = await GetCurrentUserAsync(principal, db);
+    if (user is null) return Results.Unauthorized();
+    if (!gemini.Configurado)
+        return Results.Json(new { error = "El servicio de IA no está configurado." }, statusCode: 503);
+
+    var borrador = (request.Borrador ?? request.Hallazgo ?? "").Trim();
+    if (borrador.Length < 8)
+        return Results.BadRequest(new { error = "Escribí un resumen del hallazgo (al menos unas palabras) para que la IA lo mejore." });
+
+    var estId = id.Trim();
+    var dossier = await db.EstablecimientoDossiers.AsNoTracking()
+        .FirstOrDefaultAsync(d => d.IdEstablecimiento == estId);
+    var contexto = ExtractContextoCortoDossier(dossier?.DossierJson);
+
+    var sb = new StringBuilder();
+    sb.AppendLine("Sos un asistente de prevención de riesgos laborales (Argentina, SRT).");
+    sb.AppendLine("El preventor escribió un BORRADOR de hallazgo. Mejorá la redacción y completá los campos.");
+    sb.AppendLine("REGLAS:");
+    sb.AppendLine("- No inventes hechos que el preventor no mencionó.");
+    sb.AppendLine("- Podés ordenar, aclarar y proponer recomendación/plazo/norma razonables.");
+    sb.AppendLine("- Español rioplatense, concreto, accionable.");
+    sb.AppendLine("- Respondé SOLO un JSON object (sin markdown):");
+    sb.AppendLine("""{"severidad":"baja|media|alta","hallazgo":"...","recomendacion":"...","plazoDias":30,"normaRef":"Res. SRT … o null","itemRgrl":"opcional o null"}""");
+    sb.AppendLine();
+    if (!string.IsNullOrWhiteSpace(request.ItemLabel))
+    {
+        sb.AppendLine("Ítem del checklist vinculado:");
+        sb.AppendLine(request.ItemLabel.Trim());
+        sb.AppendLine();
+    }
+    if (!string.IsNullOrWhiteSpace(contexto))
+    {
+        sb.AppendLine("=== CONTEXTO HISTÓRICO (anonimizado, solo apoyo) ===");
+        sb.AppendLine(contexto);
+        sb.AppendLine();
+    }
+    sb.AppendLine("=== BORRADOR DEL PREVENTOR ===");
+    sb.AppendLine(borrador);
+    if (!string.IsNullOrWhiteSpace(request.Recomendacion))
+    {
+        sb.AppendLine();
+        sb.AppendLine("Recomendación previa (mejorala si aporta):");
+        sb.AppendLine(request.Recomendacion.Trim());
+    }
+
+    try
+    {
+        var result = await gemini.GenerarAsync(sb.ToString());
+        var mejorado = ParseHallazgoMejorado(result.Texto);
+        if (mejorado is null)
+            return Results.Json(new { error = "La IA no devolvió un hallazgo usable. Reintentá." }, statusCode: 502);
+
+        return Results.Ok(new
+        {
+            modelo = result.Modelo,
+            hallazgo = mejorado,
+            nota = "Borrador mejorado: revisá y editá antes de confirmar el acta.",
         });
     }
     catch (GeminiException ex)
@@ -2253,18 +2360,99 @@ static (string? Hallazgos, string? Acciones) BuildResumenVisitaDesdeActa(
         string.IsNullOrWhiteSpace(acciones) ? null : acciones);
 }
 
+static async Task<List<RgrlCatalogItem>> GetRgrlCatalogItemsAsync(AppDbContext db)
+{
+    lock (RgrlCatalogCache.Gate)
+    {
+        if (RgrlCatalogCache.Items is { Count: > 0 })
+            return RgrlCatalogCache.Items;
+    }
+
+    var chunks = await db.NormativaChunks.AsNoTracking()
+        .Where(c => c.Activo && c.SourceId == "rgrl" && c.Tema == "rgrl_checklist")
+        .OrderBy(c => c.Orden)
+        .Select(c => new { c.Id, c.Texto, c.Actividad, c.NormaRef })
+        .ToListAsync();
+
+    var itemRx = new System.Text.RegularExpressions.Regex(
+        @"^(?<n>\d{1,3})\.\s+(?<body>.+)$",
+        System.Text.RegularExpressions.RegexOptions.Multiline | System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+    var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    var list = new List<RgrlCatalogItem>();
+
+    foreach (var chunk in chunks)
+    {
+        foreach (System.Text.RegularExpressions.Match m in itemRx.Matches(chunk.Texto ?? ""))
+        {
+            var num = m.Groups["n"].Value;
+            var label = FormatRgrlFormItemLabel(m.Groups["body"].Value);
+            if (label.Length < 8 || IsVagueChecklistLabel(label)) continue;
+            if (!seen.Add(label)) continue;
+            list.Add(new RgrlCatalogItem(
+                $"rgrl-{chunk.Id}-{num}",
+                label,
+                chunk.Actividad,
+                chunk.NormaRef));
+        }
+    }
+
+    lock (RgrlCatalogCache.Gate)
+    {
+        RgrlCatalogCache.Items = list;
+        return list;
+    }
+}
+
+static string FormatRgrlFormItemLabel(string raw)
+{
+    var t = (raw ?? "").Trim().Replace('\n', ' ').Replace('\r', ' ');
+    t = System.Text.RegularExpressions.Regex.Replace(t, @"\s+", " ");
+    // Cortar citas legales y encabezados de sección pegados al final.
+    t = System.Text.RegularExpressions.Regex.Replace(
+        t,
+        @"\s*\?\s*(Art\.|Arts\.|Cap\.|Dec\.|Res\.|Ley)\b.*$",
+        "?",
+        System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+    t = System.Text.RegularExpressions.Regex.Replace(
+        t,
+        @"\s+(Art\.|Arts\.|Cap\.|Dec\.|Res\.|Ley)\b.*$",
+        "",
+        System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+    t = System.Text.RegularExpressions.Regex.Replace(t, @"\s+[A-ZÁÉÍÓÚÜÑ0-9 /()\-]{10,}$", "");
+    t = System.Text.RegularExpressions.Regex.Replace(t, @"^¿\s*", "").Trim();
+    t = t.TrimEnd('?', ' ', '.', ';');
+    t = FormatChecklistLabel(t, max: 0);
+    if (t.Length > 0)
+        t = char.ToUpperInvariant(t[0]) + t[1..];
+    return t;
+}
+
 static async Task<List<object>> BuildChecklistSugeridoAsync(AppDbContext db, string idEstablecimiento)
 {
+    // Focos de esta visita: núcleo + todos los del dossier (historial y accidentes).
+    // No es el RGRL completo; el tope lo pone el dossier, no un recorte artificial.
     var items = new List<object>();
     var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    var tieneHistorial = false;
+    var tieneAccidentes = false;
 
     void Add(string id, string label, string origen)
     {
-        var key = FormatChecklistLabel(label);
+        var key = CleanChecklistFocusLabel(label);
         if (key.Length < 4 || !seen.Add(key)) return;
-        if (items.Count >= 12) return;
-        items.Add(new { id, label = key, estado = "ok", origen });
+        if (IsVagueChecklistLabel(key)) return;
+        items.Add(new { id, label = key, estado = "no_aplica", origen });
     }
+
+    // Núcleo fijo: lo que casi siempre se mira en una visita.
+    string[] nucleo =
+    [
+        "Orden y limpieza de áreas de trabajo",
+        "Uso y estado de EPP",
+        "Documentación de higiene y seguridad vigente",
+    ];
+    for (var i = 0; i < nucleo.Length; i++)
+        Add($"core-{i}", nucleo[i], "nucleo");
 
     var dossier = await db.EstablecimientoDossiers.AsNoTracking()
         .FirstOrDefaultAsync(d => d.IdEstablecimiento == idEstablecimiento);
@@ -2281,10 +2469,11 @@ static async Task<List<object>> BuildChecklistSugeridoAsync(AppDbContext db, str
                 var i = 0;
                 foreach (var e in inc.EnumerateArray())
                 {
-                    if (i >= 5) break;
                     var k = e.TryGetProperty("k", out var kv) ? kv.GetString() : null;
                     if (string.IsNullOrWhiteSpace(k)) continue;
-                    Add($"inc-{i}", k, "incumplimiento");
+                    var before = items.Count;
+                    Add($"inc-{i}", k, "historial");
+                    if (items.Count > before) tieneHistorial = true;
                     i++;
                 }
             }
@@ -2295,10 +2484,11 @@ static async Task<List<object>> BuildChecklistSugeridoAsync(AppDbContext db, str
                 var i = 0;
                 foreach (var e in formas.EnumerateArray())
                 {
-                    if (i >= 3) break;
                     var k = e.TryGetProperty("k", out var kv) ? kv.GetString() : null;
                     if (string.IsNullOrWhiteSpace(k)) continue;
-                    Add($"acc-{i}", $"Verificar controles frente a: {k}", "accidente");
+                    var before = items.Count;
+                    Add($"acc-{i}", FormatAccidentFocusLabel(k), "accidente");
+                    if (items.Count > before) tieneAccidentes = true;
                     i++;
                 }
             }
@@ -2309,47 +2499,158 @@ static async Task<List<object>> BuildChecklistSugeridoAsync(AppDbContext db, str
         }
     }
 
-    var chunks = await db.NormativaChunks.AsNoTracking()
-        .Where(c => c.Activo && (c.Tema == "rgrl_checklist" || c.Tema == "rgrl_obligacion"))
-        .OrderBy(c => c.Id)
-        .Take(40)
-        .Select(c => new { c.Id, c.Titulo, c.Texto })
-        .ToListAsync();
-
-    var rgrlAdded = 0;
-    foreach (var c in chunks)
-    {
-        if (rgrlAdded >= 5 || items.Count >= 12) break;
-        var label = !string.IsNullOrWhiteSpace(c.Titulo)
-            ? c.Titulo!
-            : (c.Texto ?? "");
-        if (string.IsNullOrWhiteSpace(label)) continue;
-        Add($"rgrl-{c.Id}", label, "rgrl");
-        rgrlAdded++;
-    }
-
-    if (items.Count < 6)
+    // Solo si no hay focos propios del establecimiento: relleno genérico mínimo.
+    if (!tieneHistorial && !tieneAccidentes)
     {
         string[] fallback =
         [
-            "Orden y limpieza de áreas de trabajo",
-            "Uso y estado de EPP",
             "Señalización de riesgos y vías de evacuación",
             "Estado de extintores y medios de lucha contra incendio",
-            "Protecciones de máquinas / resguardos",
-            "Capacitación / inducción vigente del personal",
+            "Protecciones de máquinas y resguardos",
+            "Capacitación e inducción vigente del personal",
             "Botiquín y primeros auxilios",
             "Registro de entregas de EPP",
         ];
-        var i = 0;
+        var fi = 0;
         foreach (var f in fallback)
-        {
-            if (items.Count >= 10) break;
-            Add($"base-{i++}", f, "base");
-        }
+            Add($"base-{fi++}", f, "base");
     }
 
     return items;
+}
+
+static string FormatAccidentFocusLabel(string forma)
+{
+    var f = CleanChecklistFocusLabel(forma);
+    f = System.Text.RegularExpressions.Regex.Replace(
+        f,
+        @"^ca[ií]das de personas que ocurren al\s+",
+        "Caídas al ",
+        System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+    f = System.Text.RegularExpressions.Regex.Replace(
+        f,
+        @"^choque de veh[ií]culos\.?$",
+        "Choque de vehículos",
+        System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+    // Sin ":" para no disparar subtítulos falsos en la UI.
+    return $"Prevención de {f.TrimEnd('.')}";
+}
+
+static string CleanChecklistFocusLabel(string s, int max = 0)
+{
+    var t = FormatChecklistLabel(s, max: 0);
+    // Corpus a veces llega cortado con "..." / "…" o a mitad de palabra (sanitize duro).
+    var truncated = System.Text.RegularExpressions.Regex.IsMatch(t, @"(\.\.\.|…)\s*$")
+        || LooksHardTruncatedChecklistLabel(t);
+    t = System.Text.RegularExpressions.Regex.Replace(t, @"(\.\.\.|…)+\s*$", "").Trim();
+    t = t.Trim().TrimEnd(',', ';', '·', '-', '–', '—', ' ');
+    t = System.Text.RegularExpressions.Regex.Replace(t, @"\s+", " ");
+
+    // "TEMA: detalle" → una sola frase legible.
+    var colon = t.IndexOf(": ", StringComparison.Ordinal);
+    if (colon is > 0 and < 48 && colon < t.Length - 3)
+    {
+        var head = t[..colon].Trim();
+        var tail = t[(colon + 2)..].Trim();
+        if (tail.Length > 0 && !head.Equals(tail, StringComparison.OrdinalIgnoreCase))
+        {
+            if (truncated || LooksIncompleteChecklistTail(tail) || LooksHardTruncatedChecklistLabel(tail))
+                t = ToSentenceCase(head);
+            else if (tail.Contains(head, StringComparison.OrdinalIgnoreCase) && tail.Length < head.Length + 40)
+                t = ToSentenceCase(tail);
+            else
+                t = $"{ToSentenceCase(head)}. {ToSentenceCase(tail)}";
+        }
+    }
+    else
+    {
+        // "Tema. Detalle cortado a medias" → quedarse con el tema (1ª oración completa).
+        var dot = t.IndexOf(". ", StringComparison.Ordinal);
+        if (dot > 12 && dot < t.Length - 3)
+        {
+            var head = t[..dot].Trim();
+            var tail = t[(dot + 2)..].Trim();
+            if (truncated || LooksIncompleteChecklistTail(tail) || LooksHardTruncatedChecklistLabel(tail))
+                t = ToSentenceCase(head);
+            else if (tail.Contains(head, StringComparison.OrdinalIgnoreCase) && tail.Length < head.Length + 40)
+                t = ToSentenceCase(tail);
+            else if (t.Length > 140 || LooksHardTruncatedChecklistLabel(t))
+                t = truncated || LooksHardTruncatedChecklistLabel(t)
+                    ? ToSentenceCase(head)
+                    : $"{ToSentenceCase(head)}. {ToSentenceCase(tail)}";
+        }
+        else if ((truncated || LooksHardTruncatedChecklistLabel(t)) && t.Length > 24)
+        {
+            // Sin punto: sacar la última palabra incompleta.
+            var lastSpace = t.LastIndexOf(' ');
+            if (lastSpace > 16) t = t[..lastSpace].TrimEnd(',', ';', ' ');
+        }
+    }
+
+    if (max > 0 && t.Length > max)
+    {
+        var cut = t[..max];
+        var lastSpace = cut.LastIndexOf(' ');
+        if (lastSpace > max / 2) cut = cut[..lastSpace];
+        t = cut.TrimEnd(',', '.', ':', ';');
+    }
+    return t;
+}
+
+static bool LooksHardTruncatedChecklistLabel(string s)
+{
+    if (string.IsNullOrWhiteSpace(s)) return true;
+    s = s.Trim();
+    if (System.Text.RegularExpressions.Regex.IsMatch(s, @"(\.\.\.|…)\s*$")) return true;
+    if (s.EndsWith(',') || s.EndsWith(';') || s.EndsWith('-') || s.EndsWith('/')) return true;
+    // Última "palabra" de 1–3 letras que no es palabra funcional → corte a medias ("y ca").
+    var parts = s.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+    if (parts.Length == 0) return true;
+    var last = parts[^1];
+    if (last.Length is >= 1 and <= 3 &&
+        !System.Text.RegularExpressions.Regex.IsMatch(
+            last,
+            @"^(y|e|o|u|de|la|el|lo|un|en|al|no|si|sí|ya|ni|se|su|es|ha|he|me|te|le|nos|les|más|muy|sin|con|por|que|qué|cómo|como|epp|art|srt)$",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+        return true;
+    return false;
+}
+
+static bool LooksIncompleteChecklistTail(string s)
+{
+    if (string.IsNullOrWhiteSpace(s)) return true;
+    if (s.Length < 16) return true;
+    if (LooksHardTruncatedChecklistLabel(s)) return true;
+    return System.Text.RegularExpressions.Regex.IsMatch(
+        s,
+        @"\b(y|e|o|u|de|del|la|las|el|los|un|una|unos|unas|a|al|en|con|por|para|que|se|su|sus|indicar|realizar|acreditar|disponer|medici[oó]n)\s*$",
+        System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+}
+
+static string ToSentenceCase(string s)
+{
+    if (string.IsNullOrWhiteSpace(s)) return "";
+    s = s.Trim();
+    // Si viene TODO EN MAYÚSCULAS, bajar y capitalizar.
+    var letters = s.Where(char.IsLetter).ToArray();
+    if (letters.Length >= 4 && letters.Count(char.IsUpper) >= letters.Length * 0.7)
+    {
+        s = s.ToLowerInvariant();
+        return char.ToUpperInvariant(s[0]) + s[1..];
+    }
+    return s;
+}
+
+/// <summary>Filtra títulos meta del corpus RGRL que no sirven como ítem de acta.</summary>
+static bool IsVagueChecklistLabel(string label)
+{
+    var t = label.Trim().ToLowerInvariant();
+    if (t.Length < 8) return true;
+    if (t.Contains("reglas generales del relevamiento", StringComparison.Ordinal)) return true;
+    if (t.Contains("cumplimiento dec.", StringComparison.Ordinal)) return true;
+    if (System.Text.RegularExpressions.Regex.IsMatch(t, @"[íi]tems?\s*\d+\s*[-–—]\s*\d+")) return true;
+    if (System.Text.RegularExpressions.Regex.IsMatch(t, @"^rgrl(\s+(industria|obra|comercio|agro))?$")) return true;
+    return false;
 }
 
 static string FormatChecklistLabel(string s, int max = 0)
@@ -2470,19 +2771,57 @@ static string ExtractContextoCortoDossier(string? dossierJson)
     }
 }
 
-static List<object> ParseHallazgosSugeridos(string texto)
+static string StripJsonFence(string texto)
 {
     var raw = (texto ?? "").Trim();
-    if (raw.StartsWith("```", StringComparison.Ordinal))
+    if (!raw.StartsWith("```", StringComparison.Ordinal)) return raw;
+    var end = raw.LastIndexOf("```", StringComparison.Ordinal);
+    if (end <= 3) return raw;
+    raw = raw[3..end].Trim();
+    if (raw.StartsWith("json", StringComparison.OrdinalIgnoreCase))
+        raw = raw[4..].Trim();
+    return raw;
+}
+
+static object? ParseHallazgoMejorado(string texto)
+{
+    var raw = StripJsonFence(texto);
+    var start = raw.IndexOf('{');
+    var endObj = raw.LastIndexOf('}');
+    if (start < 0 || endObj <= start) return null;
+
+    try
     {
-        var end = raw.LastIndexOf("```", StringComparison.Ordinal);
-        if (end > 3)
+        using var doc = JsonDocument.Parse(raw[start..(endObj + 1)]);
+        var e = doc.RootElement;
+        var hallazgo = e.TryGetProperty("hallazgo", out var h) ? h.GetString() : null;
+        if (string.IsNullOrWhiteSpace(hallazgo)) return null;
+        var sev = e.TryGetProperty("severidad", out var s) ? s.GetString() : "media";
+        var rec = e.TryGetProperty("recomendacion", out var r) ? r.GetString() : null;
+        int? plazo = e.TryGetProperty("plazoDias", out var p) && p.TryGetInt32(out var pd) ? pd : 30;
+        var norma = e.TryGetProperty("normaRef", out var n) ? n.GetString() : null;
+        var item = e.TryGetProperty("itemRgrl", out var ir) ? ir.GetString() : null;
+        return new
         {
-            raw = raw[3..end].Trim();
-            if (raw.StartsWith("json", StringComparison.OrdinalIgnoreCase))
-                raw = raw[4..].Trim();
-        }
+            severidad = NormalizeSeveridad(sev),
+            hallazgo = hallazgo.Trim(),
+            recomendacion = string.IsNullOrWhiteSpace(rec) ? null : rec.Trim(),
+            plazoDias = plazo,
+            normaRef = string.IsNullOrWhiteSpace(norma) ? null : norma.Trim(),
+            itemRgrl = string.IsNullOrWhiteSpace(item) ? null : item.Trim(),
+            estado = "abierto",
+            origen = "sugerido_aceptado",
+        };
     }
+    catch
+    {
+        return null;
+    }
+}
+
+static List<object> ParseHallazgosSugeridos(string texto)
+{
+    var raw = StripJsonFence(texto);
     var start = raw.IndexOf('[');
     var endArr = raw.LastIndexOf(']');
     if (start < 0 || endArr <= start) return [];
@@ -3337,6 +3676,13 @@ static async Task SeedAdminAsync(AppDbContext db)
     await db.SaveChangesAsync();
 }
 
+file static class RgrlCatalogCache
+{
+    public static readonly object Gate = new();
+    public static List<RgrlCatalogItem>? Items;
+}
+
+record RgrlCatalogItem(string Id, string Label, string? Actividad, string? NormaRef);
 record LoginRequest(string Email, string Password);
 record UpdateProfileRequest(string Nombre);
 record ChangePasswordRequest(string Actual, string Nueva);
@@ -3375,5 +3721,11 @@ record SugerirActaRequest(
     List<ChecklistItemDto>? Checklist,
     string? Notas,
     List<HallazgoActaDto>? HallazgosPrevios);
+record MejorarHallazgoRequest(
+    string? Borrador,
+    string? Hallazgo,
+    string? Recomendacion,
+    string? ItemLabel,
+    string? Severidad);
 record PatchHallazgoRequest(string? Estado);
 record CancelarVisitaRequest(string MotivoCancelacion);

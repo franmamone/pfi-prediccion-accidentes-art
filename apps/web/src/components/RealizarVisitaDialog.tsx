@@ -1,16 +1,17 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
   fetchActaContextoCierre,
+  fetchActaItemsRgrl,
   realizarVisita,
   shortId,
-  sugerirActaHallazgos,
   type AgendaItem,
   type ChecklistItemActa,
   type HallazgoActaDraft,
+  type RgrlCatalogItem,
 } from "../api";
+import { IconMic } from "../icons";
 import { riesgoLabel } from "../labels";
-import { DateField } from "./DateField";
-import { TimeField } from "./TimeField";
+import { Select } from "./Select";
 
 type Props = {
   item: AgendaItem;
@@ -20,31 +21,76 @@ type Props = {
 
 type ChecklistEstado = ChecklistItemActa["estado"];
 
+type SpeechRecognitionLike = {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  onresult: ((ev: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+  onerror: (() => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+};
+
+type SpeechWindow = Window & {
+  SpeechRecognition?: new () => SpeechRecognitionLike;
+  webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+};
+
 const CHECKLIST_ESTADOS: { value: ChecklistEstado; label: string }[] = [
   { value: "ok", label: "OK" },
   { value: "observacion", label: "Obs." },
   { value: "no_aplica", label: "N/A" },
 ];
 
-const RESULTADOS: { value: "ok" | "observacion" | "critico"; label: string }[] = [
-  { value: "ok", label: "OK" },
-  { value: "observacion", label: "Con observaciones" },
-  { value: "critico", label: "Crítico" },
+const CHECKLIST_ACROS = ["RGRL", "EPP", "PRS", "PESE", "SRT", "ART", "RAR", "IGE"];
+
+const CHECKLIST_SECCIONES: { origenes: string[]; titulo: string }[] = [
+  { origenes: ["nucleo"], titulo: "Básicos" },
+  { origenes: ["historial"], titulo: "Historial del establecimiento" },
+  { origenes: ["accidente"], titulo: "Por accidentes" },
+  { origenes: ["base"], titulo: "Complementarios" },
 ];
 
-function emptyHallazgo(): HallazgoActaDraft {
-  return {
-    severidad: "media",
-    hallazgo: "",
-    recomendacion: "",
-    plazoDias: 30,
-    normaRef: "",
-    estado: "abierto",
-    origen: "manual",
-  };
+type ExtraHallazgo = { id: string; itemId: string; tema: string; texto: string };
+
+function newExtraId() {
+  return `extra-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
-const CHECKLIST_ACROS = ["RGRL", "EPP", "PRS", "PESE", "SRT", "ART", "RAR", "IGE"];
+function normalizeFocusKey(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .replace(/[¿?¡!]/g, " ")
+    .replace(/\b(art|arts|cap|dec|res|ley)\b.*$/i, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function focusOverlaps(a: string, b: string): boolean {
+  const na = normalizeFocusKey(a);
+  const nb = normalizeFocusKey(b);
+  if (!na || !nb) return false;
+  if (na === nb) return true;
+  if (na.length >= 14 && nb.includes(na)) return true;
+  if (nb.length >= 14 && na.includes(nb)) return true;
+  return false;
+}
+
+function groupChecklist(items: ChecklistItemActa[]) {
+  const used = new Set<string>();
+  const groups = CHECKLIST_SECCIONES.map((sec) => {
+    const list = items.filter((c) => sec.origenes.includes(c.origen ?? ""));
+    list.forEach((c) => used.add(c.id));
+    return { titulo: sec.titulo, items: list };
+  }).filter((g) => g.items.length > 0);
+  const resto = items.filter((c) => !used.has(c.id));
+  if (resto.length > 0) groups.push({ titulo: "Otros focos", items: resto });
+  return groups;
+}
 
 function formatChecklistLabel(raw: string): string {
   let t = raw
@@ -56,6 +102,7 @@ function formatChecklistLabel(raw: string): string {
     .replace(/\s{2,}/g, " ")
     .replace(/:{2,}/g, ":")
     .replace(/^:\s*/, "")
+    .replace(/(\.\.\.|…)+\s*$/g, "")
     .trim();
 
   const parts = t
@@ -69,7 +116,6 @@ function formatChecklistLabel(raw: string): string {
 function formatChecklistSegment(segment: string): string {
   const s = segment.trim();
   if (!s) return s;
-  // Prefijos RGRL cortos: dejar limpios para usarlos como título.
   const rgrl = s.match(/^(rgrl)(\s+industria|\s+obra|\s+comercio|\s+agro)?$/i);
   if (rgrl) {
     return ["RGRL", rgrl[2]?.trim().toLowerCase()].filter(Boolean).join(" ");
@@ -90,55 +136,42 @@ function formatChecklistSegment(segment: string): string {
   return out;
 }
 
-function splitChecklistLabel(label: string): { title: string | null; detail: string } {
-  const formatted = formatChecklistLabel(label);
-
-  // "RGRL industria: …" / "RGRL: …"
-  const rgrl = formatted.match(/^(RGRL(?:\s+(?:industria|obra|comercio|agro))?):\s*(.+)$/i);
-  if (rgrl) {
-    return { title: rgrl[1].toUpperCase(), detail: rgrl[2] };
-  }
-
-  const sep = formatted.indexOf(": ");
-  if (sep > 0 && sep < 90) {
-    return {
-      title: formatted.slice(0, sep).toUpperCase(),
-      detail: formatted.slice(sep + 2),
-    };
-  }
-  return { title: null, detail: formatted };
-}
-
-function todayIso(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
-function addDaysIso(days: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + days);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+function speechSupported(): boolean {
+  const w = window as SpeechWindow;
+  return Boolean(w.SpeechRecognition || w.webkitSpeechRecognition);
 }
 
 export function RealizarVisitaDialog({ item, onClose, onDone }: Props) {
-  const [resultadoGlobal, setResultadoGlobal] = useState<"ok" | "observacion" | "critico">(
-    "observacion",
-  );
-  const [revisita, setRevisita] = useState(false);
-  const [fechaRevisita, setFechaRevisita] = useState(addDaysIso(30));
-  const [horaRevisita, setHoraRevisita] = useState("09:00");
-  const [notasActa, setNotasActa] = useState("");
   const [checklist, setChecklist] = useState<ChecklistItemActa[]>([]);
-  const [hallazgos, setHallazgos] = useState<HallazgoActaDraft[]>([emptyHallazgo()]);
+  /** Texto de hallazgo por ítem Obs. (clave = checklist id). */
+  const [obsNotas, setObsNotas] = useState<Record<string, string>>({});
+  /** Hallazgos fuera de la lista sugerida (ítem RGRL + texto). */
+  const [extras, setExtras] = useState<ExtraHallazgo[]>([]);
+  const [rgrlItems, setRgrlItems] = useState<RgrlCatalogItem[]>([]);
   const [abiertosPrevios, setAbiertosPrevios] = useState<number>(0);
   const [loadingCtx, setLoadingCtx] = useState(true);
-  const [sugeriendo, setSugeriendo] = useState(false);
+  const [listeningId, setListeningId] = useState<string | null>(null);
+  const [micError, setMicError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const canMic = speechSupported();
+
+  const rgrlOptionsDisponibles = useMemo(() => {
+    const usados = new Set(extras.map((x) => x.itemId).filter(Boolean));
+    return rgrlItems
+      .filter((it) => !usados.has(it.id))
+      .filter((it) => !checklist.some((c) => focusOverlaps(c.label, it.label)))
+      .map((it) => ({ value: it.id, label: it.label }));
+  }, [rgrlItems, checklist, extras]);
 
   useEffect(() => {
     let cancelled = false;
     setLoadingCtx(true);
+    setRgrlItems([]);
+    setObsNotas({});
+    setExtras([]);
+
     fetchActaContextoCierre(item.idEstablecimiento)
       .then((ctx) => {
         if (cancelled) return;
@@ -146,7 +179,8 @@ export function RealizarVisitaDialog({ item, onClose, onDone }: Props) {
           (ctx.checklistSugerido ?? []).map((c) => ({
             id: c.id,
             label: formatChecklistLabel(c.label),
-            estado: "ok",
+            estado: "no_aplica" as const,
+            origen: c.origen,
           })),
         );
         setAbiertosPrevios(ctx.hallazgosAbiertos?.length ?? 0);
@@ -154,98 +188,196 @@ export function RealizarVisitaDialog({ item, onClose, onDone }: Props) {
       .catch(() => {
         if (!cancelled) {
           setChecklist([
-            { id: "base-0", label: "Orden y limpieza", estado: "ok" },
-            { id: "base-1", label: "EPP", estado: "ok" },
-            { id: "base-2", label: "Señalización", estado: "ok" },
+            { id: "core-0", label: "Orden y limpieza de áreas de trabajo", estado: "no_aplica", origen: "nucleo" },
+            { id: "core-1", label: "Uso y estado de EPP", estado: "no_aplica", origen: "nucleo" },
+            { id: "core-2", label: "Documentación de higiene y seguridad vigente", estado: "no_aplica", origen: "nucleo" },
+            { id: "base-0", label: "Señalización de riesgos y vías de evacuación", estado: "no_aplica", origen: "base" },
+            { id: "base-1", label: "Protecciones de máquinas y resguardos", estado: "no_aplica", origen: "base" },
           ]);
         }
       })
       .finally(() => {
         if (!cancelled) setLoadingCtx(false);
       });
+
+    fetchActaItemsRgrl()
+      .then((cat) => {
+        if (!cancelled) setRgrlItems(cat.items ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setRgrlItems([]);
+      });
+
     return () => {
       cancelled = true;
+      recognitionRef.current?.stop();
     };
   }, [item.idEstablecimiento]);
 
   function setChecklistEstado(id: string, estado: ChecklistEstado) {
     setChecklist((prev) => prev.map((c) => (c.id === id ? { ...c, estado } : c)));
-  }
-
-  function updateHallazgo(index: number, patch: Partial<HallazgoActaDraft>) {
-    setHallazgos((prev) => prev.map((h, i) => (i === index ? { ...h, ...patch } : h)));
-  }
-
-  function removeHallazgo(index: number) {
-    setHallazgos((prev) => (prev.length <= 1 ? [emptyHallazgo()] : prev.filter((_, i) => i !== index)));
-  }
-
-  async function onSugerir() {
-    setSugeriendo(true);
-    setError(null);
-    try {
-      const res = await sugerirActaHallazgos(item.idEstablecimiento, {
-        checklist,
-        notas: notasActa.trim() || undefined,
+    if (estado !== "observacion") {
+      setObsNotas((prev) => {
+        if (!(id in prev)) return prev;
+        const copy = { ...prev };
+        delete copy[id];
+        return copy;
       });
-      const drafts = (res.hallazgos ?? []).filter((h) => h.hallazgo?.trim());
-      if (drafts.length === 0) {
-        setError("La IA no devolvió borradores útiles. Probá marcar observaciones en el checklist.");
-        return;
-      }
-      setHallazgos((prev) => {
-        const keep = prev.filter((h) => h.hallazgo.trim());
-        return [
-          ...keep,
-          ...drafts.map((d) => ({
-            severidad: (d.severidad as HallazgoActaDraft["severidad"]) || "media",
-            hallazgo: d.hallazgo,
-            recomendacion: d.recomendacion ?? "",
-            plazoDias: d.plazoDias ?? 30,
-            normaRef: d.normaRef ?? "",
-            itemRgrl: d.itemRgrl ?? "",
-            estado: "abierto" as const,
-            origen: "sugerido_aceptado" as const,
-          })),
-        ];
-      });
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "No se pudieron sugerir hallazgos");
-    } finally {
-      setSugeriendo(false);
+      if (listeningId === id) stopListening();
+    } else {
+      setObsNotas((prev) => (id in prev ? prev : { ...prev, [id]: "" }));
     }
+  }
+
+  function stopListening() {
+    try {
+      recognitionRef.current?.stop();
+    } catch {
+      /* ignore */
+    }
+    recognitionRef.current = null;
+    setListeningId(null);
+  }
+
+  function appendTranscript(targetId: string, chunk: string) {
+    if (targetId.startsWith("extra-")) {
+      setExtras((prev) =>
+        prev.map((x) => {
+          if (x.id !== targetId) return x;
+          const cur = x.texto.trim();
+          return { ...x, texto: cur ? `${cur} ${chunk}` : chunk };
+        }),
+      );
+      return;
+    }
+    setObsNotas((prev) => {
+      const cur = (prev[targetId] ?? "").trim();
+      return { ...prev, [targetId]: cur ? `${cur} ${chunk}` : chunk };
+    });
+  }
+
+  function toggleMic(itemId: string) {
+    setMicError(null);
+    setError(null);
+    if (!canMic) {
+      setMicError("Tu navegador no soporta dictado por micrófono. Escribí el texto a mano.");
+      return;
+    }
+    if (listeningId === itemId) {
+      stopListening();
+      return;
+    }
+    stopListening();
+
+    const w = window as SpeechWindow;
+    const Ctor = w.SpeechRecognition || w.webkitSpeechRecognition;
+    if (!Ctor) return;
+
+    const rec = new Ctor();
+    rec.lang = "es-AR";
+    rec.continuous = false;
+    rec.interimResults = false;
+    rec.onresult = (ev) => {
+      const chunk = Array.from(ev.results)
+        .map((r) => r[0]?.transcript ?? "")
+        .join(" ")
+        .trim();
+      if (!chunk) return;
+      appendTranscript(itemId, chunk);
+    };
+    rec.onerror = () => {
+      setMicError("No se pudo usar el micrófono. Revisá el permiso del navegador.");
+      setListeningId(null);
+      recognitionRef.current = null;
+    };
+    rec.onend = () => {
+      setListeningId(null);
+      recognitionRef.current = null;
+    };
+    recognitionRef.current = rec;
+    setListeningId(itemId);
+    try {
+      rec.start();
+    } catch {
+      setMicError("No se pudo iniciar el micrófono.");
+      setListeningId(null);
+      recognitionRef.current = null;
+    }
+  }
+
+  function addExtraHallazgo() {
+    setExtras((prev) => [...prev, { id: newExtraId(), itemId: "", tema: "", texto: "" }]);
+    setError(null);
+  }
+
+  function setExtraItemRgrl(extraId: string, itemId: string) {
+    const picked = rgrlItems.find((it) => it.id === itemId);
+    setExtras((prev) =>
+      prev.map((row) =>
+        row.id === extraId
+          ? { ...row, itemId, tema: picked?.label ?? "" }
+          : row,
+      ),
+    );
+    setError(null);
+  }
+
+  function removeExtraHallazgo(id: string) {
+    if (listeningId === id) stopListening();
+    setExtras((prev) => prev.filter((x) => x.id !== id));
   }
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    const hallazgosActa = hallazgos
-      .map((h) => ({
-        ...h,
-        hallazgo: h.hallazgo.trim(),
-        recomendacion: h.recomendacion?.trim() || undefined,
-        normaRef: h.normaRef?.trim() || undefined,
-        itemRgrl: h.itemRgrl?.trim() || undefined,
-      }))
-      .filter((h) => h.hallazgo.length > 0);
+    stopListening();
 
-    if (hallazgosActa.length === 0 && resultadoGlobal !== "ok") {
-      setError("Agregá al menos un hallazgo o marcá el resultado como OK.");
-      return;
+    const obsItems = checklist.filter((c) => c.estado === "observacion");
+    for (const c of obsItems) {
+      if (!(obsNotas[c.id] ?? "").trim()) {
+        setError(`Completá la observación de «${c.label}».`);
+        return;
+      }
     }
-    if (revisita && !fechaRevisita) {
-      setError("Indicá la fecha de la revisita.");
-      return;
+    for (const x of extras) {
+      if (!x.itemId || !x.tema.trim()) {
+        setError("Elegí el ítem RGRL del hallazgo agregado.");
+        return;
+      }
+      if (!x.texto.trim()) {
+        setError("Completá el texto del hallazgo agregado, o quitalo.");
+        return;
+      }
     }
+
+    const hallazgosActa: HallazgoActaDraft[] = [
+      ...obsItems.map((c) => ({
+        severidad: "media" as const,
+        hallazgo: (obsNotas[c.id] ?? "").trim(),
+        itemRgrl: c.label,
+        checklistItemId: c.id,
+        checklistLabel: c.label,
+        estado: "abierto" as const,
+        origen: "manual" as const,
+      })),
+      ...extras.map((x) => ({
+        severidad: "media" as const,
+        hallazgo: x.texto.trim(),
+        itemRgrl: x.tema.trim(),
+        checklistLabel: x.tema.trim(),
+        estado: "abierto" as const,
+        origen: "manual" as const,
+      })),
+    ];
+
+    // Resultado implícito: con Obs. → observación; si no → ok (sin UI).
+    const resultadoGlobal = hallazgosActa.length > 0 ? "observacion" : "ok";
 
     setSaving(true);
     setError(null);
     try {
       await realizarVisita(item.id, {
         resultadoGlobal,
-        revisita,
-        fechaRevisita: revisita ? fechaRevisita : undefined,
-        horaRevisita: revisita ? horaRevisita : undefined,
-        notasActa: notasActa.trim() || undefined,
+        revisita: false,
         checklist,
         hallazgosActa,
       });
@@ -282,191 +414,177 @@ export function RealizarVisitaDialog({ item, onClose, onDone }: Props) {
 
         <form onSubmit={submit} className="form-stack acta-form">
           <div className="acta-modal-scroll">
-          <fieldset className="acta-fieldset">
-            <legend>Resultado global</legend>
-            <div className="acta-resultado-row">
-              {RESULTADOS.map((r) => (
-                <label key={r.value} className={`acta-choice${resultadoGlobal === r.value ? " active" : ""}`}>
-                  <input
-                    type="radio"
-                    name="resultado"
-                    value={r.value}
-                    checked={resultadoGlobal === r.value}
-                    onChange={() => setResultadoGlobal(r.value)}
-                  />
-                  {r.label}
-                </label>
-              ))}
-            </div>
-            <label className="acta-check-inline">
-              <input
-                type="checkbox"
-                checked={revisita}
-                onChange={(e) => setRevisita(e.target.checked)}
-              />
-              Requiere revisita
-            </label>
-            {revisita && (
-              <div className="fecha-hora-row" style={{ marginTop: 10 }}>
-                <div className="field">
-                  <label htmlFor="fecha-rev">Fecha de revisita</label>
-                  <DateField
-                    ariaLabel="Fecha de revisita"
-                    min={todayIso()}
-                    value={fechaRevisita}
-                    onChange={setFechaRevisita}
-                  />
+            <fieldset className="acta-fieldset">
+              <legend>Focos sugeridos</legend>
+              {loadingCtx ? (
+                <p className="muted">Cargando ítems…</p>
+              ) : (
+                <div className="acta-checklist">
+                  {groupChecklist(checklist).map((grupo) => (
+                    <section key={grupo.titulo} className="acta-check-section">
+                      <h3 className="acta-check-section-title">{grupo.titulo}</h3>
+                      <ul className="acta-checklist-group">
+                        {grupo.items.map((c) => {
+                          const isObs = c.estado === "observacion";
+                          return (
+                            <li key={c.id} className={`acta-check-item${isObs ? " has-obs" : ""}`}>
+                              <div className="acta-check-row">
+                                <div className="acta-check-text">
+                                  <span className="acta-check-detail">{c.label}</span>
+                                </div>
+                                <div className="acta-check-states" role="group" aria-label={c.label}>
+                                  {CHECKLIST_ESTADOS.map((st) => (
+                                    <button
+                                      key={st.value}
+                                      type="button"
+                                      className={`acta-state-btn${c.estado === st.value ? " active" : ""}`}
+                                      onClick={() => setChecklistEstado(c.id, st.value)}
+                                    >
+                                      {st.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                              {isObs && (
+                                <div className="acta-obs-note">
+                                  <label className="acta-obs-note-label" htmlFor={`obs-${c.id}`}>
+                                    Observación / hallazgo
+                                  </label>
+                                  <div className="acta-obs-note-row">
+                                    <textarea
+                                      id={`obs-${c.id}`}
+                                      rows={2}
+                                      value={obsNotas[c.id] ?? ""}
+                                      onChange={(e) =>
+                                        setObsNotas((prev) => ({ ...prev, [c.id]: e.target.value }))
+                                      }
+                                      placeholder="Qué observaste y qué conviene pedir al establecimiento…"
+                                    />
+                                    <button
+                                      type="button"
+                                      className={`acta-mic-btn${listeningId === c.id ? " listening" : ""}`}
+                                      onClick={() => toggleMic(c.id)}
+                                      disabled={saving}
+                                      title={
+                                        canMic
+                                          ? listeningId === c.id
+                                            ? "Detener dictado"
+                                            : "Dictar por micrófono (navegador)"
+                                          : "Dictado no disponible en este navegador"
+                                      }
+                                      aria-label={
+                                        listeningId === c.id ? "Detener dictado" : "Dictar por micrófono"
+                                      }
+                                    >
+                                      <IconMic size={18} />
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </section>
+                  ))}
                 </div>
-                <div className="field">
-                  <label htmlFor="hora-rev">Hora</label>
-                  <TimeField
-                    ariaLabel="Hora de revisita"
-                    value={horaRevisita}
-                    onChange={setHoraRevisita}
-                  />
-                </div>
-              </div>
-            )}
-          </fieldset>
+              )}
+              {micError && <div className="error" style={{ marginTop: 8 }}>{micError}</div>}
+            </fieldset>
 
-          <fieldset className="acta-fieldset">
-            <legend>Checklist sugerido</legend>
-            {loadingCtx ? (
-              <p className="muted">Cargando ítems…</p>
-            ) : (
-              <ul className="acta-checklist">
-                {checklist.map((c) => {
-                  const { title, detail } = splitChecklistLabel(c.label);
-                  return (
-                    <li key={c.id} className="acta-check-item">
-                      <div className="acta-check-text">
-                        {title ? <strong className="acta-check-title">{title}</strong> : null}
-                        <span className="acta-check-detail">{detail}</span>
-                      </div>
-                      <div className="acta-check-states" role="group" aria-label={c.label}>
-                        {CHECKLIST_ESTADOS.map((st) => (
+            <fieldset className="acta-fieldset">
+              <legend>Otros hallazgos</legend>
+              {extras.length > 0 && (
+                <ul className="acta-checklist-group acta-extras">
+                  {extras.map((x) => {
+                    const optionsForRow = [
+                      ...(x.itemId && x.tema
+                        ? [{ value: x.itemId, label: x.tema }]
+                        : []),
+                      ...rgrlOptionsDisponibles,
+                    ];
+                    return (
+                      <li key={x.id} className="acta-check-item has-obs">
+                        <div className="acta-extra-head">
+                          <span className="acta-obs-note-label">Ítem RGRL</span>
                           <button
-                            key={st.value}
                             type="button"
-                            className={`acta-state-btn${c.estado === st.value ? " active" : ""}`}
-                            onClick={() => setChecklistEstado(c.id, st.value)}
+                            className="ghost-btn acta-extra-remove"
+                            onClick={() => removeExtraHallazgo(x.id)}
+                            disabled={saving}
                           >
-                            {st.label}
+                            Quitar
                           </button>
-                        ))}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </fieldset>
-
-          <fieldset className="acta-fieldset">
-            <legend>Hallazgos</legend>
-            <div className="acta-hallazgos">
-              {hallazgos.map((h, idx) => (
-                <div key={idx} className="acta-hallazgo">
-                  <div className="acta-hallazgo-head">
-                    <select
-                      value={h.severidad}
-                      aria-label="Severidad"
-                      onChange={(e) =>
-                        updateHallazgo(idx, {
-                          severidad: e.target.value as HallazgoActaDraft["severidad"],
-                        })
-                      }
-                    >
-                      <option value="baja">Baja</option>
-                      <option value="media">Media</option>
-                      <option value="alta">Alta</option>
-                    </select>
-                    <select
-                      value={h.estado}
-                      aria-label="Estado"
-                      onChange={(e) =>
-                        updateHallazgo(idx, {
-                          estado: e.target.value as HallazgoActaDraft["estado"],
-                        })
-                      }
-                    >
-                      <option value="abierto">Abierto</option>
-                      <option value="cerrado">Cerrado</option>
-                    </select>
-                    {h.origen === "sugerido_aceptado" && (
-                      <span className="badge-sev media">IA</span>
-                    )}
-                    <button
-                      type="button"
-                      className="ghost-btn danger"
-                      onClick={() => removeHallazgo(idx)}
-                      aria-label="Quitar hallazgo"
-                    >
-                      Quitar
-                    </button>
-                  </div>
-                  <textarea
-                    rows={2}
-                    placeholder="Descripción del hallazgo…"
-                    value={h.hallazgo}
-                    onChange={(e) => updateHallazgo(idx, { hallazgo: e.target.value })}
-                  />
-                  <textarea
-                    rows={2}
-                    placeholder="Recomendación / acción…"
-                    value={h.recomendacion ?? ""}
-                    onChange={(e) => updateHallazgo(idx, { recomendacion: e.target.value })}
-                  />
-                  <div className="acta-hallazgo-meta">
-                    <label>
-                      Plazo (días)
-                      <input
-                        type="number"
-                        min={1}
-                        max={365}
-                        value={h.plazoDias ?? ""}
-                        onChange={(e) =>
-                          updateHallazgo(idx, {
-                            plazoDias: e.target.value ? Number(e.target.value) : undefined,
-                          })
-                        }
-                      />
-                    </label>
-                    <label className="grow">
-                      Norma / ref.
-                      <input
-                        type="text"
-                        value={h.normaRef ?? ""}
-                        onChange={(e) => updateHallazgo(idx, { normaRef: e.target.value })}
-                        placeholder="Res. SRT …"
-                      />
-                    </label>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="row-actions" style={{ marginTop: 8 }}>
-              <button type="button" className="ghost-btn" onClick={() => setHallazgos((p) => [...p, emptyHallazgo()])}>
+                        </div>
+                        <Select
+                          className="acta-extra-tema"
+                          value={x.itemId}
+                          onChange={(v) => setExtraItemRgrl(x.id, v)}
+                          options={optionsForRow}
+                          placeholder={
+                            rgrlItems.length === 0
+                              ? "Catálogo RGRL no disponible"
+                              : "Buscar ítem del RGRL…"
+                          }
+                          ariaLabel="Ítem RGRL del hallazgo"
+                          disabled={saving || rgrlItems.length === 0}
+                          searchable
+                        />
+                        <div className="acta-obs-note">
+                          <label className="acta-obs-note-label" htmlFor={`obs-${x.id}`}>
+                            Observación / hallazgo
+                          </label>
+                          <div className="acta-obs-note-row">
+                            <textarea
+                              id={`obs-${x.id}`}
+                              rows={2}
+                              value={x.texto}
+                              onChange={(e) =>
+                                setExtras((prev) =>
+                                  prev.map((row) =>
+                                    row.id === x.id ? { ...row, texto: e.target.value } : row,
+                                  ),
+                                )
+                              }
+                              placeholder="Qué observaste y qué conviene pedir al establecimiento…"
+                              disabled={saving}
+                            />
+                            <button
+                              type="button"
+                              className={`acta-mic-btn${listeningId === x.id ? " listening" : ""}`}
+                              onClick={() => toggleMic(x.id)}
+                              disabled={saving}
+                              title={
+                                canMic
+                                  ? listeningId === x.id
+                                    ? "Detener dictado"
+                                    : "Dictar por micrófono (navegador)"
+                                  : "Dictado no disponible en este navegador"
+                              }
+                              aria-label={
+                                listeningId === x.id ? "Detener dictado" : "Dictar por micrófono"
+                              }
+                            >
+                              <IconMic size={18} />
+                            </button>
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              <button
+                type="button"
+                className="ghost-btn acta-add-extra"
+                onClick={addExtraHallazgo}
+                disabled={saving || loadingCtx || rgrlItems.length === 0}
+              >
                 Agregar hallazgo
               </button>
-              <button type="button" className="ghost-btn" disabled={sugeriendo || saving} onClick={() => void onSugerir()}>
-                {sugeriendo ? "Sugiriendo…" : "Sugerir con IA"}
-              </button>
-            </div>
-          </fieldset>
+            </fieldset>
 
-          <div className="field">
-            <label htmlFor="notas-acta">Notas (opcional)</label>
-            <textarea
-              id="notas-acta"
-              rows={2}
-              value={notasActa}
-              onChange={(e) => setNotasActa(e.target.value)}
-              placeholder="Comentarios libres del cierre…"
-            />
-          </div>
-
-          {error && <div className="error">{error}</div>}
+            {error && <div className="error">{error}</div>}
           </div>
 
           <div className="modal-actions acta-modal-foot">

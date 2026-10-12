@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -28,40 +27,31 @@ public sealed record CopilotoResponse(
 
 public sealed class CopilotoService(AppDbContext db, GeminiClient gemini)
 {
+    /// <summary>Únicas consultas permitidas (botonera fija; sin chat libre).</summary>
     private static readonly HashSet<string> TemasPermitidos = new(StringComparer.OrdinalIgnoreCase)
     {
         "rgrl_checklist",
-        "visitas_frecuencia",
-        "rgrl_obligacion",
-        "pese",
-        "pese_pyme",
-        "rar_examenes",
         "accidentes_previos",
-        "general",
-        "auto",
+        "visitas_previas",
+        "pese",
+        "rar_examenes",
     };
 
-    private static readonly HashSet<string> SeccionesChip = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "rgrl_checklist",
-        "visitas_frecuencia",
-        "rgrl_obligacion",
-        "pese",
-        "pese_pyme",
-        "rar_examenes",
-        "accidentes_previos",
-    };
-
-    private static readonly (string Tema, string[] Keywords)[] TemaKeywords =
-    [
-        ("pese", ["pese", "prs", "ige", "siniestralidad elevada", "plan de reducción"]),
-        ("pese_pyme", ["pyme", "pymes", "pequeñas y medianas"]),
-        ("rar_examenes", ["rar", "examen", "periódico", "periodico", "agente de riesgo", "enfermedad profesional"]),
-        ("visitas_frecuencia", ["frecuencia", "cada cuánto", "cada cuanto", "visitar", "cronograma de visita"]),
-        ("rgrl_obligacion", ["actualizar rgrl", "presentar rgrl", "renovación", "renovacion", "remitir"]),
-        ("rgrl_checklist", ["rgrl", "verificar", "checklist", "andamio", "epp", "higiene", "ruido", "qué mirar", "que mirar", "visita"]),
-        ("accidentes_previos", ["accidentes previos", "historial de accidentes", "siniestros previos", "briefing de accidentes"]),
-    ];
+    private static readonly Dictionary<string, string> PreguntasFijas =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["rgrl_checklist"] =
+                "Qué debo verificar en esta visita según el RGRL (ítems del formulario), qué recomendaciones " +
+                "concretas darle al establecimiento, y si corresponde presentar o actualizar el RGRL.",
+            ["accidentes_previos"] =
+                "Briefing de accidentes previos de este establecimiento para preparar la visita.",
+            ["visitas_previas"] =
+                "Resumen de visitas preventivas previas: resultados, hallazgos y qué retomar.",
+            ["pese"] =
+                "Si el establecimiento está en PESE o tiene PRS, qué obligaciones hay para esta visita.",
+            ["rar_examenes"] =
+                "Qué implica el RAR y los exámenes médicos periódicos para este establecimiento.",
+        };
 
     private static bool _cacheTableReady;
 
@@ -72,17 +62,14 @@ public sealed class CopilotoService(AppDbContext db, GeminiClient gemini)
     {
         await EnsureCacheTableAsync(ct);
 
-        var pregunta = (req.Pregunta ?? "").Trim();
-        if (pregunta.Length < 5)
-            throw new ArgumentException("La pregunta es demasiado corta.");
-        if (pregunta.Length > 800)
-            pregunta = pregunta[..800];
+        var tema = (req.Tema ?? "").Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(tema) || !TemasPermitidos.Contains(tema))
+            throw new ArgumentException(
+                "Consulta no permitida. Usá solo la botonera de Prevex IA (tema de consulta obligatorio).");
 
-        var tema = InferirTema(req.Tema, pregunta);
-        if (!TemasPermitidos.Contains(tema))
-            throw new ArgumentException("Tema no permitido para el copiloto normativo.");
-
-        var seccion = ResolverSeccion(req.Tema, pregunta);
+        // Pregunta fija del servidor: se ignora texto libre del cliente (anti-jailbreak en demo).
+        var pregunta = PreguntasFijas[tema];
+        var seccion = tema;
         var forzar = req.Refrescar == true;
 
         if (!forzar)
@@ -121,11 +108,8 @@ public sealed class CopilotoService(AppDbContext db, GeminiClient gemini)
         var sinFundamento = false;
         var modeloUsado = gemini.Model;
 
-        // Sección aparte: briefing de accidentes del dossier.
-        if (seccion == "accidentes_previos" || tema == "accidentes_previos")
+        if (tema == "accidentes_previos")
         {
-            seccion = "accidentes_previos";
-            tema = "accidentes_previos";
             var (dossierRich, tieneDatos) = await BuildAccidentesDossierAsync(idEstablecimiento, ct);
             if (!tieneDatos)
             {
@@ -138,6 +122,25 @@ public sealed class CopilotoService(AppDbContext db, GeminiClient gemini)
             {
                 var prompt = BuildAccidentesPrompt(
                     pregunta, dossierRich, item?.Banda, item?.Ranking, item?.ObligacionPrs == true, actividad);
+                var resultado = await gemini.GenerarAsync(prompt, ct);
+                texto = LimpiarSalida(resultado.Texto);
+                modeloUsado = resultado.Modelo;
+            }
+        }
+        else if (tema == "visitas_previas")
+        {
+            var (dossierVisitas, tieneDatos) = await BuildVisitasDossierAsync(idEstablecimiento, ct);
+            if (!tieneDatos)
+            {
+                texto =
+                    "No hay visitas preventivas previas registradas para este establecimiento. " +
+                    "Cuando se realicen visitas con acta, van a aparecer acá para preparar el seguimiento.";
+                sinFundamento = true;
+            }
+            else
+            {
+                var prompt = BuildVisitasPrompt(
+                    pregunta, dossierVisitas, item?.Banda, item?.Ranking, item?.ObligacionPrs == true, actividad);
                 var resultado = await gemini.GenerarAsync(prompt, ct);
                 texto = LimpiarSalida(resultado.Texto);
                 modeloUsado = resultado.Modelo;
@@ -157,7 +160,8 @@ public sealed class CopilotoService(AppDbContext db, GeminiClient gemini)
             if (chunks.Count == 0)
             {
                 texto =
-                    "No tengo fundamento normativo en el corpus cargado para responder esa consulta. Probá un chip de RGRL, visitas, PESE o RAR.";
+                    "No tengo fundamento normativo en el corpus cargado para esta consulta. " +
+                    "Probá otra opción de la botonera (RGRL, PESE o RAR).";
                 sinFundamento = true;
             }
             else
@@ -231,19 +235,6 @@ public sealed class CopilotoService(AppDbContext db, GeminiClient gemini)
             """,
             ct);
         _cacheTableReady = true;
-    }
-
-    private static string ResolverSeccion(string? temaReq, string pregunta)
-    {
-        // Solo los chips (Tema explícito de sección) comparten una caché por establecimiento.
-        // Las preguntas libres NUNCA reutilizan esa entrada: si no, "andamios sin baranda"
-        // devolvía la misma respuesta que el chip "Qué verificar (RGRL)".
-        if (!string.IsNullOrWhiteSpace(temaReq) && SeccionesChip.Contains(temaReq.Trim()))
-            return temaReq.Trim().ToLowerInvariant();
-
-        var norm = Regex.Replace(pregunta.Trim().ToLowerInvariant(), @"\s+", " ");
-        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(norm)))[..16].ToLowerInvariant();
-        return $"q:{hash}";
     }
 
     private async Task<List<NormativaChunk>> RecuperarChunksAsync(
@@ -328,27 +319,15 @@ public sealed class CopilotoService(AppDbContext db, GeminiClient gemini)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
     }
 
-    private static string InferirTema(string? temaReq, string pregunta)
-    {
-        if (!string.IsNullOrWhiteSpace(temaReq) &&
-            !temaReq.Equals("auto", StringComparison.OrdinalIgnoreCase))
-            return temaReq.Trim().ToLowerInvariant();
-
-        var p = pregunta.ToLowerInvariant();
-        foreach (var (tema, keys) in TemaKeywords)
-        {
-            if (keys.Any(k => p.Contains(k, StringComparison.Ordinal)))
-                return tema;
-        }
-        return "rgrl_checklist";
-    }
-
     private static IReadOnlyList<string> TemasParaRetrieve(string tema, bool tienePrs)
     {
         var list = new List<string> { tema };
+        // Un solo botón RGRL: checklist del formulario + obligación de presentar/actualizar.
         if (tema == "rgrl_checklist")
-            list.Add("visitas_frecuencia");
-        if (tienePrs && tema is "rgrl_checklist" or "auto" or "pese")
+            list.Add("rgrl_obligacion");
+        if (tema == "pese")
+            list.Add("pese_pyme");
+        if (tienePrs && tema == "rgrl_checklist")
         {
             list.Add("pese");
             list.Add("pese_pyme");
@@ -580,6 +559,183 @@ public sealed class CopilotoService(AppDbContext db, GeminiClient gemini)
         return sb.ToString();
     }
 
+    /// <summary>Historial de visitas preventivas (dossier + actas de la app).</summary>
+    private async Task<(string Texto, bool TieneDatos)> BuildVisitasDossierAsync(
+        string id, CancellationToken ct)
+    {
+        var sb = new StringBuilder();
+        var tiene = false;
+
+        var dossier = await db.EstablecimientoDossiers.AsNoTracking()
+            .FirstOrDefaultAsync(d => d.IdEstablecimiento == id, ct);
+        if (dossier is not null)
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(dossier.DossierJson);
+                var root = doc.RootElement;
+                if (root.TryGetProperty("visitas", out var vis) && vis.ValueKind == JsonValueKind.Object)
+                {
+                    tiene = true;
+                    sb.AppendLine("VISITAS DEL DOSSIER HISTÓRICO:");
+                    if (vis.TryGetProperty("total", out var vt))
+                        sb.Append("- Total visitas: ").Append(vt.GetRawText()).AppendLine();
+                    if (vis.TryGetProperty("incumplimientos_frecuentes", out var inc) &&
+                        inc.ValueKind == JsonValueKind.Array && inc.GetArrayLength() > 0)
+                    {
+                        sb.AppendLine("- Incumplimientos recurrentes:");
+                        var i = 0;
+                        foreach (var e in inc.EnumerateArray())
+                        {
+                            if (i++ >= 12) break;
+                            var k = e.TryGetProperty("k", out var kv) ? kv.GetString() : null;
+                            if (string.IsNullOrWhiteSpace(k)) continue;
+                            var n = e.TryGetProperty("n", out var nv) ? nv.GetRawText() : null;
+                            var ultima = e.TryGetProperty("ultima", out var uv) && uv.ValueKind == JsonValueKind.String
+                                ? uv.GetString()
+                                : null;
+                            sb.Append("  * ").Append(Sanitize(k));
+                            if (n is not null) sb.Append(" (n=").Append(n);
+                            if (!string.IsNullOrWhiteSpace(ultima)) sb.Append(", última ").Append(ultima);
+                            if (n is not null) sb.Append(')');
+                            sb.AppendLine();
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // dossier no parseable: seguir con actas de app
+            }
+        }
+
+        try
+        {
+            var visitas = await db.VisitasApp.AsNoTracking()
+                .Include(v => v.Acta!)
+                    .ThenInclude(a => a.Hallazgos)
+                .Where(v => v.IdEstablecimiento == id && v.Resultado == "realizada")
+                .OrderByDescending(v => v.FechaHoraReal)
+                .ThenByDescending(v => v.Id)
+                .Take(12)
+                .ToListAsync(ct);
+
+            if (visitas.Count > 0)
+            {
+                tiene = true;
+                sb.AppendLine("VISITAS REGISTRADAS EN LA APP (más recientes):");
+                foreach (var v in visitas)
+                {
+                    sb.Append("- Fecha: ").Append(v.FechaHoraReal.ToString("yyyy-MM-dd"));
+                    sb.Append(" | tipo=").Append(Sanitize(v.Tipo));
+                    if (v.Acta is not null)
+                    {
+                        sb.Append(" | resultado_acta=").Append(Sanitize(v.Acta.ResultadoGlobal));
+                        if (v.Acta.Revisita) sb.Append(" | revisita=sí");
+                        if (!string.IsNullOrWhiteSpace(v.Acta.Notas))
+                            sb.Append(" | notas=").Append(Sanitize(
+                                v.Acta.Notas.Length > 180 ? v.Acta.Notas[..180] + "…" : v.Acta.Notas));
+                        var hallazgos = v.Acta.Hallazgos ?? [];
+                        foreach (var h in hallazgos.Take(6))
+                        {
+                            sb.AppendLine();
+                            sb.Append("    * [").Append(h.Severidad).Append('/').Append(h.Estado).Append("] ")
+                                .Append(Sanitize(h.Hallazgo));
+                            if (!string.IsNullOrWhiteSpace(h.NormaRef))
+                                sb.Append(" (").Append(Sanitize(h.NormaRef)).Append(')');
+                        }
+                    }
+                    else if (!string.IsNullOrWhiteSpace(v.Hallazgos))
+                    {
+                        var htxt = v.Hallazgos.Length > 200 ? v.Hallazgos[..200] + "…" : v.Hallazgos;
+                        sb.Append(" | hallazgos=").Append(Sanitize(htxt));
+                    }
+                    sb.AppendLine();
+                }
+            }
+        }
+        catch
+        {
+            // tablas acta aún no creadas
+        }
+
+        try
+        {
+            var abiertos = await db.VisitasHallazgos.AsNoTracking()
+                .Where(h => h.IdEstablecimiento == id && h.Estado == "abierto")
+                .OrderByDescending(h => h.Severidad == "alta")
+                .ThenByDescending(h => h.CreadoEn)
+                .Take(12)
+                .Select(h => new { h.Severidad, h.Hallazgo, h.PlazoDias, h.NormaRef })
+                .ToListAsync(ct);
+            if (abiertos.Count > 0)
+            {
+                tiene = true;
+                sb.AppendLine("HALLAZGOS AÚN ABIERTOS:");
+                foreach (var h in abiertos)
+                {
+                    sb.Append("- [").Append(h.Severidad).Append("] ").Append(Sanitize(h.Hallazgo));
+                    if (h.PlazoDias is int plazo) sb.Append(" (plazo ").Append(plazo).Append(" días)");
+                    if (!string.IsNullOrWhiteSpace(h.NormaRef))
+                        sb.Append(" norma=").Append(Sanitize(h.NormaRef));
+                    sb.AppendLine();
+                }
+            }
+        }
+        catch
+        {
+            // ignore
+        }
+
+        var ctx = sb.ToString().Trim();
+        if (!tiene || string.IsNullOrWhiteSpace(ctx))
+            return ("Sin visitas previas usables.", false);
+        return (ctx.Length > 4500 ? ctx[..4500] + "…" : ctx, true);
+    }
+
+    private static string BuildVisitasPrompt(
+        string pregunta,
+        string dossierVisitas,
+        string? banda,
+        int? ranking,
+        bool prs,
+        string? actividad)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("=== HISTORIAL DE VISITAS (anonimizado) ===");
+        sb.AppendLine(dossierVisitas);
+        if (!string.IsNullOrWhiteSpace(banda)) sb.Append("Banda de riesgo: ").Append(banda).Append(". ");
+        if (ranking is not null) sb.Append("Posición en priorización: #").Append(ranking).Append(". ");
+        if (prs) sb.Append("Obligación PRS/PESE: sí. ");
+        if (!string.IsNullOrWhiteSpace(actividad)) sb.Append("Actividad: ").Append(actividad).Append('.');
+        sb.AppendLine();
+        sb.AppendLine();
+        sb.AppendLine("=== PEDIDO DEL PREVENTOR ===");
+        sb.AppendLine(pregunta);
+        sb.AppendLine();
+        sb.AppendLine("=== TAREA ===");
+        sb.AppendLine(
+            "Sos un asistente para un preventor de ART (Argentina). Con SOLO el historial de visitas de arriba, " +
+            "armá un briefing de VISITAS PREVIAS para preparar el seguimiento. " +
+            "NO te centres en el patrón de accidentes (eso es otra consulta); enfocate en lo ya relevado en visitas.");
+        sb.AppendLine("REGLAS:");
+        sb.AppendLine("- Empezá exactamente con ===RESPUESTA=== y no escribas nada antes.");
+        sb.AppendLine("- Español rioplatense. No inventes datos que no figuren arriba.");
+        sb.AppendLine("- No uses nombre de empresa ni datos personales.");
+        sb.AppendLine("- Máximo ~200 palabras. Viñetas con \"- \".");
+        sb.AppendLine("- Usá EXACTAMENTE este formato:");
+        sb.AppendLine();
+        sb.AppendLine("**Visitas realizadas**");
+        sb.AppendLine("- (cuántas, fechas/resultados si hay, si hubo revisita)");
+        sb.AppendLine();
+        sb.AppendLine("**Qué quedó pendiente u observado**");
+        sb.AppendLine("- (hallazgos abiertos, incumplimientos recurrentes)");
+        sb.AppendLine();
+        sb.AppendLine("**Qué retomar en la próxima visita**");
+        sb.AppendLine("- (2–5 focos concretos de seguimiento)");
+        return sb.ToString();
+    }
+
     private static string Sanitize(string? s)
     {
         if (string.IsNullOrWhiteSpace(s)) return "";
@@ -648,12 +804,20 @@ public sealed class CopilotoService(AppDbContext db, GeminiClient gemini)
                 sb.AppendLine("- Elegí 6–10 ítems del RGRL del corpus que mejor se relacionen con los accidentes,");
                 sb.AppendLine("  incumplimientos o riesgos del dossier (caídas, herramientas, eléctrico, incendio, etc.).");
                 sb.AppendLine("- Empezá con 1 línea: por qué esos focos en ESTE establecimiento (números del dossier).");
+                sb.AppendLine("- Sección **Ítems del RGRL a verificar**. Cada ítem en DOS líneas (no una viñeta plana):");
+                sb.AppendLine("    **Ítem N: nombre corto**");
+                sb.AppendLine("    Por qué mirarlo en ESTE establecimiento (una frase). [#n]");
+                sb.AppendLine("  Ejemplo:");
+                sb.AppendLine("    **Ítem 40: Orden y limpieza**");
+                sb.AppendLine("    Fiscalizar pasillos y superficies por las 31 caídas a nivel. [#4]");
+                sb.AppendLine("  PROHIBIDO usar guión largo o \" - \" entre número y nombre.");
+                sb.AppendLine("  PROHIBIDO poner solo el número sin nombre.");
                 sb.AppendLine("- No listes aparatos para izar u otros ítems si no hay señal en el dossier.");
-                break;
-            case "visitas_frecuencia":
-                sb.AppendLine("- Explicá la regla normativa Y aplicála a este caso con los datos del dossier");
-                sb.AppendLine("  (accidentes/año, últimos 12m, banda/ranking). Decí si es probable visita anual u otra.");
-                sb.AppendLine("- Si faltan datos para concluir, marcá qué dato falta; no copies solo el artículo.");
+                sb.AppendLine("- Incluí una sección **Recomendaciones al establecimiento** con 3–5 frases concretas");
+                sb.AppendLine("  (viñetas normales) que el preventor pueda decirle al empleador.");
+                sb.AppendLine("  Deben salir de los ítems priorizados y del dossier; tono operativo, no legalista.");
+                sb.AppendLine("- Cerrá con una sección corta **Presentación / actualización del RGRL**: cuándo corresponde");
+                sb.AppendLine("  presentar o actualizar según el corpus (463/741) y qué chequearías acá; si no hay base, dilo.");
                 break;
             case "pese":
             case "pese_pyme":
@@ -663,9 +827,6 @@ public sealed class CopilotoService(AppDbContext db, GeminiClient gemini)
             case "rar_examenes":
                 sb.AppendLine("- Relacioná exámenes/nómina de expuestos con riesgos sugeridos por el dossier");
                 sb.AppendLine("  (ruido, químico, etc.). Si el dossier no sugiere agentes, dilo y no inventes exposiciones.");
-                break;
-            case "rgrl_obligacion":
-                sb.AppendLine("- Explicá obligación de actualizar/presentar RGRL y qué chequearías acá según historial.");
                 break;
             default:
                 sb.AppendLine("- Anclá la respuesta a los datos del establecimiento antes de la norma genérica.");
@@ -684,6 +845,9 @@ public sealed class CopilotoService(AppDbContext db, GeminiClient gemini)
             var nl = t.IndexOf('\n', idx);
             t = nl >= 0 ? t[(nl + 1)..] : "";
         }
+        // Evitar em/en dash entre N° y nombre del ítem (el modelo a veces los pone).
+        t = Regex.Replace(t, @"[–—]", ":");
+        t = Regex.Replace(t, @"(Ítem\s+\d+)\s*:\s*", "$1: ", RegexOptions.IgnoreCase);
         return t.Trim();
     }
 }

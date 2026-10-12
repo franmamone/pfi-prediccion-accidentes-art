@@ -113,9 +113,14 @@ export function DateField({
       const popH = popRef.current?.offsetHeight ?? 320;
       const spaceBelow = window.innerHeight - r.bottom - 12;
       const openUp = spaceBelow < popH && r.top > spaceBelow;
-      const width = Math.max(r.width, 280);
-      let left = r.left;
-      if (left + width > window.innerWidth - 8) left = Math.max(8, window.innerWidth - width - 8);
+      const narrow = window.innerWidth <= 960;
+      const width = narrow
+        ? Math.min(340, window.innerWidth - 24)
+        : Math.max(r.width, 280);
+      let left = narrow ? Math.max(12, (window.innerWidth - width) / 2) : r.left;
+      if (!narrow && left + width > window.innerWidth - 8) {
+        left = Math.max(8, window.innerWidth - width - 8);
+      }
       setPos({
         top: openUp ? r.top - 6 : r.bottom + 6,
         left,

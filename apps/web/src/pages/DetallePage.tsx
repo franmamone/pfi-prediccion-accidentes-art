@@ -10,6 +10,7 @@ import {
   guardarCopilotoRespuesta,
   patchHallazgo,
   preguntarCopiloto,
+  shortId,
   HORIZONTE_OPERATIVO,
   type AgendaEvento,
   type CopilotoGuardado,
@@ -48,7 +49,6 @@ export function DetallePage() {
   const [openInfo, setOpenInfo] = useState<InfoKey>(null);
   const [tab, setTab] = useState<DetalleSectionKey>("establecimiento");
   const [dossier, setDossier] = useState<DossierEstablecimiento | null>(null);
-  const [copilotoPregunta, setCopilotoPregunta] = useState("");
   const [copilotoUltimaPregunta, setCopilotoUltimaPregunta] = useState("");
   const [copilotoLoading, setCopilotoLoading] = useState(false);
   const [copilotoError, setCopilotoError] = useState<string | null>(null);
@@ -66,70 +66,15 @@ export function DetallePage() {
   type CopilotoChip = {
     label: string;
     tema: string;
-    kind: "normativa" | "accidentes";
-    pregunta?: string;
   };
 
+  /** Botonera fija (sin chat libre): misma para todos los establecimientos. */
   const copilotoChips: CopilotoChip[] = [
-    {
-      label: "Qué verificar (RGRL)",
-      pregunta: "¿Qué debo verificar en esta visita según el RGRL?",
-      tema: "rgrl_checklist",
-      kind: "normativa",
-    },
-    {
-      label: "Accidentes previos",
-      pregunta:
-        "Armame un briefing de accidentes previos de este establecimiento para preparar la visita: patrones, gravedad e incumplimientos recurrentes.",
-      tema: "accidentes_previos",
-      kind: "accidentes",
-    },
-    {
-      label: "Frecuencia de visitas",
-      pregunta: "¿Qué frecuencia de visita aplica según la normativa?",
-      tema: "visitas_frecuencia",
-      kind: "normativa",
-    },
-    {
-      label: "Obligaciones PESE/PRS",
-      pregunta: "Si el establecimiento está en PESE o tiene PRS, ¿qué obligaciones hay?",
-      tema: "pese",
-      kind: "normativa",
-    },
-    {
-      label: "RAR / exámenes",
-      pregunta: "¿Qué implica el RAR y los exámenes médicos periódicos?",
-      tema: "rar_examenes",
-      kind: "normativa",
-    },
-  ];
-
-  /** Preguntas típicas de un preventor. Sin `tema`: cada una se cachea y responde por su texto. */
-  const copilotoEjemplos: { pregunta: string }[] = [
-    {
-      pregunta: "Mañana visito este establecimiento: ¿qué 8 puntos del RGRL no me puedo olvidar de verificar?",
-    },
-    {
-      pregunta: "Encontré andamios sin baranda: ¿qué le reclamo al empleador y con qué respaldo normativo?",
-    },
-    {
-      pregunta: "¿Cómo armo el recorrido de la visita si hay historial de caídas y cortes?",
-    },
-    {
-      pregunta: "El empleador dice que ya tiene HyS: ¿qué documentación le pido para comprobarlo en la visita?",
-    },
-    {
-      pregunta: "¿Cada cuánto tengo que volver a este tipo de establecimiento y qué dejo asentado al salir?",
-    },
-    {
-      pregunta: "Está en PESE/PRS: ¿qué tengo que controlar sí o sí en esta visita y qué denuncio si no cumple?",
-    },
-    {
-      pregunta: "Hay ruido fuerte en planta: ¿qué miro en campo y qué tiene que ver el RAR / exámenes periódicos?",
-    },
-    {
-      pregunta: "Cierro la visita con observaciones: ¿qué le comunico al empleador y qué plazos puedo plantear?",
-    },
+    { label: "Qué verificar (RGRL)", tema: "rgrl_checklist" },
+    { label: "Accidentes previos", tema: "accidentes_previos" },
+    { label: "Visitas previas", tema: "visitas_previas" },
+    { label: "PESE / PRS", tema: "pese" },
+    { label: "RAR / exámenes", tema: "rar_examenes" },
   ];
 
   // Al abrir un establecimiento, siempre entrar por la ficha agrupada.
@@ -178,7 +123,6 @@ export function DetallePage() {
     setDossier(null);
     setCopilotoResp(null);
     setCopilotoError(null);
-    setCopilotoPregunta("");
     setCopilotoUltimaPregunta("");
     setGuardados([]);
     setGuardadoSeleccionadoId(null);
@@ -266,42 +210,28 @@ export function DetallePage() {
     }
   }
 
-  async function handleCopiloto(pregunta: string, tema?: string, regenerar = false) {
-    const q = pregunta.trim();
-    if (q.length < 5) {
-      setCopilotoError("Escribí una pregunta un poco más concreta.");
-      return;
-    }
+  async function handleChip(chip: CopilotoChip, regenerar = false) {
     setCopilotoLoading(true);
     setCopilotoError(null);
-    setCopilotoUltimaPregunta(q);
-    setCopilotoPregunta("");
+    setCopilotoUltimaPregunta(chip.label);
     try {
       const res = await preguntarCopiloto(id, {
-        pregunta: q,
-        tema,
+        tema: chip.tema,
         refrescar: regenerar,
       });
       setCopilotoResp(res);
       if (res.sinFundamento) {
-        toast.info("Sin fundamento suficiente en el corpus");
+        toast.info("Sin fundamento suficiente para esta consulta");
       } else if (res.desdeCache) {
         toast.info("Respuesta recuperada");
       } else {
         toast.success(regenerar ? "Respuesta regenerada" : "Respuesta generada");
       }
     } catch (err) {
-      // Si falló, devolver el texto al campo para que pueda reintentar.
-      setCopilotoPregunta(q);
-      setCopilotoError(err instanceof Error ? err.message : "No se pudo consultar el copiloto.");
+      setCopilotoError(err instanceof Error ? err.message : "No se pudo consultar Prevex IA.");
     } finally {
       setCopilotoLoading(false);
     }
-  }
-
-  function handleChip(chip: CopilotoChip, regenerar = false) {
-    // Accidentes previos va por copiloto (sección propia + caché), no por Resumen IA.
-    void handleCopiloto(chip.pregunta ?? "", chip.tema, regenerar);
   }
 
   const guardadoActivoId =
@@ -393,7 +323,9 @@ export function DetallePage() {
         <h1 className="page-title" style={{ marginTop: 8 }}>
           Establecimiento
         </h1>
-        <p className="page-sub mono">{id}</p>
+        <p className="page-sub mono" title={id}>
+          {shortId(id)}
+        </p>
       </div>
 
       {error && <div className="error">{error}</div>}
@@ -420,8 +352,8 @@ export function DetallePage() {
 
       {item && data && (
         <>
-          <div className="panel">
-            <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 14, flexWrap: "wrap" }}>
+          <div className="panel detalle-meta-panel">
+            <div className="detalle-meta-row">
               <span className={`badge pop-in ${item.banda}`} title={tipRiesgo(item.banda, item.ranking)}>
                 {riesgoLabel(item.banda)}
               </span>
@@ -450,17 +382,16 @@ export function DetallePage() {
               )}
               {data.agendaActiva ? (
                 <Link className="badge motivo-prs" to="/agenda" title="Ver en Agenda">
-                      Programada · {data.agendaActiva.fechaPlanificada.slice(0, 10)}
-                      {data.agendaActiva.horaPlanificada
-                        ? ` · ${data.agendaActiva.horaPlanificada.slice(0, 5)}`
-                        : ""}
+                  Programada · {data.agendaActiva.fechaPlanificada.slice(0, 10)}
+                  {data.agendaActiva.horaPlanificada
+                    ? ` · ${data.agendaActiva.horaPlanificada.slice(0, 5)}`
+                    : ""}
                 </Link>
               ) : (
                 !esPreventor && (
                   <button
                     type="button"
-                    className="btn"
-                    style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+                    className="btn detalle-programar-btn"
                     onClick={() => setShowProgramar(true)}
                   >
                     <IconCalendar size={16} />
@@ -706,71 +637,36 @@ export function DetallePage() {
                     const activa = copilotoResp?.seccion === chip.tema;
                     return (
                       <button
-                        key={chip.tema + chip.label}
+                        key={chip.tema}
                         type="button"
                         className={activa ? "btn" : "ghost-btn"}
                         disabled={copilotoLoading}
-                        onClick={() => handleChip(chip, false)}
+                        onClick={() => void handleChip(chip, false)}
                       >
                         {chip.label}
                       </button>
                     );
                   })}
                 </div>
-                <div className="form-stack" style={{ marginBottom: 12 }}>
-                  <div className="field">
-                    <label htmlFor="copiloto-pregunta">Tu pregunta</label>
-                    <textarea
-                      id="copiloto-pregunta"
-                      rows={2}
-                      placeholder="Ej.: Mañana visito: ¿qué puntos del RGRL priorizo?"
-                      value={copilotoPregunta}
-                      disabled={copilotoLoading}
-                      onChange={(e) => setCopilotoPregunta(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key !== "Enter" || e.shiftKey) return;
-                        e.preventDefault();
-                        if (copilotoLoading) return;
-                        void handleCopiloto(copilotoPregunta, undefined, false);
-                      }}
-                    />
-                  </div>
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {copilotoResp && (
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
                     <button
                       type="button"
-                      className="btn"
+                      className="ghost-btn"
                       disabled={copilotoLoading}
-                      onClick={() => void handleCopiloto(copilotoPregunta, undefined, false)}
+                      onClick={() => {
+                        const chip = copilotoChips.find((c) => c.tema === copilotoResp.seccion);
+                        if (chip) void handleChip(chip, true);
+                      }}
                     >
-                      {copilotoLoading ? "Consultando…" : "Preguntar"}
+                      Regenerar
                     </button>
-                    {copilotoResp && (
-                      <button
-                        type="button"
-                        className="ghost-btn"
-                        disabled={copilotoLoading}
-                        onClick={() => {
-                          const chip = copilotoChips.find((c) => c.tema === copilotoResp.seccion);
-                          if (chip) {
-                            handleChip(chip, true);
-                            return;
-                          }
-                          void handleCopiloto(
-                            copilotoPregunta.trim() || copilotoUltimaPregunta,
-                            undefined,
-                            true,
-                          );
-                        }}
-                      >
-                        Regenerar
-                      </button>
-                    )}
                   </div>
-                </div>
+                )}
                 {copilotoError && <div className="error" style={{ marginBottom: 10 }}>{copilotoError}</div>}
                 {copilotoLoading && (
                   <p className="muted copiloto-escribiendo" style={{ marginBottom: 12, fontSize: 13 }}>
-                    El copiloto está preparando la respuesta…
+                    Prevex IA está preparando la respuesta…
                   </p>
                 )}
                 {copilotoResp && !copilotoLoading && (
@@ -805,25 +701,6 @@ export function DetallePage() {
                     />
                   </div>
                 )}
-                <div className="copiloto-ejemplos" style={{ marginBottom: 8 }}>
-                  <div className="muted" style={{ fontSize: 12, marginBottom: 6 }}>
-                    Preguntas útiles para el preventor (tocá una para enviar):
-                  </div>
-                  <ul className="copiloto-ejemplos-list">
-                    {copilotoEjemplos.map((ej) => (
-                      <li key={ej.pregunta}>
-                        <button
-                          type="button"
-                          className="copiloto-ejemplo-btn"
-                          disabled={copilotoLoading}
-                          onClick={() => void handleCopiloto(ej.pregunta, undefined, false)}
-                        >
-                          {ej.pregunta}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
               </>
             )}
 
@@ -831,7 +708,7 @@ export function DetallePage() {
               <div className="guardadas-layout">
                 <div className="guardadas-card">
                   <div className="guardadas-card-head">
-                    <h3>Preguntas guardadas</h3>
+                    <h3>Consultas guardadas</h3>
                     <span className="muted" style={{ fontSize: 12 }}>
                       {guardados.length} {guardados.length === 1 ? "ítem" : "ítems"}
                     </span>
@@ -842,8 +719,8 @@ export function DetallePage() {
                     </p>
                   ) : guardados.length === 0 ? (
                     <p className="muted" style={{ fontSize: 13, margin: 0, lineHeight: 1.45 }}>
-                      Todavía no guardaste respuestas. En Prevex IA, tocá{" "}
-                      <strong>Guardar</strong> arriba de una respuesta que te sirva para la visita.
+                      Todavía no guardaste consultas. En Prevex IA, elegí una opción de la botonera y
+                      tocá <strong>Guardar</strong> en la respuesta.
                     </p>
                   ) : (
                     <ul className="guardadas-list">
@@ -893,7 +770,7 @@ export function DetallePage() {
                     if (!sel) {
                       return (
                         <p className="muted" style={{ fontSize: 13, margin: 0 }}>
-                          Seleccioná una pregunta de la lista para ver la respuesta completa.
+                          Seleccioná una consulta de la lista para ver la respuesta completa.
                         </p>
                       );
                     }
@@ -1096,28 +973,47 @@ function renderInline(text: string): (string | ReactElement)[] {
   return nodes;
 }
 
-/** Detecta títulos de sección (azules) aunque el modelo agregue ":" o los mande como viñeta. */
-function parseHeading(line: string): string | null {
+type ParsedHeading = { text: string; kind: "section" | "item" };
+
+/** Detecta títulos de sección (azules) o subtítulos de ítem RGRL. */
+function parseHeading(line: string): ParsedHeading | null {
   const t = line.trim();
   if (!t) return null;
 
+  const asHeading = (raw: string): ParsedHeading => {
+    const text = cleanHeadingText(raw);
+    const isItem = /^ítem\s+\d+/i.test(text) || /^item\s+\d+/i.test(text);
+    return { text, kind: isItem ? "item" : "section" };
+  };
+
   const hash = t.match(/^#{1,4}\s+(.+)$/);
-  if (hash) return cleanHeadingText(hash[1]);
+  if (hash) return asHeading(hash[1]);
 
   const numbered = t.match(/^\d+[.)]\s+(.+)$/);
   if (numbered && numbered[1].length <= 80 && !numbered[1].includes(". ")) {
-    return cleanHeadingText(numbered[1]);
+    return asHeading(numbered[1]);
   }
 
   // "**Título**" / "**Título:**" / "**Título**:"
   const boldLine = t.match(/^\*\*(.+?)\*\*:?\s*$/);
-  if (boldLine) return cleanHeadingText(boldLine[1]);
+  if (boldLine) return asHeading(boldLine[1]);
 
-  // "- **Título:**" (sección disfrazada de viñeta)
+  // "- **Título:**" (sección disfrazada de viñeta, sin cuerpo extra)
   const boldBullet = t.match(/^[-*]\s+\*\*(.+?)\*\*:?\s*$/);
-  if (boldBullet && boldBullet[1].length <= 90) return cleanHeadingText(boldBullet[1]);
+  if (boldBullet && boldBullet[1].length <= 90) return asHeading(boldBullet[1]);
 
   return null;
+}
+
+/** Si la línea es viñeta con ítem + texto, separa título y cuerpo. */
+function splitItemBullet(line: string): { title: string; body: string } | null {
+  const t = line.trim();
+  const m = t.match(
+    /^[-*]\s+\*\*(Ítem\s+\d+\s*[:\-–—]\s*[^:*]+?)\*\*\s*:?\s*(.+)$/i,
+  );
+  if (!m) return null;
+  const title = cleanHeadingText(m[1].replace(/[–—]/g, ":").replace(/\s*:\s*/, ": "));
+  return { title, body: m[2].trim() };
 }
 
 function cleanHeadingText(raw: string): string {
@@ -1196,13 +1092,37 @@ function ResumenIaContenido({ texto }: { texto: string }) {
       continue;
     }
 
+    const split = splitItemBullet(line);
+    if (split) {
+      flushBullets();
+      blocks.push(
+        <h5 key={`h-${key++}`} className="ia-item-title">
+          {split.title}
+        </h5>,
+      );
+      if (split.body) {
+        blocks.push(
+          <p key={`p-${key++}`} className="ia-item-body">
+            {renderInline(split.body)}
+          </p>,
+        );
+      }
+      continue;
+    }
+
     const heading = parseHeading(line);
     if (heading) {
       flushBullets();
       blocks.push(
-        <h4 key={`h-${key++}`} className="ia-heading">
-          {heading}
-        </h4>,
+        heading.kind === "item" ? (
+          <h5 key={`h-${key++}`} className="ia-item-title">
+            {heading.text}
+          </h5>
+        ) : (
+          <h4 key={`h-${key++}`} className="ia-heading">
+            {heading.text}
+          </h4>
+        ),
       );
       continue;
     }
@@ -1213,6 +1133,7 @@ function ResumenIaContenido({ texto }: { texto: string }) {
     }
 
     flushBullets();
+    // Párrafo bajo un ítem: un poco más compacto si viene pegado al título
     blocks.push(
       <p key={`p-${key++}`} className="ia-par">
         {renderInline(line)}

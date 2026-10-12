@@ -293,7 +293,7 @@ export type CopilotoRespuesta = {
 
 export function preguntarCopiloto(
   id: string,
-  body: { pregunta: string; tema?: string; actividad?: string; refrescar?: boolean },
+  body: { tema: string; actividad?: string; refrescar?: boolean },
 ) {
   return request<CopilotoRespuesta>(
     `/api/establecimientos/${encodeURIComponent(id)}/copiloto`,
@@ -679,6 +679,9 @@ export type HallazgoActaDraft = {
   plazoDias?: number;
   normaRef?: string;
   itemRgrl?: string;
+  /** Vincula el hallazgo al ítem del checklist marcado como Obs. */
+  checklistItemId?: string;
+  checklistLabel?: string;
   estado?: "abierto" | "cerrado" | string;
   origen?: "manual" | "sugerido_aceptado" | string;
 };
@@ -703,6 +706,17 @@ export function fetchActaContextoCierre(idEstablecimiento: string) {
     hallazgosAbiertos: HallazgoAbierto[];
     checklistSugerido: ChecklistItemActa[];
   }>(`/api/establecimientos/${encodeURIComponent(idEstablecimiento)}/acta/contexto-cierre`);
+}
+
+export type RgrlCatalogItem = {
+  id: string;
+  label: string;
+  actividad?: string | null;
+  normaRef?: string | null;
+};
+
+export function fetchActaItemsRgrl() {
+  return request<{ total: number; items: RgrlCatalogItem[] }>("/api/acta/items-rgrl");
 }
 
 export function fetchHallazgosAbiertos(idEstablecimiento: string) {
@@ -771,6 +785,26 @@ export function sugerirActaHallazgos(
     hallazgos: HallazgoActaDraft[];
     nota: string | null;
   }>(`/api/establecimientos/${encodeURIComponent(idEstablecimiento)}/acta/sugerir`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+/** Mejora el borrador escrito por el preventor y completa campos del hallazgo. */
+export function mejorarHallazgoActa(
+  idEstablecimiento: string,
+  body: {
+    borrador: string;
+    recomendacion?: string;
+    itemLabel?: string;
+    severidad?: string;
+  },
+) {
+  return request<{
+    modelo: string;
+    hallazgo: HallazgoActaDraft;
+    nota: string | null;
+  }>(`/api/establecimientos/${encodeURIComponent(idEstablecimiento)}/acta/mejorar-hallazgo`, {
     method: "POST",
     body: JSON.stringify(body),
   });

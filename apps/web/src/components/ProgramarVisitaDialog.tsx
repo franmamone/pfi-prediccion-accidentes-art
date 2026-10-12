@@ -86,58 +86,62 @@ export function ProgramarVisitaDialog({ item, horizonte, onClose, onDone }: Prop
         aria-labelledby="programar-title"
         onClick={(ev) => ev.stopPropagation()}
       >
-        <h2 id="programar-title" className="page-title" style={{ fontSize: 18, marginBottom: 6 }}>
-          Programar visita
-        </h2>
-        <p className="page-sub" style={{ marginBottom: 14 }}>
-          {shortId(item.idEstablecimiento)} · #{item.ranking} · {riesgoLabel(item.banda)} ·{" "}
-          {motivoLabel(item.motivo)}
-        </p>
+        <div className="programar-modal-head">
+          <h2 id="programar-title" className="page-title programar-modal-title">
+            Programar visita
+          </h2>
+          <p className="page-sub programar-modal-sub">
+            {shortId(item.idEstablecimiento)} · #{item.ranking} · {riesgoLabel(item.banda)} ·{" "}
+            {motivoLabel(item.motivo)}
+          </p>
+        </div>
 
-        <form onSubmit={submit} className="form-stack">
-          <div className="fecha-hora-row">
+        <form onSubmit={submit} className="form-stack programar-form">
+          <div className="programar-modal-scroll">
+            <div className="fecha-hora-row">
+              <div className="field">
+                <label htmlFor="fecha-planificada">Fecha</label>
+                <DateField
+                  ariaLabel="Fecha planificada"
+                  min={todayIso()}
+                  value={fecha}
+                  onChange={setFecha}
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="hora-planificada">Hora</label>
+                <TimeField
+                  ariaLabel="Hora planificada"
+                  value={hora}
+                  onChange={setHora}
+                />
+              </div>
+            </div>
             <div className="field">
-              <label htmlFor="fecha-planificada">Fecha</label>
-              <DateField
-                ariaLabel="Fecha planificada"
-                min={todayIso()}
-                value={fecha}
-                onChange={setFecha}
+              <label htmlFor="responsable">Responsable</label>
+              <Select
+                value={String(usuarioId)}
+                onChange={(v) => setUsuarioId(Number(v))}
+                ariaLabel="Responsable"
+                placeholder="Elegí un responsable…"
+                options={usuarios.map((u) => ({ value: String(u.id), label: `${u.nombre} (${u.rol})` }))}
               />
             </div>
             <div className="field">
-              <label htmlFor="hora-planificada">Hora</label>
-              <TimeField
-                ariaLabel="Hora planificada"
-                value={hora}
-                onChange={setHora}
+              <label htmlFor="notas">Notas (opcional)</label>
+              <textarea
+                id="notas"
+                rows={3}
+                value={notas}
+                onChange={(e) => setNotas(e.target.value)}
+                placeholder="Observaciones para el prevencionista…"
               />
             </div>
-          </div>
-          <div className="field">
-            <label htmlFor="responsable">Responsable</label>
-            <Select
-              value={String(usuarioId)}
-              onChange={(v) => setUsuarioId(Number(v))}
-              ariaLabel="Responsable"
-              placeholder="Elegí un responsable…"
-              options={usuarios.map((u) => ({ value: String(u.id), label: `${u.nombre} (${u.rol})` }))}
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="notas">Notas (opcional)</label>
-            <textarea
-              id="notas"
-              rows={3}
-              value={notas}
-              onChange={(e) => setNotas(e.target.value)}
-              placeholder="Observaciones para el prevencionista…"
-            />
+
+            {error && <div className="error">{error}</div>}
           </div>
 
-          {error && <div className="error">{error}</div>}
-
-          <div className="modal-actions">
+          <div className="modal-actions programar-modal-foot">
             <button type="button" className="ghost-btn" onClick={onClose} disabled={saving}>
               Cancelar
             </button>

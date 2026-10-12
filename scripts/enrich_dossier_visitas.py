@@ -46,7 +46,11 @@ def sanitize(text, max_len: int = 200):
     t = _CUIT.sub("[id]", t)
     t = _DIGITS.sub("[nro]", t)
     t = _WS.sub(" ", t).strip()
-    return t[:max_len] or None
+    if len(t) <= max_len:
+        return t or None
+    # Cortar en límite de palabra (nunca a mitad: "... ca").
+    cut = t[:max_len].rsplit(" ", 1)[0].rstrip(" ,;.-")
+    return cut or t[:max_len]
 
 
 def load_rows(path: Path) -> list[dict]:
@@ -141,7 +145,7 @@ def main() -> None:
         )
         incumplimientos = []
         for k, c in frec[:MAX_INCUMPLIMIENTOS]:
-            sk = sanitize(k, 180)
+            sk = sanitize(k, 320)
             if sk:
                 incumplimientos.append(
                     {"k": sk, "n": c["n"], "ultima": c["ultima"].isoformat() if c["ultima"] else None}
