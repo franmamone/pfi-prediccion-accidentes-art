@@ -6,6 +6,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 {
     public DbSet<Zona> Zonas => Set<Zona>();
     public DbSet<Usuario> Usuarios => Set<Usuario>();
+    public DbSet<UsuarioDisponibilidad> UsuarioDisponibilidades => Set<UsuarioDisponibilidad>();
+    public DbSet<AuthToken> AuthTokens => Set<AuthToken>();
+    public DbSet<EstablecimientoUbicacion> EstablecimientoUbicaciones => Set<EstablecimientoUbicacion>();
     public DbSet<RankingSnapshot> RankingSnapshots => Set<RankingSnapshot>();
     public DbSet<RankingItem> RankingItems => Set<RankingItem>();
     public DbSet<RankingItemContribucion> RankingItemContribuciones => Set<RankingItemContribucion>();
@@ -18,6 +21,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<VisitaApp> VisitasApp => Set<VisitaApp>();
     public DbSet<VisitaActa> VisitasActa => Set<VisitaActa>();
     public DbSet<VisitaHallazgo> VisitasHallazgos => Set<VisitaHallazgo>();
+    public DbSet<EstablecimientoReagenda> EstablecimientoReagendas => Set<EstablecimientoReagenda>();
     public DbSet<AgendaEvento> AgendaEventos => Set<AgendaEvento>();
     public DbSet<EstablecimientoDossier> EstablecimientoDossiers => Set<EstablecimientoDossier>();
     public DbSet<ResumenIaEstablecimiento> ResumenesIaEstablecimiento => Set<ResumenIaEstablecimiento>();
@@ -30,6 +34,25 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<Usuario>()
             .HasIndex(u => u.Email)
             .IsUnique();
+
+        modelBuilder.Entity<UsuarioDisponibilidad>()
+            .HasOne(d => d.Usuario)
+            .WithMany(u => u.Disponibilidades)
+            .HasForeignKey(d => d.UsuarioId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<AuthToken>()
+            .HasOne(t => t.Usuario)
+            .WithMany()
+            .HasForeignKey(t => t.UsuarioId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<AuthToken>()
+            .HasIndex(t => t.TokenHash)
+            .IsUnique();
+
+        modelBuilder.Entity<EstablecimientoUbicacion>()
+            .HasKey(e => e.IdEstablecimiento);
 
         modelBuilder.Entity<RankingSnapshot>()
             .HasIndex(s => new { s.Periodo, s.Horizonte, s.ArtifactHash });

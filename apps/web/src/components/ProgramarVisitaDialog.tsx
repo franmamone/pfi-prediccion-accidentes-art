@@ -1,16 +1,18 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import {
-  fetchUsuariosAsignables,
+  fetchCandidatosAsignacion,
   programarVisita,
   shortId,
+  type CandidatoAsignacion,
   type Horizonte,
   type RankingItem,
-  type UsuarioAsignable,
 } from "../api";
 import { useAuth } from "../auth";
+import { useLockBodyScroll } from "../hooks/useLockBodyScroll";
 import { motivoLabel, riesgoLabel } from "../labels";
+import { puedeGestionar } from "../roles";
+import { AsignacionMap } from "./AsignacionMap";
 import { DateField } from "./DateField";
-import { Select } from "./Select";
 import { TimeField } from "./TimeField";
 
 type Props = {
@@ -28,34 +30,105 @@ function todayIso(): string {
   return `${y}-${m}-${day}`;
 }
 
+function horasDe(c: CandidatoAsignacion | undefined): string[] {
+  return (c?.huecosDisponibles ?? []).map((h) => h.slice(0, 5));
+}
+
 export function ProgramarVisitaDialog({ item, horizonte, onClose, onDone }: Props) {
+  useLockBodyScroll(true);
   const { user } = useAuth();
-  const [usuarios, setUsuarios] = useState<UsuarioAsignable[]>([]);
+  const canAssign = puedeGestionar(user?.rol);
   const [fecha, setFecha] = useState(todayIso());
   const [hora, setHora] = useState("09:00");
   const [usuarioId, setUsuarioId] = useState<number>(user?.id ?? 0);
+  const [hoverId, setHoverId] = useState<number | null>(null);
   const [notas, setNotas] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [loadingCand, setLoadingCand] = useState(false);
+  const [candidatos, setCandidatos] = useState<CandidatoAsignacion[]>([]);
+  const [recomendadoId, setRecomendadoId] = useState<number | null>(null);
+  const [gapHoras, setGapHoras] = useState(2);
+  const [establecimiento, setEstablecimiento] = useState<{
+    latitud: number;
+    longitud: number;
+  } | null>(null);
 
   useEffect(() => {
-    fetchUsuariosAsignables()
-      .then((rows) => {
-        setUsuarios(rows);
-        if (rows.length && !rows.some((u) => u.id === usuarioId)) {
-          setUsuarioId(rows[0].id);
-        }
+    if (!canAssign) {
+      setUsuarioId(user?.id ?? 0);
+      return;
+    }
+    let cancelled = false;
+    setLoadingCand(true);
+    setError(null);
+    // La hora del request solo ordena la recomendación; los huecos del día no dependen de ella.
+    fetchCandidatosAsignacion(fecha, hora || "09:00", item.idEstablecimiento)
+      .then((res) => {
+        if (cancelled) return;
+        setCandidatos(res.candidatos);
+        setRecomendadoId(res.recomendadoId);
+        setEstablecimiento(res.establecimiento);
+        setGapHoras(res.gapHoras ?? 2);
+        setUsuarioId((prev) => {
+          if (prev && res.candidatos.some((c) => c.id === prev)) return prev;
+          return res.recomendadoId ?? res.candidatos[0]?.id ?? 0;
+        });
       })
       .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : "No se pudieron cargar responsables");
+        if (cancelled) return;
+        setCandidatos([]);
+        setEstablecimiento(null);
+        setError(err instanceof Error ? err.message : "No se pudieron cargar candidatos");
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingCand(false);
       });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- no refetch al cambiar hora del combo
+  }, [fecha, item.idEstablecimiento, canAssign, user?.id]);
+
+  const focoId = hoverId ?? usuarioId;
+  const foco = useMemo(
+    () => candidatos.find((c) => c.id === focoId),
+    [candidatos, focoId],
+  );
+  const horasDisponibles = useMemo(() => horasDe(foco), [foco]);
+  const seleccion = candidatos.find((c) => c.id === usuarioId);
+  const recomendado = candidatos.find((c) => c.id === recomendadoId) ?? candidatos[0];
+  const horaValidaSeleccion = !!seleccion && horasDe(seleccion).includes(hora);
+
+  useEffect(() => {
+    if (horasDisponibles.length === 0) return;
+    if (!horasDisponibles.includes(hora)) {
+      setHora(horasDisponibles[0]);
+    }
+  }, [focoId, horasDisponibles, hora]);
+
+  function elegirPreventor(id: number) {
+    setUsuarioId(id);
+    setHoverId(null);
+    const c = candidatos.find((x) => x.id === id);
+    const horas = horasDe(c);
+    if (horas.length > 0 && !horas.includes(hora)) {
+      setHora(horas[0]);
+    }
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (!fecha) {
       setError("Elegí una fecha planificada.");
+      return;
+    }
+    if (!usuarioId) {
+      setError("Elegí un responsable disponible.");
+      return;
+    }
+    if (canAssign && seleccion && !horasDe(seleccion).includes(hora)) {
+      setError(`Elegí una hora disponible para ${seleccion.nombre}.`);
       return;
     }
     setSaving(true);
@@ -78,13 +151,12 @@ export function ProgramarVisitaDialog({ item, horizonte, onClose, onDone }: Prop
   }
 
   return (
-    <div className="modal-backdrop" role="presentation" onClick={onClose}>
+    <div className="modal-backdrop" role="presentation">
       <div
-        className="modal panel programar-modal"
+        className="modal panel programar-modal programar-modal-wide"
         role="dialog"
         aria-modal="true"
         aria-labelledby="programar-title"
-        onClick={(ev) => ev.stopPropagation()}
       >
         <div className="programar-modal-head">
           <h2 id="programar-title" className="page-title programar-modal-title">
@@ -114,19 +186,87 @@ export function ProgramarVisitaDialog({ item, horizonte, onClose, onDone }: Prop
                   ariaLabel="Hora planificada"
                   value={hora}
                   onChange={setHora}
+                  allowedHours={canAssign ? horasDisponibles : undefined}
+                  disabled={canAssign && horasDisponibles.length === 0}
                 />
               </div>
             </div>
-            <div className="field">
-              <label htmlFor="responsable">Responsable</label>
-              <Select
-                value={String(usuarioId)}
-                onChange={(v) => setUsuarioId(Number(v))}
-                ariaLabel="Responsable"
-                placeholder="Elegí un responsable…"
-                options={usuarios.map((u) => ({ value: String(u.id), label: `${u.nombre} (${u.rol})` }))}
-              />
-            </div>
+
+            {canAssign ? (
+              <>
+                {recomendado && (
+                  <div className="recomendado-banner">
+                    Recomendado: {recomendado.nombre} ({recomendado.distanciaKm} km
+                    {horasDe(recomendado).includes(hora) ? `, disponible a las ${hora}` : ""})
+                  </div>
+                )}
+                <p className="muted" style={{ margin: 0, fontSize: 12 }}>
+                  Separación mínima entre visitas: {gapHoras} h. El combo Hora muestra los huecos del
+                  preventor seleccionado (o sobre el que estás parado).
+                </p>
+                {loadingCand ? (
+                  <p className="muted">Buscando preventores disponibles…</p>
+                ) : candidatos.length === 0 ? (
+                  <div className="error">
+                    No hay preventores con huecos libres ese día (franja laboral + {gapHoras} h entre
+                    visitas).
+                  </div>
+                ) : (
+                  <div className="asignacion-layout">
+                    {establecimiento && (
+                      <AsignacionMap
+                        establecimiento={establecimiento}
+                        candidatos={candidatos}
+                        seleccionadoId={usuarioId}
+                        recomendadoId={recomendadoId}
+                        onSelect={elegirPreventor}
+                      />
+                    )}
+                    <ul
+                      className="candidatos-list"
+                      onMouseLeave={() => setHoverId(null)}
+                      onWheel={(e) => e.stopPropagation()}
+                    >
+                      {candidatos.map((c) => (
+                        <li key={c.id}>
+                          <div
+                            className={
+                              c.id === usuarioId
+                                ? "candidato-item is-selected"
+                                : c.id === hoverId
+                                  ? "candidato-item is-hover"
+                                  : "candidato-item"
+                            }
+                            onMouseEnter={() => setHoverId(c.id)}
+                          >
+                            <button
+                              type="button"
+                              className="candidato-pick"
+                              onClick={() => elegirPreventor(c.id)}
+                            >
+                              <span className="candidato-name">
+                                {c.nombre}
+                                {c.id === recomendadoId ? " · top" : ""}
+                              </span>
+                              <span className="candidato-meta">
+                                {c.distanciaKm} km · {c.visitasDelDia} visita
+                                {c.visitasDelDia === 1 ? "" : "s"}
+                                {c.horasOcupadas.length > 0
+                                  ? ` · ocupadas ${c.horasOcupadas.join(", ")}`
+                                  : ""}
+                              </span>
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="muted">Se asignará a tu usuario ({user?.nombre}).</p>
+            )}
+
             <div className="field">
               <label htmlFor="notas">Notas (opcional)</label>
               <textarea
@@ -145,7 +285,15 @@ export function ProgramarVisitaDialog({ item, horizonte, onClose, onDone }: Prop
             <button type="button" className="ghost-btn" onClick={onClose} disabled={saving}>
               Cancelar
             </button>
-            <button type="submit" className="btn" disabled={saving || !usuarioId}>
+            <button
+              type="submit"
+              className="btn success"
+              disabled={
+                saving ||
+                !usuarioId ||
+                (canAssign && (candidatos.length === 0 || !horaValidaSeleccion))
+              }
+            >
               {saving ? "Guardando…" : "Programar visita"}
             </button>
           </div>

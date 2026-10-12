@@ -16,6 +16,7 @@ import {
   IconMoon,
   IconSun,
   IconUser,
+  IconUsers,
 } from "../icons";
 
 type NavItem = {
@@ -28,6 +29,7 @@ type NavItem = {
 
 function buildNav(rol: string | undefined): { group: string; items: NavItem[] }[] {
   const esPreventor = rol === "Prevencionista";
+  const esAdmin = rol === "Admin";
   const operacion: NavItem[] = [];
   if (!esPreventor) {
     operacion.push({
@@ -45,10 +47,20 @@ function buildNav(rol: string | undefined): { group: string; items: NavItem[] }[
     end: true,
   });
 
+  const sistema: NavItem[] = [{ to: "/perfil", label: "Perfil", icon: <IconUser /> }];
+  if (esAdmin) {
+    sistema.push({
+      to: "/usuarios",
+      label: "Usuarios",
+      icon: <IconUsers />,
+      end: true,
+    });
+  }
+
   return [
     { group: "Operación", items: operacion },
     { group: "Análisis", items: [{ to: "/estadisticas", label: "Estadísticas", icon: <IconChart /> }] },
-    { group: "Sistema", items: [{ to: "/perfil", label: "Perfil", icon: <IconUser /> }] },
+    { group: "Sistema", items: sistema },
   ];
 }
 

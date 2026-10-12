@@ -17,6 +17,7 @@ import { IconCalendar, IconExternal } from "../icons";
 import {
   estadoOperativoBadgeClass,
   estadoOperativoLabel,
+  formatFechaCorta,
   riesgoLabel,
 } from "../labels";
 import { consumeRiesgoScroll, saveRiesgoScroll } from "../prefs";
@@ -179,6 +180,7 @@ export function RiesgoPage() {
             options={[
               { value: "", label: "Todos" },
               { value: "pendiente", label: "Pendiente" },
+              { value: "reagendar", label: "Reagendar" },
               { value: "programada", label: "Programada" },
               { value: "reprogramada", label: "Reprogramada" },
               { value: "realizada", label: "Realizada" },
@@ -261,25 +263,30 @@ export function RiesgoPage() {
           <tbody>
             {items.map((item) => {
               const estado = item.estadoOperativo ?? "pendiente";
+              const limiteTxt = formatFechaCorta(item.reagendaLimiteEn);
               const estadoLink =
-                estado === "pendiente"
+                estado === "pendiente" || estado === "reagendar"
                   ? `/establecimientos/${item.idEstablecimiento}`
                   : estado === "realizada"
                     ? "/agenda?estado=realizada"
                     : "/agenda?estado=programada";
               const estadoTitle =
-                estado === "pendiente"
-                  ? "Pendiente de programar. Abrir detalle."
-                  : estado === "realizada"
-                    ? "Visita realizada. Abrir Agenda → Realizadas."
-                    : estado === "reprogramada"
-                      ? `Reprogramada${item.agendaActiva ? ` · ${item.agendaActiva.fechaPlanificada}` : ""}. Abrir Agenda.`
-                      : `Programada${item.agendaActiva ? ` · ${item.agendaActiva.fechaPlanificada}` : ""}. Abrir Agenda.`;
+                estado === "reagendar"
+                  ? item.reagendaVencida
+                    ? `Reagendar vencido${limiteTxt ? ` (límite ${limiteTxt})` : ""}. Programar visita.`
+                    : `Reagendar antes del ${limiteTxt || "plazo indicado"}. Programar visita.`
+                  : estado === "pendiente"
+                    ? "Pendiente de programar. Abrir detalle."
+                    : estado === "realizada"
+                      ? "Visita realizada. Abrir Agenda → Realizadas."
+                      : estado === "reprogramada"
+                        ? `Reprogramada${item.agendaActiva ? ` · ${item.agendaActiva.fechaPlanificada}` : ""}. Abrir Agenda.`
+                        : `Programada${item.agendaActiva ? ` · ${item.agendaActiva.fechaPlanificada}` : ""}. Abrir Agenda.`;
 
               return (
               <tr
                 key={item.id}
-                className="riesgo-row"
+                className="riesgo-row row-clickable"
                 title="Clic para abrir el detalle"
                 onClick={(e) => {
                   const target = e.target as HTMLElement;
@@ -327,17 +334,28 @@ export function RiesgoPage() {
                   {item.ultimaVisitaHaceMeses != null ? `${item.ultimaVisitaHaceMeses} m` : "sin visita"}
                 </td>
                 <td>
-                  <Link
-                    className={`badge ${estadoOperativoBadgeClass(estado)} estado-link`}
-                    to={estadoLink}
-                    title={estadoTitle}
-                    onClick={estado === "pendiente" ? rememberScroll : undefined}
-                  >
-                    {estadoOperativoLabel(estado)}
-                  </Link>
+                  <div className="estado-cell">
+                    <Link
+                      className={`badge ${estadoOperativoBadgeClass(estado)}${
+                        estado === "reagendar" && item.reagendaVencida ? " is-vencida" : ""
+                      } estado-link`}
+                      to={estadoLink}
+                      title={estadoTitle}
+                      onClick={
+                        estado === "pendiente" || estado === "reagendar" ? rememberScroll : undefined
+                      }
+                    >
+                      {estadoOperativoLabel(estado)}
+                    </Link>
+                    {estado === "reagendar" && limiteTxt ? (
+                      <span className={`estado-reagenda-limite${item.reagendaVencida ? " is-vencida" : ""}`}>
+                        {item.reagendaVencida ? "Venció" : "Antes del"} {limiteTxt}
+                      </span>
+                    ) : null}
+                  </div>
                 </td>
                 <td>
-                  {estado === "pendiente" || estado === "realizada" ? (
+                  {estado === "pendiente" || estado === "realizada" || estado === "reagendar" ? (
                     <button
                       type="button"
                       className="icon-btn primary"

@@ -23,6 +23,49 @@ public class Usuario
     public Zona? Zona { get; set; }
     public bool Activo { get; set; } = true;
     public DateTime CreadoEn { get; set; }
+    public double? Latitud { get; set; }
+    public double? Longitud { get; set; }
+    public bool MfaRequired { get; set; }
+    public bool MfaEnabled { get; set; }
+    [MaxLength(200)] public string? MfaSecret { get; set; }
+    public DateTime? MfaConfirmedEn { get; set; }
+    public bool DebeCambiarPassword { get; set; }
+    public string? MfaRecoveryHashes { get; set; }
+    public ICollection<UsuarioDisponibilidad> Disponibilidades { get; set; } = new List<UsuarioDisponibilidad>();
+}
+
+[Table("UsuarioDisponibilidad", Schema = "app")]
+public class UsuarioDisponibilidad
+{
+    public int Id { get; set; }
+    public int UsuarioId { get; set; }
+    public Usuario? Usuario { get; set; }
+    public byte DiaSemana { get; set; } // 1=Lun .. 7=Dom
+    public TimeOnly HoraDesde { get; set; }
+    public TimeOnly HoraHasta { get; set; }
+}
+
+[Table("AuthToken", Schema = "app")]
+public class AuthToken
+{
+    public int Id { get; set; }
+    public int UsuarioId { get; set; }
+    public Usuario? Usuario { get; set; }
+    [MaxLength(20)] public string Tipo { get; set; } = "";
+    [MaxLength(64)] public string TokenHash { get; set; } = "";
+    public DateTime ExpiraEn { get; set; }
+    public DateTime? UsadoEn { get; set; }
+    public DateTime CreadoEn { get; set; }
+}
+
+[Table("EstablecimientoUbicacion", Schema = "app")]
+public class EstablecimientoUbicacion
+{
+    [MaxLength(64)] public string IdEstablecimiento { get; set; } = "";
+    public double Latitud { get; set; }
+    public double Longitud { get; set; }
+    [MaxLength(80)] public string? Barrio { get; set; }
+    public DateTime ActualizadoEn { get; set; }
 }
 
 [Table("RankingSnapshots", Schema = "app")]
@@ -332,6 +375,23 @@ public class VisitaActa
     public DateTime CreadoEn { get; set; }
     public int? CreadoPorUsuarioId { get; set; }
     public List<VisitaHallazgo> Hallazgos { get; set; } = [];
+}
+
+[Table("EstablecimientoReagenda", Schema = "app")]
+public class EstablecimientoReagenda
+{
+    public int Id { get; set; }
+    [MaxLength(64)] public string IdEstablecimiento { get; set; } = "";
+    public DateOnly LimiteEn { get; set; }
+    public byte MesesPlazo { get; set; }
+    public int? VisitaOrigenId { get; set; }
+    public VisitaApp? VisitaOrigen { get; set; }
+    public int? AgendaCubiertaId { get; set; }
+    public AgendaItem? AgendaCubierta { get; set; }
+    [MaxLength(20)] public string Estado { get; set; } = "pendiente";
+    public DateTime CreadoEn { get; set; }
+    public DateTime? CubiertoEn { get; set; }
+    public int? CreadoPorUsuarioId { get; set; }
 }
 
 [Table("VisitaHallazgo", Schema = "app")]

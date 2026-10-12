@@ -40,7 +40,7 @@ Eso:
 3. Al abrir `http://localhost:5011`, SpaProxy **redirige** al front en `:5173` (igual que en Testing). Vite proxifica `/api` → `:5011`, así que el navegador habla con un solo origen de UI y las llamadas van a `/api/...` sin CORS.
 
 Abrí **`http://localhost:5011`** (te lleva al front).  
-Login: `admin@pfi.local` / `Admin123!` · Preventor: `prevencionista@pfi.local` / `Prev123!`
+Login: usuarios reales (invitar desde Usuarios). Demo cercanía CABA: `prev.palermo@pfi.local` … `prev.caballito@pfi.local` / `Prev123!`
 
 En **producción** (`dotnet publish`) no hay redirect: UI y `/api` viven en el mismo host/puerto (`wwwroot` + Kestrel).
 
@@ -80,3 +80,35 @@ En el servidor: `dotnet PfiPrevencion.Api.dll` sirve **UI + API** en el mismo pr
 ```
 Server=localhost;Database=PfiPrevencion;Trusted_Connection=True;TrustServerCertificate=True;Encrypt=True
 ```
+
+## Secrets y config (local + AWS)
+
+Ningún secret en Git. Placeholders en `appsettings.json`; valores reales por **User Secrets** (dev) o **variables de entorno** (AWS).
+
+### Local (User Secrets)
+
+Desde `apps/api`:
+
+```powershell
+dotnet user-secrets init
+dotnet user-secrets set "Smtp:Host" "smtp.gmail.com"
+dotnet user-secrets set "Smtp:Port" "587"
+dotnet user-secrets set "Smtp:User" "tu@gmail.com"
+dotnet user-secrets set "Smtp:Password" "<app-password-de-gmail>"
+dotnet user-secrets set "Smtp:From" "Prevex <tu@gmail.com>"
+dotnet user-secrets set "App:PublicBaseUrl" "http://localhost:5173"
+dotnet user-secrets set "Jwt:Key" "<clave-larga-min-32-chars>"
+```
+
+Sin SMTP configurado, el alta de usuarios falla con error explícito (no se silencia).
+
+### AWS (cuando desplieguen)
+
+| Clave env | Uso |
+|-----------|-----|
+| `Smtp__Host` / `Smtp__Port` / `Smtp__User` / `Smtp__Password` / `Smtp__From` | MailKit (Gmail o Amazon SES) |
+| `App__PublicBaseUrl` | URL HTTPS del front (links de invite/reset) |
+| `Jwt__Key` | Firma JWT (rotar; ≥32 chars) |
+| `ConnectionStrings__PfiPrevencion` | RDS SQL Server |
+
+MFA TOTP no depende de AWS (secreto en SQL). Lo exige un Admin al crear/editar usuario; el QR se completa en el primer login. Al programar/reprogramar una visita a un Prevencionista se envía mail con link a `/agenda?visita={id}` (requiere SMTP + `App:PublicBaseUrl`). Leaflet/OSM no necesita API key.

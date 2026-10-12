@@ -38,13 +38,12 @@ export function CancelarVisitaDialog({ item, onClose, onDone }: Props) {
   }
 
   return (
-    <div className="modal-backdrop" role="presentation" onClick={onClose}>
+    <div className="modal-backdrop" role="presentation">
       <div
         className="modal panel"
         role="dialog"
         aria-modal="true"
         aria-labelledby="cancelar-title"
-        onClick={(ev) => ev.stopPropagation()}
       >
         <h2 id="cancelar-title" className="page-title" style={{ fontSize: 18, marginBottom: 6 }}>
           Cancelar visita

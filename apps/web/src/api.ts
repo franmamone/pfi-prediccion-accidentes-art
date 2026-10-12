@@ -8,6 +8,37 @@ export type User = {
   nombre: string;
   rol: string;
   zonaId: number | null;
+  mfaRequired?: boolean;
+  mfaEnabled?: boolean;
+  mfaSetupRequired?: boolean;
+  debeCambiarPassword?: boolean;
+  latitud?: number | null;
+  longitud?: number | null;
+};
+
+export type DisponibilidadDia = {
+  diaSemana: number;
+  horaDesde: string;
+  horaHasta: string;
+};
+
+export type UsuarioAdmin = User & {
+  activo: boolean;
+  creadoEn?: string;
+  disponibilidad?: DisponibilidadDia[];
+};
+
+export type CandidatoAsignacion = {
+  id: number;
+  email: string;
+  nombre: string;
+  latitud: number;
+  longitud: number;
+  visitasDelDia: number;
+  distanciaKm: number;
+  disponibleEnHora: boolean;
+  horasOcupadas: string[];
+  huecosDisponibles: string[];
 };
 
 export type CoberturaTopK = {
@@ -105,7 +136,12 @@ export type AgendaItem = {
   } | null;
 };
 
-export type EstadoOperativo = "pendiente" | "programada" | "reprogramada" | "realizada";
+export type EstadoOperativo =
+  | "pendiente"
+  | "programada"
+  | "reprogramada"
+  | "realizada"
+  | "reagendar";
 
 export type RankingItem = {
   id: number;
@@ -130,6 +166,9 @@ export type RankingItem = {
   agendaId?: number | null;
   agendaActiva?: AgendaResumen | null;
   visitaAppRecienteEn?: string | null;
+  reagendaLimiteEn?: string | null;
+  reagendaMesesPlazo?: number | null;
+  reagendaVencida?: boolean;
 };
 
 export type ExplicacionBullet = {
@@ -512,14 +551,134 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return parseJson() as T;
 }
 
-export async function login(email: string, password: string): Promise<{ user: User; access_token: string }> {
-  const data = await request<{ user: User; access_token: string }>("/api/auth/login", {
+export type LoginResult =
+  | { mfaRequired: true; mfaToken: string; user: User }
+  | { mfaRequired?: false; user: User; access_token: string };
+
+export async function login(email: string, password: string): Promise<LoginResult> {
+  const data = await request<LoginResult & { access_token?: string; mfaToken?: string }>(
+    "/api/auth/login",
+    {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    },
+  );
+  if (data.mfaRequired && data.mfaToken) {
+    return { mfaRequired: true, mfaToken: data.mfaToken, user: data.user };
+  }
+  if (!data.access_token) throw new Error("Respuesta de login inválida.");
+  localStorage.setItem(TOKEN_KEY, data.access_token);
+  storeUser(data.user);
+  return { user: data.user, access_token: data.access_token };
+}
+
+export async function completeMfaLogin(mfaToken: string, code: string) {
+  const data = await request<{ user: User; access_token: string }>("/api/auth/mfa", {
     method: "POST",
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ mfaToken, code }),
   });
   localStorage.setItem(TOKEN_KEY, data.access_token);
   storeUser(data.user);
   return data;
+}
+
+export function forgotPassword(email: string) {
+  return request<{ ok: boolean }>("/api/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export function resetPassword(token: string, nueva: string) {
+  return request<{ ok: boolean }>("/api/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ token, nueva }),
+  });
+}
+
+export function acceptInvite(token: string, nueva: string) {
+  return request<{ ok: boolean; email?: string }>("/api/auth/aceptar-invitacion", {
+    method: "POST",
+    body: JSON.stringify({ token, nueva }),
+  });
+}
+
+export function fetchUsuariosAdmin(params?: { rol?: string; activo?: boolean }) {
+  const qs = new URLSearchParams();
+  if (params?.rol) qs.set("rol", params.rol);
+  if (params?.activo != null) qs.set("activo", String(params.activo));
+  const q = qs.toString();
+  return request<{ total: number; items: UsuarioAdmin[] }>(`/api/usuarios${q ? `?${q}` : ""}`);
+}
+
+export function createUsuario(body: {
+  email: string;
+  nombre: string;
+  rol: string;
+  zonaId?: number | null;
+  latitud?: number | null;
+  longitud?: number | null;
+  mfaRequired?: boolean;
+  disponibilidad?: DisponibilidadDia[];
+}) {
+  return request<UsuarioAdmin>("/api/usuarios", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function updateUsuario(
+  id: number,
+  body: {
+    nombre?: string;
+    rol?: string;
+    activo?: boolean;
+    zonaId?: number | null;
+    latitud?: number | null;
+    longitud?: number | null;
+    mfaRequired?: boolean;
+    resetMfa?: boolean;
+    disponibilidad?: DisponibilidadDia[];
+  },
+) {
+  return request<UsuarioAdmin>(`/api/usuarios/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+}
+
+export function reenviarInvitacion(id: number) {
+  return request<{ ok: boolean }>(`/api/usuarios/${id}/reenviar-invitacion`, { method: "POST" });
+}
+
+export function setupMfa() {
+  return request<{ secret: string; otpauthUrl: string }>("/api/me/mfa/setup", { method: "POST" });
+}
+
+export function confirmMfa(code: string) {
+  return request<{ ok: boolean }>("/api/me/mfa/confirm", {
+    method: "POST",
+    body: JSON.stringify({ code }),
+  });
+}
+
+export function fetchCandidatosAsignacion(fecha: string, hora: string, idEstablecimiento: string) {
+  const qs = new URLSearchParams({ fecha, hora, idEstablecimiento });
+  return request<{
+    establecimiento: { idEstablecimiento: string; latitud: number; longitud: number };
+    gapHoras: number;
+    pasoMinutos: number;
+    recomendadoId: number | null;
+    candidatos: CandidatoAsignacion[];
+  }>(`/api/agenda/candidatos?${qs}`);
+}
+
+export function fetchCapacidadAgenda() {
+  return request<{
+    preventoresActivos: number;
+    nota: string;
+    semana: { fecha: string; visitas: number }[];
+  }>("/api/agenda/capacidad");
 }
 
 export function fetchResumen(horizonte: Horizonte) {
@@ -613,6 +772,10 @@ export function fetchAgenda(params: {
   return request<{ total: number; items: AgendaItem[] }>(`/api/agenda${suffix}`);
 }
 
+export function fetchAgendaById(id: number) {
+  return request<AgendaItem>(`/api/agenda/${id}`);
+}
+
 export function programarVisita(body: {
   rankingItemId: number;
   fechaPlanificada: string;
@@ -655,6 +818,8 @@ export function realizarVisita(
     fechaRevisita?: string;
     horaRevisita?: string;
     notasActa?: string;
+    /** Meses máx. para próxima visita (1|2|3|6). Omitir = no requiere. */
+    reagendaMesesPlazo?: number | null;
     checklist?: ChecklistItemActa[];
     hallazgosActa?: HallazgoActaDraft[];
   },

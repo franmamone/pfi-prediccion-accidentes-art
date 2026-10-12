@@ -5,6 +5,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using PfiPrevencion.Api;
 using PfiPrevencion.Api.Data;
 using PfiPrevencion.Api.Services;
 
@@ -47,6 +48,8 @@ builder.Services.AddHttpClient<GeminiClient>(c =>
     c.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
 });
 builder.Services.AddScoped<CopilotoService>();
+builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
+builder.Services.AddScoped<AuthTokenService>();
 
 var app = builder.Build();
 
@@ -54,7 +57,8 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await EnsureAgendaHoraColumnAsync(db);
-    await SeedAdminAsync(db);
+    await AuthUsersEndpoints.EnsureAuthGeoTablesAsync(db);
+    await EnsureEstablecimientoReagendaTableAsync(db);
 }
 
 if (app.Environment.IsDevelopment())
@@ -70,6 +74,42 @@ app.UseStaticFiles();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Si el admin exige MFA y el usuario aún no lo confirmó, solo permite /api/me y setup/confirm.
+app.Use(async (context, next) =>
+{
+    if (context.User.Identity?.IsAuthenticated == true)
+    {
+        var path = context.Request.Path.Value ?? "";
+        if (path.StartsWith("/api/", StringComparison.OrdinalIgnoreCase)
+            && !IsAllowedDuringMfaSetup(path))
+        {
+            var sub = context.User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+                ?? context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (int.TryParse(sub, out var userId))
+            {
+                using var scope = context.RequestServices.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var flags = await db.Usuarios.AsNoTracking()
+                    .Where(u => u.Id == userId && u.Activo)
+                    .Select(u => new { u.MfaRequired, u.MfaEnabled })
+                    .FirstOrDefaultAsync();
+                if (flags is { MfaRequired: true, MfaEnabled: false })
+                {
+                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                    await context.Response.WriteAsJsonAsync(new
+                    {
+                        error = "Debés completar el registro MFA antes de continuar.",
+                        mfaSetupRequired = true,
+                    });
+                    return;
+                }
+            }
+        }
+    }
+
+    await next();
+});
 
 app.MapGet("/api/health", async (AppDbContext db) =>
 {
@@ -94,20 +134,38 @@ app.MapPost("/api/auth/login", async (LoginRequest request, AppDbContext db) =>
         return Results.Unauthorized();
     }
 
+    if (user.DebeCambiarPassword)
+    {
+        return Results.BadRequest(new { error = "Debés aceptar la invitación por mail y crear tu contraseña antes de ingresar." });
+    }
+
+    if (user.MfaEnabled && !string.IsNullOrWhiteSpace(user.MfaSecret))
+    {
+        AuthUsersEndpoints.TryLoginWithMfa(user, jwtKey, jwtIssuer, out _, out var mfaToken, out _);
+        return Results.Ok(new
+        {
+            mfaRequired = true,
+            mfaToken,
+            user = AuthUsersEndpoints.ToUserDtoExt(user),
+        });
+    }
+
     var token = CreateToken(user, jwtKey, jwtIssuer);
     return Results.Ok(new
     {
         access_token = token,
         token_type = "Bearer",
-        user = ToUserDto(user),
+        user = AuthUsersEndpoints.ToUserDtoExt(user),
     });
 });
+
+app.MapAuthUsersAndGeo(jwtKey, jwtIssuer);
 
 app.MapGet("/api/me", async (ClaimsPrincipal principal, AppDbContext db) =>
 {
     var user = await GetCurrentUserAsync(principal, db);
     if (user is null) return Results.Unauthorized();
-    return Results.Ok(ToUserDto(user));
+    return Results.Ok(AuthUsersEndpoints.ToUserDtoExt(user));
 }).RequireAuthorization();
 
 app.MapPut("/api/me", async (UpdateProfileRequest request, ClaimsPrincipal principal, AppDbContext db) =>
@@ -123,7 +181,7 @@ app.MapPut("/api/me", async (UpdateProfileRequest request, ClaimsPrincipal princ
 
     user.Nombre = nombre;
     await db.SaveChangesAsync();
-    return Results.Ok(ToUserDto(user));
+    return Results.Ok(AuthUsersEndpoints.ToUserDtoExt(user));
 }).RequireAuthorization();
 
 app.MapPut("/api/me/password", async (ChangePasswordRequest request, ClaimsPrincipal principal, AppDbContext db) =>
@@ -364,9 +422,7 @@ app.MapGet("/api/riesgo", async (
             : query.Where(i => !programadasQuery.Contains(i.IdEstablecimiento));
     }
 
-    // Filtro por estado operativo de la grilla (pendiente|programada|reprogramada|realizada).
-    // Se aplica en memoria después de enriquecer, salvo realizadas/programadas que se pueden
-    // prefiltrar parcialmente para no perder cupo del top.
+    // Filtro por estado operativo (pendiente|programada|reprogramada|realizada|reagendar).
     var estadoFiltro = string.IsNullOrWhiteSpace(estadoOperativo)
         ? null
         : estadoOperativo.Trim().ToLowerInvariant();
@@ -377,12 +433,24 @@ app.MapGet("/api/riesgo", async (
             .Select(a => a.IdEstablecimiento);
         query = query.Where(i => programadasQuery.Contains(i.IdEstablecimiento));
     }
+    else if (estadoFiltro == "reagendar")
+    {
+        var reagendarQuery = db.EstablecimientoReagendas.AsNoTracking()
+            .Where(r => r.Estado == "pendiente")
+            .Select(r => r.IdEstablecimiento);
+        query = query.Where(i => reagendarQuery.Contains(i.IdEstablecimiento));
+    }
     else if (estadoFiltro == "realizada")
     {
         var realizadasQuery = db.VisitasApp.AsNoTracking()
             .Where(v => v.Resultado == "realizada" && v.FechaHoraReal >= desdeReciente)
             .Select(v => v.IdEstablecimiento);
-        query = query.Where(i => realizadasQuery.Contains(i.IdEstablecimiento));
+        var conReagenda = db.EstablecimientoReagendas.AsNoTracking()
+            .Where(r => r.Estado == "pendiente")
+            .Select(r => r.IdEstablecimiento);
+        query = query.Where(i =>
+            realizadasQuery.Contains(i.IdEstablecimiento)
+            && !conReagenda.Contains(i.IdEstablecimiento));
     }
     else if (estadoFiltro == "pendiente")
     {
@@ -392,7 +460,11 @@ app.MapGet("/api/riesgo", async (
             .Concat(
                 db.VisitasApp.AsNoTracking()
                     .Where(v => v.Resultado == "realizada" && v.FechaHoraReal >= desdeReciente)
-                    .Select(v => v.IdEstablecimiento));
+                    .Select(v => v.IdEstablecimiento))
+            .Concat(
+                db.EstablecimientoReagendas.AsNoTracking()
+                    .Where(r => r.Estado == "pendiente")
+                    .Select(r => r.IdEstablecimiento));
         query = query.Where(i => !ocupadasQuery.Contains(i.IdEstablecimiento));
     }
 
@@ -449,6 +521,15 @@ app.MapGet("/api/riesgo", async (
         .GroupBy(a => a.IdEstablecimiento)
         .ToDictionary(g => g.Key, g => g.OrderBy(a => a.FechaPlanificada).First());
 
+    var reagendasPendientes = ids.Count == 0
+        ? new List<EstablecimientoReagenda>()
+        : await db.EstablecimientoReagendas.AsNoTracking()
+            .Where(r => r.Estado == "pendiente" && ids.Contains(r.IdEstablecimiento))
+            .ToListAsync();
+    var reagendaByEst = reagendasPendientes
+        .GroupBy(r => r.IdEstablecimiento)
+        .ToDictionary(g => g.Key, g => g.OrderBy(r => r.LimiteEn).First());
+
     Dictionary<string, (DateTime FechaHoraReal, int? AgendaItemId)> visitaByEst;
     if (ids.Count == 0)
     {
@@ -474,12 +555,14 @@ app.MapGet("/api/riesgo", async (
                 });
     }
 
+    var hoy = DateOnly.FromDateTime(DateTime.Today);
     var items = rows.Select(i =>
     {
         agendaByEst.TryGetValue(i.IdEstablecimiento, out var agenda);
+        reagendaByEst.TryGetValue(i.IdEstablecimiento, out var reagenda);
         var tieneVisita = visitaByEst.TryGetValue(i.IdEstablecimiento, out var visitaApp);
-        var enCooldownApp = tieneVisita || i.EnCooldown;
-        var estado = ResolveEstadoOperativo(agenda, tieneVisita);
+        var enDataApp = tieneVisita;
+        var estado = ResolveEstadoOperativo(agenda, tieneVisita, reagenda);
         var efectividad = AciertoHistoricoLookup(snapshot.Horizonte, i.Ranking);
         return new
         {
@@ -493,7 +576,7 @@ app.MapGet("/api/riesgo", async (
             i.Banda,
             i.Motivo,
             i.ObligacionPrs,
-            EnCooldown = enCooldownApp,
+            EnData = enDataApp,
             i.UltimaVisitaHaceMeses,
             i.Sector,
             i.CiiuDivision,
@@ -505,6 +588,9 @@ app.MapGet("/api/riesgo", async (
             agendaId = agenda?.Id ?? (tieneVisita ? visitaApp.AgendaItemId : null),
             agendaActiva = agenda is null ? null : ToAgendaResumen(agenda),
             visitaAppRecienteEn = tieneVisita ? (DateTime?)visitaApp.FechaHoraReal : null,
+            reagendaLimiteEn = reagenda?.LimiteEn,
+            reagendaMesesPlazo = reagenda?.MesesPlazo,
+            reagendaVencida = reagenda is not null && reagenda.LimiteEn < hoy,
         };
     }).ToList();
 
@@ -1246,14 +1332,38 @@ app.MapGet("/api/agenda", async (
     });
 }).RequireAuthorization();
 
-app.MapPost("/api/agenda", async (
-    ProgramarVisitaRequest request,
+app.MapGet("/api/agenda/{id:int}", async (
+    int id,
     ClaimsPrincipal principal,
     AppDbContext db) =>
 {
     var user = await GetCurrentUserAsync(principal, db);
     if (user is null) return Results.Unauthorized();
     await EnsureAgendaHoraColumnAsync(db);
+
+    var agenda = await db.AgendaItems.AsNoTracking()
+        .Include(a => a.Usuario)
+        .Include(a => a.Visita!)
+            .ThenInclude(v => v.Acta!)
+            .ThenInclude(ac => ac.Hallazgos)
+        .FirstOrDefaultAsync(a => a.Id == id);
+    if (agenda is null) return Results.NotFound(new { error = "Visita no encontrada." });
+    if (!CanAssignAny(user) && agenda.UsuarioId != user.Id)
+        return Results.Json(new { error = "Sin permiso para ver este turno." }, statusCode: 403);
+
+    return Results.Ok(ToAgendaDto(agenda));
+}).RequireAuthorization();
+
+app.MapPost("/api/agenda", async (
+    ProgramarVisitaRequest request,
+    ClaimsPrincipal principal,
+    AppDbContext db,
+    AuthTokenService tokens) =>
+{
+    var user = await GetCurrentUserAsync(principal, db);
+    if (user is null) return Results.Unauthorized();
+    await EnsureAgendaHoraColumnAsync(db);
+    await EnsureEstablecimientoReagendaTableAsync(db);
 
     var horizonte = NormalizeHorizonte(request.Horizonte);
     if (request.RankingItemId <= 0)
@@ -1289,6 +1399,13 @@ app.MapPost("/api/agenda", async (
     if (assignee is null)
     {
         return Results.BadRequest(new { error = "El responsable indicado no existe o está inactivo." });
+    }
+
+    var slotErr = await AuthUsersEndpoints.ValidateAssigneeForSlotAsync(
+        db, assignee, request.FechaPlanificada, horaPlanificada, rankingItem.IdEstablecimiento);
+    if (slotErr is not null)
+    {
+        return Results.BadRequest(new { error = slotErr });
     }
 
     var yaProgramada = await db.AgendaItems.AnyAsync(a =>
@@ -1343,6 +1460,7 @@ app.MapPost("/api/agenda", async (
                 rankingItemId = rankingItem.Id,
                 horizonte,
             });
+        await CubrirReagendasPendientesAsync(db, agenda.IdEstablecimiento, agenda.Id);
         await db.SaveChangesAsync();
         await tx.CommitAsync();
     }
@@ -1353,6 +1471,7 @@ app.MapPost("/api/agenda", async (
     }
 
     await db.Entry(agenda).Reference(a => a.Usuario).LoadAsync();
+    await tokens.TryNotifyVisitaAsignadaAsync(assignee, agenda, reprogramacion: false);
     return Results.Ok(ToAgendaDto(agenda));
 }).RequireAuthorization();
 
@@ -1360,7 +1479,8 @@ app.MapPut("/api/agenda/{id:int}", async (
     int id,
     ReprogramarVisitaRequest request,
     ClaimsPrincipal principal,
-    AppDbContext db) =>
+    AppDbContext db,
+    AuthTokenService tokens) =>
 {
     var user = await GetCurrentUserAsync(principal, db);
     if (user is null) return Results.Unauthorized();
@@ -1412,6 +1532,15 @@ app.MapPut("/api/agenda/{id:int}", async (
         agenda.UsuarioId = assignee.Id;
     }
 
+    var responsable = await db.Usuarios.FirstOrDefaultAsync(u => u.Id == agenda.UsuarioId && u.Activo);
+    if (responsable is not null)
+    {
+        var slotErr = await AuthUsersEndpoints.ValidateAssigneeForSlotAsync(
+            db, responsable, agenda.FechaPlanificada, agenda.HoraPlanificada, agenda.IdEstablecimiento);
+        if (slotErr is not null)
+            return Results.BadRequest(new { error = slotErr });
+    }
+
     if (request.Notas is not null)
     {
         agenda.Notas = string.IsNullOrWhiteSpace(request.Notas) ? null : request.Notas.Trim();
@@ -1430,6 +1559,8 @@ app.MapPut("/api/agenda/{id:int}", async (
     await db.SaveChangesAsync();
     await tx.CommitAsync();
     await db.Entry(agenda).Reference(a => a.Usuario).LoadAsync();
+    if (responsable is not null)
+        await tokens.TryNotifyVisitaAsignadaAsync(responsable, agenda, reprogramacion: true);
     return Results.Ok(ToAgendaDto(agenda));
 }).RequireAuthorization();
 
@@ -1454,7 +1585,7 @@ app.MapPost("/api/agenda/{id:int}/realizar", async (
     {
         return Results.BadRequest(new { error = "Solo se pueden cerrar visitas en estado programada." });
     }
-    if (!CanManageAgenda(user, agenda))
+    if (!CanCerrarOCancelarVisita(user, agenda))
     {
         return Results.Json(new { error = "No tenés permiso para cerrar esta visita." }, statusCode: 403);
     }
@@ -1652,11 +1783,39 @@ app.MapPost("/api/agenda/{id:int}/realizar", async (
             horaRevisita = requiereRevisita ? FormatHoraPlanificada(horaRevisita) : null,
             plazoRevisitaDias,
             revisitaAgendaId,
+            reagendaMesesPlazo = request.ReagendaMesesPlazo,
             hallazgosTotal = hallazgosActa.Count,
             hallazgosAbiertos = abiertos,
             responsableId = agenda.UsuarioId,
             actorEsResponsable = user.Id == agenda.UsuarioId,
         });
+
+    // Plazo de reagenda (sin crear turno): el coordinador agenda después desde Priorización.
+    if (request.ReagendaMesesPlazo is int meses && meses is 1 or 2 or 3 or 6)
+    {
+        await EnsureEstablecimientoReagendaTableAsync(db);
+        var pendientes = await db.EstablecimientoReagendas
+            .Where(r => r.IdEstablecimiento == agenda.IdEstablecimiento && r.Estado == "pendiente")
+            .ToListAsync();
+        foreach (var p in pendientes)
+        {
+            p.Estado = "cancelada";
+            p.CubiertoEn = DateTime.UtcNow;
+        }
+
+        var limite = DateOnly.FromDateTime(DateTime.Today).AddMonths(meses);
+        db.EstablecimientoReagendas.Add(new EstablecimientoReagenda
+        {
+            IdEstablecimiento = agenda.IdEstablecimiento,
+            LimiteEn = limite,
+            MesesPlazo = (byte)meses,
+            VisitaOrigenId = visita.Id,
+            Estado = "pendiente",
+            CreadoEn = DateTime.UtcNow,
+            CreadoPorUsuarioId = user.Id,
+        });
+    }
+
     await db.SaveChangesAsync();
     await tx.CommitAsync();
 
@@ -1687,7 +1846,7 @@ app.MapPost("/api/agenda/{id:int}/cancelar", async (
     {
         return Results.BadRequest(new { error = "Solo se pueden cancelar visitas en estado programada." });
     }
-    if (!CanManageAgenda(user, agenda))
+    if (!CanCerrarOCancelarVisita(user, agenda))
     {
         return Results.Json(new { error = "No tenés permiso para cancelar esta visita." }, statusCode: 403);
     }
@@ -2209,6 +2368,11 @@ static async Task EnsureCopilotoGuardadoTableAsync(AppDbContext db)
         """);
 }
 
+static bool IsAllowedDuringMfaSetup(string path) =>
+    path.Equals("/api/me", StringComparison.OrdinalIgnoreCase)
+    || path.Equals("/api/me/mfa/setup", StringComparison.OrdinalIgnoreCase)
+    || path.Equals("/api/me/mfa/confirm", StringComparison.OrdinalIgnoreCase);
+
 static async Task EnsureAgendaHoraColumnAsync(AppDbContext db)
 {
     await db.Database.ExecuteSqlRawAsync(
@@ -2220,6 +2384,48 @@ static async Task EnsureAgendaHoraColumnAsync(AppDbContext db)
                     CONSTRAINT DF_AgendaItems_HoraPlanificada DEFAULT ('09:00:00');
         END
         """);
+}
+
+static async Task EnsureEstablecimientoReagendaTableAsync(AppDbContext db)
+{
+    await db.Database.ExecuteSqlRawAsync(
+        """
+        IF OBJECT_ID(N'app.EstablecimientoReagenda', N'U') IS NULL
+        BEGIN
+            CREATE TABLE app.EstablecimientoReagenda
+            (
+                Id                  int            NOT NULL IDENTITY(1,1) CONSTRAINT PK_EstablecimientoReagenda PRIMARY KEY,
+                IdEstablecimiento   nvarchar(64)   NOT NULL,
+                LimiteEn            date           NOT NULL,
+                MesesPlazo          tinyint        NOT NULL,
+                VisitaOrigenId      int            NULL,
+                AgendaCubiertaId    int            NULL,
+                Estado              nvarchar(20)   NOT NULL CONSTRAINT DF_EstablecimientoReagenda_Estado DEFAULT (N'pendiente'),
+                CreadoEn            datetime2(0)   NOT NULL CONSTRAINT DF_EstablecimientoReagenda_CreadoEn DEFAULT (SYSUTCDATETIME()),
+                CubiertoEn          datetime2(0)   NULL,
+                CreadoPorUsuarioId  int            NULL,
+                CONSTRAINT CK_EstablecimientoReagenda_Estado CHECK (Estado IN (N'pendiente', N'cubierta', N'cancelada')),
+                CONSTRAINT CK_EstablecimientoReagenda_Meses CHECK (MesesPlazo IN (1, 2, 3, 6))
+            );
+            CREATE INDEX IX_EstablecimientoReagenda_Est_Estado
+                ON app.EstablecimientoReagenda (IdEstablecimiento, Estado)
+                INCLUDE (LimiteEn, MesesPlazo);
+        END
+        """);
+}
+
+static async Task CubrirReagendasPendientesAsync(AppDbContext db, string idEstablecimiento, int agendaId)
+{
+    var pendientes = await db.EstablecimientoReagendas
+        .Where(r => r.IdEstablecimiento == idEstablecimiento && r.Estado == "pendiente")
+        .ToListAsync();
+    var ahora = DateTime.UtcNow;
+    foreach (var r in pendientes)
+    {
+        r.Estado = "cubierta";
+        r.AgendaCubiertaId = agendaId;
+        r.CubiertoEn = ahora;
+    }
 }
 
 static bool TryParseHoraPlanificada(string? value, out TimeOnly hora)
@@ -2860,14 +3066,7 @@ static List<object> ParseHallazgosSugeridos(string texto)
     }
 }
 
-static object ToUserDto(Usuario user) => new
-{
-    user.Id,
-    user.Email,
-    user.Nombre,
-    user.Rol,
-    user.ZonaId,
-};
+static object ToUserDto(Usuario user) => AuthUsersEndpoints.ToUserDtoExt(user);
 
 static object ToAgendaResumen(AgendaItem a) => new
 {
@@ -2881,15 +3080,21 @@ static object ToAgendaResumen(AgendaItem a) => new
     a.ActualizadoEn,
 };
 
-static string ResolveEstadoOperativo(AgendaItem? agendaProgramada, bool tieneVisitaAppReciente)
+static string ResolveEstadoOperativo(
+    AgendaItem? agendaProgramada,
+    bool tieneVisitaAppReciente,
+    EstablecimientoReagenda? reagendaPendiente)
 {
-    // Agenda activa tiene prioridad (puede haber una nueva visita tras una realizada reciente).
+    // Agenda activa tiene prioridad.
     if (agendaProgramada is not null)
     {
         if (agendaProgramada.ActualizadoEn > agendaProgramada.CreadoEn.AddSeconds(2))
             return "reprogramada";
         return "programada";
     }
+    // Plazo de reagenda pendiente (sin turno aún) → coordinador debe agendar.
+    if (reagendaPendiente is not null)
+        return "reagendar";
     if (tieneVisitaAppReciente) return "realizada";
     return "pendiente";
 }
@@ -3044,6 +3249,11 @@ static bool CanAssignAny(Usuario user) =>
 
 static bool CanManageAgenda(Usuario user, AgendaItem agenda) =>
     CanAssignAny(user) || agenda.UsuarioId == user.Id;
+
+/// <summary>Marcar realizada / cancelar: Admin (cualquiera) o Prevencionista (solo la propia). Coordinador no.</summary>
+static bool CanCerrarOCancelarVisita(Usuario user, AgendaItem agenda) =>
+    user.Rol == "Admin"
+    || (user.Rol == "Prevencionista" && agenda.UsuarioId == user.Id);
 
 static string InferMotivoVisita(RankingItem item)
 {
@@ -3646,36 +3856,6 @@ static string CreateToken(Usuario user, string key, string issuer)
     return new JwtSecurityTokenHandler().WriteToken(token);
 }
 
-static async Task SeedAdminAsync(AppDbContext db)
-{
-    var zonaId = await db.Zonas.Select(z => (int?)z.Id).FirstOrDefaultAsync();
-
-    var admin = await db.Usuarios.FirstOrDefaultAsync(u => u.Email == "admin@pfi.local");
-    if (admin is not null &&
-        (admin.PasswordHash is "PENDING_SEED" or "" ||
-         !admin.PasswordHash.StartsWith("$2", StringComparison.Ordinal)))
-    {
-        admin.PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin123!");
-    }
-
-    var prev = await db.Usuarios.FirstOrDefaultAsync(u => u.Email == "prevencionista@pfi.local");
-    if (prev is null)
-    {
-        db.Usuarios.Add(new Usuario
-        {
-            Email = "prevencionista@pfi.local",
-            Nombre = "Prevencionista Demo",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Prev123!"),
-            Rol = "Prevencionista",
-            ZonaId = zonaId,
-            Activo = true,
-            CreadoEn = DateTime.UtcNow,
-        });
-    }
-
-    await db.SaveChangesAsync();
-}
-
 file static class RgrlCatalogCache
 {
     public static readonly object Gate = new();
@@ -3715,6 +3895,8 @@ record RealizarVisitaRequest(
     DateOnly? FechaRevisita,
     string? HoraRevisita,
     string? NotasActa,
+    /// <summary>Meses máximos para la próxima visita (1|2|3|6). Null/0 = no requiere reagenda.</summary>
+    int? ReagendaMesesPlazo,
     List<ChecklistItemDto>? Checklist,
     List<HallazgoActaDto>? HallazgosActa);
 record SugerirActaRequest(

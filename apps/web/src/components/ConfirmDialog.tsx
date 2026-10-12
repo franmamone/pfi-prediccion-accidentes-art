@@ -18,13 +18,12 @@ export function ConfirmDialog({
   onClose,
 }: Props) {
   return (
-    <div className="modal-backdrop" role="presentation" onClick={onClose}>
+    <div className="modal-backdrop" role="presentation">
       <div
         className="modal panel"
         role="dialog"
         aria-modal="true"
         aria-labelledby="confirm-dialog-title"
-        onClick={(ev) => ev.stopPropagation()}
       >
         <h2 id="confirm-dialog-title" className="page-title" style={{ fontSize: 18, marginBottom: 6 }}>
           {title}

@@ -97,6 +97,17 @@ export function IconUser(p: IconProps) {
   );
 }
 
+export function IconUsers(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <circle cx="9" cy="8" r="3.2" />
+      <path d="M2.5 20c1.2-3.2 3.8-4.8 6.5-4.8" />
+      <circle cx="16.5" cy="8.5" r="2.6" />
+      <path d="M14 20c.6-2.4 2.4-3.8 4.8-4.2 1.6.2 3.2 1.2 4.2 3.2" />
+    </Svg>
+  );
+}
+
 export function IconSun(p: IconProps) {
   return (
     <Svg {...p}>

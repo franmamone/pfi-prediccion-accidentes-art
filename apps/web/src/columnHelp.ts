@@ -36,7 +36,7 @@ export const COLUMN_HELP: Record<string, string> = {
   programada:
     "Si el establecimiento ya tiene una visita en Agenda en estado programada. No programadas = disponibles para agendar desde esta grilla.",
   estadoOperativo:
-    "Estado operativo de la visita: Pendiente (sin agenda), Programada, Reprogramada (se modificó la agenda) o Realizada (cerrada en la app). Clic para ir al caso.",
+    "Estado operativo: Pendiente, Reagendar (plazo del preventor sin turno aún), Programada, Reprogramada o Realizada. Filtrá por Reagendar para agenda próximas visitas.",
 };
 
 export function help(key: keyof typeof COLUMN_HELP | string): string {

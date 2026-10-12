@@ -43,6 +43,14 @@ const CHECKLIST_ESTADOS: { value: ChecklistEstado; label: string }[] = [
   { value: "no_aplica", label: "N/A" },
 ];
 
+const REAGENDA_OPCIONES = [
+  { value: "", label: "No requiere otra visita" },
+  { value: "1", label: "Antes de 1 mes" },
+  { value: "2", label: "Antes de 2 meses" },
+  { value: "3", label: "Antes de 3 meses" },
+  { value: "6", label: "Antes de 6 meses" },
+];
+
 const CHECKLIST_ACROS = ["RGRL", "EPP", "PRS", "PESE", "SRT", "ART", "RAR", "IGE"];
 
 const CHECKLIST_SECCIONES: { origenes: string[]; titulo: string }[] = [
@@ -154,6 +162,7 @@ export function RealizarVisitaDialog({ item, onClose, onDone }: Props) {
   const [micError, setMicError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [reagendaMeses, setReagendaMeses] = useState("");
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const canMic = speechSupported();
 
@@ -375,9 +384,11 @@ export function RealizarVisitaDialog({ item, onClose, onDone }: Props) {
     setSaving(true);
     setError(null);
     try {
+      const meses = Number(reagendaMeses);
       await realizarVisita(item.id, {
         resultadoGlobal,
         revisita: false,
+        reagendaMesesPlazo: meses === 1 || meses === 2 || meses === 3 || meses === 6 ? meses : null,
         checklist,
         hallazgosActa,
       });
@@ -390,13 +401,12 @@ export function RealizarVisitaDialog({ item, onClose, onDone }: Props) {
   }
 
   return (
-    <div className="modal-backdrop" role="presentation" onClick={onClose}>
+    <div className="modal-backdrop" role="presentation">
       <div
         className="modal panel acta-modal"
         role="dialog"
         aria-modal="true"
         aria-labelledby="realizar-title"
-        onClick={(ev) => ev.stopPropagation()}
       >
         <div className="acta-modal-head">
           <h2 id="realizar-title" className="page-title" style={{ fontSize: 18, marginBottom: 6 }}>
@@ -584,6 +594,23 @@ export function RealizarVisitaDialog({ item, onClose, onDone }: Props) {
               </button>
             </fieldset>
 
+            <fieldset className="acta-fieldset acta-reagenda">
+              <legend>Próxima visita</legend>
+              <p className="muted" style={{ margin: "0 0 10px", fontSize: 13 }}>
+                Si hay incumplimientos o seguimiento, indicá en cuántos meses como máximo debe
+                agendarse otra visita. El coordinador lo verá en Priorización.
+              </p>
+              <div className="field" style={{ margin: 0 }}>
+                <label htmlFor="reagenda-meses">Reagendar antes de</label>
+                <Select
+                  value={reagendaMeses}
+                  onChange={setReagendaMeses}
+                  ariaLabel="Plazo máximo para próxima visita"
+                  options={REAGENDA_OPCIONES}
+                />
+              </div>
+            </fieldset>
+
             {error && <div className="error">{error}</div>}
           </div>
 
@@ -591,7 +618,7 @@ export function RealizarVisitaDialog({ item, onClose, onDone }: Props) {
             <button type="button" className="ghost-btn" onClick={onClose} disabled={saving}>
               Volver
             </button>
-            <button type="submit" className="btn" disabled={saving || loadingCtx}>
+            <button type="submit" className="btn success" disabled={saving || loadingCtx}>
               {saving ? "Guardando…" : "Confirmar realizada"}
             </button>
           </div>

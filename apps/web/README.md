@@ -22,8 +22,8 @@ npm run dev
 
 Vite en `http://localhost:5173` proxifica `/api` → `http://localhost:5011`.
 
-Login: `admin@pfi.local` / `Admin123!`  
-Prevencionista demo: `prevencionista@pfi.local` / `Prev123!`
+Login: usuarios reales (invitar desde Usuarios).  
+Demo cercanía CABA: `prev.palermo@pfi.local` … `prev.caballito@pfi.local` / `Prev123!`
 
 ## Build
 

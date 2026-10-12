@@ -44,6 +44,8 @@ export function estadoOperativoLabel(estado: string | null | undefined): string 
       return "Reprogramada";
     case "realizada":
       return "Realizada";
+    case "reagendar":
+      return "Reagendar";
     case "pendiente":
     default:
       return "Pendiente";
@@ -58,8 +60,18 @@ export function estadoOperativoBadgeClass(estado: string | null | undefined): st
       return "estado-reprogramada";
     case "realizada":
       return "estado-realizada";
+    case "reagendar":
+      return "estado-reagendar";
     case "pendiente":
     default:
       return "estado-pendiente";
   }
+}
+
+export function formatFechaCorta(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = iso.slice(0, 10);
+  const [y, m, day] = d.split("-");
+  if (!y || !m || !day) return d;
+  return `${day}/${m}/${y}`;
 }

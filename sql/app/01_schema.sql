@@ -416,23 +416,8 @@ WHEN MATCHED THEN UPDATE SET Valor = s.Valor, Actualizado = SYSUTCDATETIME()
 WHEN NOT MATCHED THEN INSERT (Clave, Valor) VALUES (s.Clave, s.Valor);
 GO
 
-/* Usuario demo: admin@pfi.local / Admin123!
-   Hash PBKDF2 generado por la API al primer arranque si no existe;
-   placeholder marcado para que el seeder .NET lo reemplace. */
-IF NOT EXISTS (SELECT 1 FROM app.Usuarios WHERE Email = N'admin@pfi.local')
-BEGIN
-    DECLARE @zona INT = (SELECT TOP (1) Id FROM app.Zonas ORDER BY Id);
-    INSERT INTO app.Usuarios (Email, Nombre, PasswordHash, Rol, ZonaId, Activo)
-    VALUES (
-        N'admin@pfi.local',
-        N'Administrador PFI',
-        N'PENDING_SEED',
-        N'Admin',
-        @zona,
-        1
-    );
-END
-GO
-
+/* Usuarios reales: crear por invitación (Admin) o ABM en la app.
+   Demo de cercanía: preventores por barrio CABA se seedan al arrancar la API
+   (prev.palermo@pfi.local … Prev123!). */
 PRINT 'Schema app aplicado en PfiPrevencion.';
 GO

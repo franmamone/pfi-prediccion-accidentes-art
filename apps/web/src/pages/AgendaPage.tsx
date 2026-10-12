@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   fetchAgenda,
+  fetchAgendaById,
   fetchUsuariosAsignables,
   reprogramarVisita,
   shortId,
@@ -18,7 +19,7 @@ import { TimeField } from "../components/TimeField";
 import { EmptyState } from "../components/UiKit";
 import { motivoLabel, riesgoLabel } from "../labels";
 import { getAgendaVista, setAgendaVista, type AgendaVista } from "../prefs";
-import { puedeGestionar } from "../roles";
+import { puedeCerrarVisita, puedeGestionar } from "../roles";
 import { useToast } from "../toast";
 
 type FiltroEstado = EstadoAgenda | "todas";
@@ -86,10 +87,16 @@ export function AgendaPage() {
   const toast = useToast();
   const { user } = useAuth();
   const canAssign = puedeGestionar(user?.rol);
+  const canCerrar = puedeCerrarVisita(user?.rol);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [vista, setVista] = useState<AgendaVista>(() => getAgendaVista());
   const [cursor, setCursor] = useState<Date>(() => new Date());
-  const [filtro, setFiltro] = useState<FiltroEstado>("programada");
+  const [filtro, setFiltro] = useState<FiltroEstado>(() => {
+    const e = searchParams.get("estado");
+    if (e === "programada" || e === "realizada" || e === "cancelada" || e === "todas") return e;
+    return "programada";
+  });
   const [usuarioId, setUsuarioId] = useState("");
   const [usuarios, setUsuarios] = useState<UsuarioAsignable[]>([]);
 
@@ -99,6 +106,7 @@ export function AgendaPage() {
   const [reloadKey, setReloadKey] = useState(0);
 
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [deepLinkReady, setDeepLinkReady] = useState(() => !searchParams.get("visita"));
   const [realizarItem, setRealizarItem] = useState<AgendaItem | null>(null);
   const [cancelarItem, setCancelarItem] = useState<AgendaItem | null>(null);
 
@@ -123,7 +131,60 @@ export function AgendaPage() {
     return { desde: dia, hasta: dia };
   }, [vista, cursor]);
 
+  // Deep link desde mail: /agenda?visita={id}
   useEffect(() => {
+    const raw = searchParams.get("visita");
+    if (!raw) {
+      setDeepLinkReady(true);
+      return;
+    }
+    const id = Number(raw);
+    if (!Number.isFinite(id) || id <= 0) {
+      setDeepLinkReady(true);
+      return;
+    }
+
+    let cancelled = false;
+    setDeepLinkReady(false);
+    setLoading(true);
+    setError(null);
+    void fetchAgendaById(id)
+      .then((item) => {
+        if (cancelled) return;
+        const fecha = item.fechaPlanificada.slice(0, 10);
+        const [y, m, d] = fecha.split("-").map(Number);
+        setCursor(new Date(y, (m ?? 1) - 1, d ?? 1));
+        setVista("dia");
+        setAgendaVista("dia");
+        const est = item.estado;
+        setFiltro(est === "programada" || est === "realizada" || est === "cancelada" ? est : "todas");
+        setSelectedId(item.id);
+        setItems((prev) => (prev.some((x) => x.id === item.id) ? prev : [item, ...prev]));
+        const next = new URLSearchParams(searchParams);
+        next.delete("visita");
+        setSearchParams(next, { replace: true });
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "No se pudo abrir el turno del enlace");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setDeepLinkReady(true);
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+    // Solo al montar / cambiar visita en URL
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams.get("visita")]);
+
+  useEffect(() => {
+    if (!deepLinkReady) return;
     setLoading(true);
     setError(null);
     fetchAgenda({
@@ -135,12 +196,12 @@ export function AgendaPage() {
       .then((res) => setItems(res.items))
       .catch((err: unknown) => setError(err instanceof Error ? err.message : "No se pudo cargar la agenda"))
       .finally(() => setLoading(false));
-  }, [rango, filtro, usuarioId, reloadKey]);
+  }, [rango, filtro, usuarioId, reloadKey, deepLinkReady]);
 
   useEffect(() => {
     if (!canAssign) return;
     fetchUsuariosAsignables().then(setUsuarios).catch(() => undefined);
-  }, [canAssign]);
+  }, [canAssign, reloadKey]);
 
   const porDia = useMemo(() => {
     const map = new Map<string, AgendaItem[]>();
@@ -464,7 +525,7 @@ export function AgendaPage() {
                   <textarea rows={2} value={editNotas} onChange={(e) => setEditNotas(e.target.value)} />
                 </div>
                 <div className="row-actions">
-                  <button type="button" className="btn" disabled={busy} onClick={() => guardarReprogramacion(selected)}>
+                  <button type="button" className="btn success" disabled={busy} onClick={() => guardarReprogramacion(selected)}>
                     Guardar
                   </button>
                   <button type="button" className="ghost-btn" onClick={() => setEditando(false)}>
@@ -473,14 +534,18 @@ export function AgendaPage() {
                 </div>
               </div>
             ) : (
-              selected.estado === "programada" && (
+              selected.estado === "programada" && (canCerrar || canAssign) && (
                 <div className="agenda-drawer-actions">
-                  <button type="button" className="btn" onClick={() => setRealizarItem(selected)}>
-                    Marcar realizada
-                  </button>
-                  <button type="button" className="ghost-btn danger" onClick={() => setCancelarItem(selected)}>
-                    Cancelar
-                  </button>
+                  {canCerrar && (
+                    <>
+                      <button type="button" className="btn success" onClick={() => setRealizarItem(selected)}>
+                        Marcar realizada
+                      </button>
+                      <button type="button" className="ghost-btn danger" onClick={() => setCancelarItem(selected)}>
+                        Cancelar
+                      </button>
+                    </>
+                  )}
                   {canAssign && (
                     <button type="button" className="ghost-btn" onClick={() => startEdit(selected)}>
                       Reprogramar

@@ -391,7 +391,7 @@ export function DetallePage() {
                 !esPreventor && (
                   <button
                     type="button"
-                    className="btn detalle-programar-btn"
+                    className="btn success detalle-programar-btn"
                     onClick={() => setShowProgramar(true)}
                   >
                     <IconCalendar size={16} />

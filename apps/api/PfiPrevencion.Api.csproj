@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -9,10 +9,12 @@
     <SpaProxyServerUrl>http://localhost:5173</SpaProxyServerUrl>
     <!-- Evita fingerprint/compresión de static web assets que choca con el build de Vite. -->
     <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
+    <UserSecretsId>56a06866-543e-4cb3-b3a6-25a33c37ebd3</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
+    <PackageReference Include="MailKit" Version="4.14.1" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />
     <PackageReference Include="Microsoft.AspNetCore.SpaProxy" Version="10.0.0" />
@@ -21,12 +23,22 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.10" />
+    <PackageReference Include="Otp.NET" Version="1.4.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\web\PfiPrevencion.Web.esproj">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\logo-mark.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\logo.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <!--
@@ -39,13 +51,8 @@
       <_SpaRootFull>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\$(SpaRoot)'))</_SpaRootFull>
     </PropertyGroup>
     <Message Importance="high" Text="SPA root: $(_SpaRootFull)" />
-    <Exec
-      WorkingDirectory="$(_SpaRootFull)"
-      Command="npm run build"
-      Condition="!Exists('$(_SpaDistIndex)')" />
-    <Error
-      Condition="!Exists('$(_SpaDistIndex)')"
-      Text="No se encontró apps/web/dist/index.html después de npm run build." />
+    <Exec WorkingDirectory="$(_SpaRootFull)" Command="npm run build" Condition="!Exists('$(_SpaDistIndex)')" />
+    <Error Condition="!Exists('$(_SpaDistIndex)')" Text="No se encontró apps/web/dist/index.html después de npm run build." />
     <Message Importance="high" Text="Including SPA from $(_SpaRootFull)\dist into publish wwwroot..." />
     <ItemGroup>
       <_SpaDistFiles Include="$(_SpaRootFull)\dist\**\*.*" />

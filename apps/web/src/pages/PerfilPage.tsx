@@ -108,7 +108,7 @@ export function PerfilPage() {
                 <label>Nombre visible</label>
                 <input value={nombre} onChange={(e) => setNombre(e.target.value)} required minLength={2} />
               </div>
-              <button className="btn" type="submit" disabled={savingProfile}>
+              <button className="btn success" type="submit" disabled={savingProfile}>
                 {savingProfile ? "Guardando…" : "Guardar perfil"}
               </button>
             </form>
@@ -122,58 +122,58 @@ export function PerfilPage() {
               Mínimo 8 caracteres. Vas a seguir con la sesión abierta.
             </p>
             <form onSubmit={onChangePassword} className="form-stack">
-            <div className="field password-field">
-              <label>Contraseña actual</label>
-              <input
-                type={showActual ? "text" : "password"}
-                value={actual}
-                onChange={(e) => setActual(e.target.value)}
-                required
-                autoComplete="current-password"
-              />
-              <button
-                type="button"
-                className="password-toggle"
-                onClick={() => setShowActual((v) => !v)}
-                title={showActual ? "Ocultar" : "Mostrar"}
-              >
-                {showActual ? <IconEyeOff size={16} /> : <IconEye size={16} />}
+              <div className="field password-field">
+                <label>Contraseña actual</label>
+                <input
+                  type={showActual ? "text" : "password"}
+                  value={actual}
+                  onChange={(e) => setActual(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowActual((v) => !v)}
+                  title={showActual ? "Ocultar" : "Mostrar"}
+                >
+                  {showActual ? <IconEyeOff size={16} /> : <IconEye size={16} />}
+                </button>
+              </div>
+              <div className="field password-field">
+                <label>Nueva contraseña</label>
+                <input
+                  type={showNueva ? "text" : "password"}
+                  value={nueva}
+                  onChange={(e) => setNueva(e.target.value)}
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowNueva((v) => !v)}
+                  title={showNueva ? "Ocultar" : "Mostrar"}
+                >
+                  {showNueva ? <IconEyeOff size={16} /> : <IconEye size={16} />}
+                </button>
+              </div>
+              <div className="field">
+                <label>Confirmar nueva</label>
+                <input
+                  type="password"
+                  value={confirmacion}
+                  onChange={(e) => setConfirmacion(e.target.value)}
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                />
+              </div>
+              <button className="btn success" type="submit" disabled={savingPass}>
+                {savingPass ? "Actualizando…" : "Actualizar contraseña"}
               </button>
-            </div>
-            <div className="field password-field">
-              <label>Nueva contraseña</label>
-              <input
-                type={showNueva ? "text" : "password"}
-                value={nueva}
-                onChange={(e) => setNueva(e.target.value)}
-                required
-                minLength={8}
-                autoComplete="new-password"
-              />
-              <button
-                type="button"
-                className="password-toggle"
-                onClick={() => setShowNueva((v) => !v)}
-                title={showNueva ? "Ocultar" : "Mostrar"}
-              >
-                {showNueva ? <IconEyeOff size={16} /> : <IconEye size={16} />}
-              </button>
-            </div>
-            <div className="field">
-              <label>Confirmar nueva</label>
-              <input
-                type="password"
-                value={confirmacion}
-                onChange={(e) => setConfirmacion(e.target.value)}
-                required
-                minLength={8}
-                autoComplete="new-password"
-              />
-            </div>
-            <button className="btn" type="submit" disabled={savingPass}>
-              {savingPass ? "Actualizando…" : "Actualizar contraseña"}
-            </button>
-          </form>
+            </form>
           </div>
         </div>
       </div>

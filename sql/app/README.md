@@ -58,7 +58,7 @@ $env:PYTHONPATH="src"
 `--fuente-completa-hasta` es obligatorio: solo marca `maduro` las ventanas totalmente cubiertas.  
 La cobertura operativa se refresca mientras la ventana está abierta y se congela al cerrarla.
 
-## Usuario demo
+## Usuarios
 
-- Email: `admin@pfi.local`
-- Password: `Admin123!` (seteado por el seeder de la API al arrancar; si el hash queda vacío, reiniciar la API regenera el hash)
+- Reales: crear por invitación / ABM en la app (no hay seed de admin genérico).
+- Demo cercanía CABA (API al arrancar): `prev.palermo@pfi.local` … `prev.caballito@pfi.local` / `Prev123!`
