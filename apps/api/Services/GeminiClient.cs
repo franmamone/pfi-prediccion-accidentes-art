@@ -41,7 +41,7 @@ public sealed class GeminiException(string message) : Exception(message);
 /// Envía únicamente texto anonimizado; no recibe identificadores del establecimiento.
 /// Prueba la lista de modelos en orden hasta obtener una respuesta usable.
 /// </summary>
-public sealed class GeminiClient(HttpClient http, IConfiguration config)
+public sealed class GeminiClient(HttpClient http, IConfiguration config) : IGeminiClient
 {
     private readonly GeminiOptions _opt = LoadOptions(config);
     private string? _ultimoModeloUsado;

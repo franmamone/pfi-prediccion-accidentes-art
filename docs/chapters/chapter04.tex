@@ -1,30 +1,33 @@
 \chapter{Metodolog\'ia de desarrollo e implementaci\'on}\label{ch:metodologia}
 
-Este cap\'itulo documenta las decisiones de implementaci\'on del prototipo: metodolog\'{\i}a de desarrollo, stack tecnol\'ogico, flujo de informaci\'on, arquitectura, modelo de clases, modelo de datos, resguardo de datos frente a los dos usos de IA, m\'etricas de referencia del modelo y capturas de la interfaz en ejecuci\'on.
+Esta secci\'on documenta las decisiones de implementaci\'on del prototipo: metodolog\'{\i}a de desarrollo, stack tecnol\'ogico, flujo de informaci\'on, arquitectura, modelo de clases, modelo de datos, resguardo de datos frente a los dos usos de IA, m\'etricas de referencia del modelo y capturas de la interfaz en ejecuci\'on.
 
 \section{Metodolog\'ia}
 
-El desarrollo sigui\'o un enfoque iterativo:
+\rev{El desarrollo adopta un enfoque iterativo:}
 \begin{enumerate}
-	\item ingenier\'ia de datos sobre la BD core de la ART (vistas y panel establecimiento$\times$mes);
-	\item entrenamiento y evaluaci\'on de un modelo XGBoost con horizonte trimestral (accidentaci\'on en los tres meses siguientes);
-	\item generaci\'on del ranking explicable (SHAP) e importaci\'on a la BD operativa;
-	\item construcci\'on de API REST + frontend React para uso por Preventores;
-	\item anal\'itica hist\'orica (snapshots, cobertura y precisi\'on observada).
+	\item \rev{ingenier\'ia de datos sobre la BD core de la ART (vistas y panel establecimiento$\times$mes);}
+	\item \rev{entrenamiento y evaluaci\'on de un modelo XGBoost con horizonte trimestral (accidentaci\'on en los tres meses siguientes);}
+	\item \rev{generaci\'on del ranking explicable (SHAP) e importaci\'on a la BD operativa;}
+	\item \rev{construcci\'on de API REST + frontend React para uso por Preventores;}
+	\item \rev{anal\'itica hist\'orica (snapshots, cobertura y precisi\'on observada).}
 \end{enumerate}
 
-Los \'arboles del XGBoost se ajustan solo con 2022 y 2023.
+\rev{Los \'arboles del XGBoost se ajustan solo con 2022 y 2023.
 El a\~no 2024 no entra a ese entrenamiento: se reserva para fijar el umbral de decisi\'on, sin volver a entrenar el modelo.
-El desempe\~no que se reporta es el de 2025, que el modelo no vio.
+El desempe\~no que se reporta corresponde a 2025, que el modelo no vio.
 El horizonte operativo es el pr\'oximo trimestre: predice si el establecimiento registrar\'a al menos un accidente en los tres meses siguientes al per\'{\i}odo de decisi\'on.
 Esa ventana se alinea a la planificaci\'on de visitas relevada en las entrevistas: el calendario normativo, los relevamientos como el RGRL y la capacidad limitada del preventor.
-Daniel Oscar, desde el core, coincidi\'o en que el volumen de datos y la diversidad de tareas empujan a un modo reactivo, y situ\'o la asignaci\'on inteligente de visitas y las recomendaciones al preventor como primer recorte de IA.
+Daniel Oscar, desde el core, coincide en que el volumen de datos y la diversidad de tareas empujan a un modo reactivo, y sit\'ua la asignaci\'on inteligente de visitas y las recomendaciones al preventor como primer recorte de IA.}
 
 \section{Stack tecnol\'ogico y justificaci\'on}
 
+\rev{La Tabla~\ref{tab:stack} presenta las tecnolog\'ias seleccionadas para cada componente del prototipo y la justificaci\'on de cada elecci\'on.
+La selecci\'on prioriza el encaje con el ecosistema .NET de la ART, la explicabilidad del modelo predictivo y el control de costos en la arquitectura de nube.}
+
 \begin{table}[htbp]
 	\centering
-	\caption{Stack tecnol\'ogico del prototipo y motivaci\'on de la elecci\'on.}
+	\caption{Stack tecnol\'ogico del prototipo y motivaci\'on de la elecci\'on. \fuentepropia}
 	\label{tab:stack}
 	\begin{tabular}{@{}p{0.28\textwidth}p{0.66\textwidth}@{}}
 		\hline
@@ -33,7 +36,7 @@ Daniel Oscar, desde el core, coincidi\'o en que el volumen de datos y la diversi
 		Pipeline ML & Python + XGBoost + SHAP: adecuado a datos tabulares heterog\'eneos y a la necesidad de explicabilidad. \\
 		API & ASP.NET Core (C\#): encaje con ecosistemas ART/.NET, Minimal APIs y JWT. \\
 		Frontend & React + Vite + TypeScript: interfaz tipada y ciclo de desarrollo \'agil. \\
-		BD operativa & SQL Server Express (`PfiPrevencion`): modelo relacional de rankings, agenda y usuarios. \\
+		BD operativa & SQL Server Express (\texttt{PfiPrevencion}): modelo relacional de rankings, agenda y usuarios. \\
 		Auth & JWT Bearer + hash de contrase\~nas: adecuado al prototipo y reemplazable por un esquema institucional. \\
 		Comunicaci\'on & HTTPS/HTTP + REST JSON: desacople cliente-servidor. \\
 		Arquitectura & AWS Free Tier: una EC2 con Nginx, React, API y SQL Express, S3 para rankings y Budgets para el control de costo. \\
@@ -41,7 +44,8 @@ Daniel Oscar, desde el core, coincidi\'o en que el volumen de datos y la diversi
 	\end{tabular}
 \end{table}
 
-\subsection{Protocolos y arquitectura de red}
+\rev{Los protocolos de comunicaci\'on y la topolog\'ia de red se describen a continuaci\'on.
+Separan la BD core on-prem del prototipo en nube y garantizan que el modelo no opere sobre datos sin anonimizar.}
 
 \begin{itemize}
 	\item \textbf{REST/HTTP(S):} intercambio de recursos JSON entre React y la API.
@@ -52,10 +56,12 @@ Daniel Oscar, desde el core, coincidi\'o en que el volumen de datos y la diversi
 
 \section{Flujo de informaci\'on}
 
+La Figura~\ref{fig:flujo-info} muestra el flujo completo desde la BD core de la ART hasta la interfaz de los preventores.
+
 \begin{figure}[htbp]
 	\centering
 	\input{figures/diagramas/flujo_informacion}
-	\caption{Flujo de informaci\'on desde la BD core de la ART hasta la interfaz de los preventores.}
+	\caption{Flujo de informaci\'on desde la BD core de la ART hasta la interfaz de los preventores. \fuentepropia}
 	\label{fig:flujo-info}
 \end{figure}
 
@@ -69,28 +75,30 @@ El mismo dise\~no se puede reutilizar con otra aseguradora.
 \begin{figure}[htbp]
 	\centering
 	\input{figures/diagramas/arquitectura_aws_freetier}
-	\caption{Arquitectura propuesta en AWS Free Tier.}
+	\caption{Arquitectura propuesta en AWS Free Tier. \fuentepropia}
 	\label{fig:aws-ft}
 \end{figure}
 
 \section{Modelo de clases de dominio}
 
+La Figura~\ref{fig:clases} presenta el diagrama de clases del dominio, simplificado para mostrar las entidades principales y sus relaciones.
+
 \begin{figure}[H]
 	\centering
 	\input{figures/diagramas/clases_dominio}
-	\caption{Diagrama de clases del dominio, simplificado.}
+	\caption{Diagrama de clases del dominio, simplificado. \fuentepropia}
 	\label{fig:clases}
 \end{figure}
 
 \clearpage
 \section{Modelo de datos (ER)}
 
-La BD operativa `PfiPrevencion` (schema \texttt{app}) almacena snapshots de ranking, \'items, contribuciones SHAP, outcomes, m\'etricas, coberturas, agenda y visitas. La Figura~\ref{fig:er} resume las entidades principales.
+La BD operativa \texttt{PfiPrevencion} (schema \texttt{app}) almacena snapshots de ranking, \'items, contribuciones SHAP, outcomes, m\'etricas, coberturas, agenda y visitas. La Figura~\ref{fig:er} resume las entidades principales.
 
 \begin{figure}[H]
 	\centering
 	\input{figures/diagramas/modelo_er}
-	\caption{Diagrama entidad-relaci\'on de la BD operativa, simplificado.}
+	\caption{Diagrama entidad-relaci\'on de la BD operativa, simplificado. \fuentepropia}
 	\label{fig:er}
 \end{figure}
 
@@ -120,9 +128,14 @@ El entrenamiento y el c\'alculo de SHAP no se delegan a una IA p\'ublica: quedan
 El resumen en lenguaje claro del detalle es opcional y no interviene en el puntaje ni en el orden de la lista.
 Solo redacta una gu\'{\i}a de la pr\'oxima visita a partir de un dossier ya agregado: conteos de accidentes, formas, zonas del cuerpo, naturaleza y gravedad, incumplimientos u observaciones de visitas previas, banda y posici\'on en el ranking.
 Antes de invocar el servicio de generaci\'on de texto, la API arma un prompt anonimizado: quita hashes, nombres y cualquier identificador.
+\nuevo{La pol\'{\i}tica vigente es a\'un m\'as estricta: el modelo solo recibe \emph{agregados} del dossier (conteos, tops de forma/zona/naturaleza/gravedad e incumplimientos por categor\'{\i}a). No se env\'{\i}an relatos de accidentes, observaciones en prosa ni notas libres de actas; si un hallazgo operativo a\'un parece contener domicilio o identificadores tipados, se omite el detalle.}
 El modelo externo no recibe qui\'en es el establecimiento ni el empleador; recibe evidencia operacional ya agregada y debe devolverla en un formato fijo (resumen ejecutivo, perfil de riesgo, incumplimientos a verificar y focos de la visita).
 El texto se guarda en la BD operativa para no reiterar la llamada.
 Si no hay dossier, no hay invocaci\'on.
+
+\nuevo{En la madurez operativa del prototipo, ese apoyo se concreta como un \emph{copiloto normativo}: el Preventor elige un tema (RGRL, PESE, RAR, entre otros) y la API recupera fragmentos de normativa SRT almacenados como \emph{chunks} en SQL Server (sin base vectorial), los combina con el dossier del establecimiento y produce una respuesta con citas.
+Las respuestas pueden guardarse por establecimiento y tema.
+Al cerrar una visita, el mismo circuito alimenta sugerencias de acta y hallazgos abiertos, siempre con dossier desidentificado y controles frente a prompt injection en texto libre.}
 
 La distinci\'on importa porque los datos de ART son sensibles (siniestros, n\'omina, visitas).
 Entrenar el ranking en una IA p\'ublica expondr\'{\i}a el panel completo.
@@ -130,12 +143,20 @@ Pedirle a un modelo generativo que ``conozca'' al establecimiento lo convertir\'
 Por eso el XGBoost se entrena en local y el generativo solo resume evidencia ya desidentificada, en el molde que pide el preventor.
 La explicaci\'on auditable del puntaje sigue siendo SHAP, calculada en el pipeline; la narrativa es un apoyo de redacci\'on, no la fuente de la priorizaci\'on.
 
+\subsection*{\nuevo{Asignaci\'on geogr\'afica y reagenda}}
+
+\nuevo{La asignaci\'on de visitas usa coordenadas de demostraci\'on en CABA.
+El score de un candidato combina distancia Haversine al ancla de la ruta (visita anterior o siguiente del d\'{\i}a; si no hay visitas, la base del Preventor) con un peso por horas ya cargadas.
+La duraci\'on estimada depende de las c\'apitas del establecimiento (heur\'{\i}stica 1\,h / 2\,h / 3\,h).
+No se optimiza tr\'ansito en tiempo real.
+La reagenda registra un plazo de seguimiento al cerrar la visita y vuelve a exponer el establecimiento en la lista operativa con estado \texttt{reagendar}.}
+
 \section{Resultados del modelo}
 
 Los resultados vigentes corresponden al horizonte trimestral en holdout 2025 (el a\~no que el modelo no vio).
 Los \'arboles se ajustan con 2022--2023; 2024 fija el umbral de decisi\'on, sin reentrenar.
 
-La aplicaci\'on muestra una lista operativa de \textbf{1000 establecimientos}: el 2,8\,\% de los 35\,505 del universo modelado.
+La aplicaci\'on muestra una lista operativa de \textbf{1000 establecimientos}: el 2,8\,\% de los 35.505 del universo modelado.
 Sobre esa lista se calculan las bandas de riesgo, el SHAP agregado y la cobertura de visitas.
 No se usa un recorte menor como universo de la priorizaci\'on.
 
@@ -143,22 +164,22 @@ No se usa un recorte menor como universo de la priorizaci\'on.
 
 Cada fila es un establecimiento en un mes de decisi\'on.
 El positivo es registrar al menos un accidente en los tres meses siguientes.
-El holdout 2025 trimestral cubre 284\,040 filas, de las que 7\,565 son positivas (tasa base 2,66\,\%).
+El holdout 2025 trimestral cubre 284.040 filas, de las que 7.565 son positivas (tasa base 2,66\,\%).
 
 \begin{table}[htbp]
 	\centering
-	\caption{Split temporal y volumen del holdout trimestral 2025.}
+	\caption{Split temporal y volumen del holdout trimestral 2025. \fuentepropia}
 	\label{tab:holdout-split}
 	\begin{tabular}{@{}ll@{}}
 		\hline
 		\textbf{Rol} & \textbf{Detalle} \\
 		\hline
-		Entrenamiento (\'arboles) & 2022--2023 (852\,120 filas) \\
+		Entrenamiento (\'arboles) & 2022--2023 (852.120 filas) \\
 		Calibraci\'on del umbral & 2024 (sin reentrenar) \\
 		Holdout reportado & 2025, horizonte 3 meses \\
-		Filas evaluadas & 284\,040 \\
-		Positivos & 7\,565 (tasa base 2,66\,\%) \\
-		Universo modelado & 35\,505 establecimientos \\
+		Filas evaluadas & 284.040 \\
+		Positivos & 7.565 (tasa base 2,66\,\%) \\
+		Universo modelado & 35.505 establecimientos \\
 		Lista operativa & 1000 (2,8\,\% del universo) \\
 		\hline
 	\end{tabular}
@@ -172,7 +193,7 @@ El Brier de 0,055 confirma que el score no est\'a calibrado como probabilidad; e
 
 \begin{table}[htbp]
 	\centering
-	\caption{M\'etricas globales del modelo trimestral en holdout 2025.}
+	\caption{M\'etricas globales del modelo trimestral en holdout 2025. \fuentepropia}
 	\label{tab:metricas-holdout}
 	\begin{tabular}{@{}lc@{}}
 		\hline
@@ -199,7 +220,7 @@ No hay banda baja dentro de los 1000: el acierto del tramo m\'as amplio (top-100
 
 \begin{table}[htbp]
 	\centering
-	\caption{Precisi\'on media por mes en holdout 2025 (horizonte 3 meses) sobre la lista de 1000.}
+	\caption{Precisi\'on media por mes en holdout 2025 (horizonte 3 meses) sobre la lista de 1000. \fuentepropia}
 	\label{tab:precision-topk}
 	\begin{tabular}{@{}lccc@{}}
 		\hline
@@ -232,7 +253,7 @@ En el tramo cr\'{\i}tico supera tambi\'en a ordenar solo por siniestralidad prev
 Al bajar hacia los 1000 la precisi\'on media baja (se incluye m\'as masa) y el historial sigue siendo un competidor serio.
 El valor del prototipo est\'a en decidir a qui\'en visitar primero, con bandas y explicaci\'on SHAP, no en reemplazar el conocimiento de accidentes pasados ni en leer el score como probabilidad.
 
-\section{Avance de implementaci\'on (demo)}
+\section{Avance de implementaci\'on (demo)}\label{sec:demo}
 
 A diferencia de los mockups esquem\'aticos del Cap\'itulo~\ref{ch:descripcion}, las capturas siguientes corresponden a la interfaz del prototipo en ejecuci\'on.
 
@@ -246,55 +267,106 @@ El horizonte operativo es el trimestre (Figuras~\ref{fig:demo-priorizacion} y~\r
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.92\textwidth]{figures/demo/login.png}
-	\caption{Captura de login del prototipo en ejecuci\'on (RF-01).}
+	\caption{Captura de login del prototipo en ejecuci\'on (RF-01). \fuentepropia}
 	\label{fig:demo-login}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.92\textwidth]{figures/demo/priorizacion.png}
-	\caption{Captura de priorizaci\'on: ranking trimestral y estado de visita (RF-02, RF-03 / HU-02, HU-03).}
+	\caption{Captura de priorizaci\'on: ranking trimestral y estado de visita (RF-02, RF-03 / HU-02, HU-03). \fuentepropia}
 	\label{fig:demo-priorizacion}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.92\textwidth]{figures/demo/detalle_historial.png}
-	\caption{Captura del detalle: historial de accidentes del establecimiento (RF-04).}
+	\caption{Captura del detalle: historial de accidentes del establecimiento (RF-04). \fuentepropia}
 	\label{fig:demo-historial}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.92\textwidth]{figures/demo/detalle_resumen.png}
-	\caption{Captura del detalle: resumen generativo para la pr\'oxima visita (RF-04 / HU-04).}
+	\caption{Captura del detalle: resumen generativo para la pr\'oxima visita (RF-04 / HU-04). \fuentepropia}
 	\label{fig:demo-resumen}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.92\textwidth]{figures/demo/detalle_shap.png}
-	\caption{Captura del detalle: factores de priorizaci\'on (valores SHAP) (RF-04).}
+	\caption{Captura del detalle: factores de priorizaci\'on (valores SHAP) (RF-04). \fuentepropia}
 	\label{fig:demo-shap}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.92\textwidth]{figures/demo/agenda.png}
-	\caption{Captura de agenda de visitas en vista mensual (RF-05 / HU-06).}
+	\caption{Captura de agenda de visitas en vista mensual (RF-05 / HU-06). \fuentepropia}
 	\label{fig:demo-agenda}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.92\textwidth]{figures/demo/estadisticas.png}
-	\caption{Captura de estad\'isticas: composici\'on y riesgo de la lista (RF-07 / HU-07 y HU-09).}
+	\caption{Captura de estad\'isticas: composici\'on y riesgo de la lista (RF-07 / HU-07 y HU-09). \fuentepropia}
 	\label{fig:demo-estadisticas}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.92\textwidth]{figures/demo/perfil.png}
-	\caption{Captura de perfil de usuario del prototipo en ejecuci\'on (RF-09).}
+	\caption{Captura de perfil de usuario del prototipo en ejecuci\'on (RF-09). \fuentepropia}
 	\label{fig:demo-perfil}
 \end{figure}
+
+\section{\rev{Validaci\'on del sistema}}
+
+\rev{El prototipo se valida mediante pruebas manuales del flujo completo: autenticaci\'on, visualizaci\'on del ranking, acceso al detalle del establecimiento, generaci\'on del resumen narrativo, registro de visitas en la agenda y consulta de estad\'isticas de cobertura.
+Cada pantalla del recorrido documentado en la Secci\'on~\ref{sec:demo} fue ejercitada contra la instancia local de la API y la BD operativa \texttt{PfiPrevencion}.}
+
+\rev{Las m\'etricas de calidad del modelo predictivo est\'an detalladas en la secci\'on de Resultados del modelo: PR-AUC de~0,515, recall del~66,7\,\% al umbral F2 y precisi\'on media mensual de~49,5\,\% en la lista de~1000 (v\'ease la Tabla~\ref{tab:metricas-holdout} y la Tabla~\ref{tab:precision-topk}).
+Estas m\'etricas se calculan sobre el holdout~2025, que el modelo no vio durante el entrenamiento ni durante la calibraci\'on del umbral.}
+
+\nuevo{Adem\'as de las pruebas manuales, la API se valida con una suite automatizada (xUnit) que combina pruebas unitarias e integraci\'on HTTP (\texttt{WebApplicationFactory} contra SQL LocalDB de prueba, con dobles de Gemini y SMTP).
+La cobertura de c\'odigo se mide con Coverlet.
+El reporte E75 se calcula sobre los servicios de dominio y el \texttt{AppDbContext} (geo, MFA, plantillas de correo, tokens e invitaciones), excluyendo el composition root (\texttt{Program.cs}), los clientes de I/O externo (Gemini/SMTP) y el servicio de copiloto (cuyo flujo se ejercita en integraci\'on pero no entra al denominador del umbral).
+El artefacto vigente queda en \texttt{docs/evidence/coverage/} (Cobertura XML y resumen).
+Al cierre de esta revisi\'on, esa cobertura de l\'{\i}neas alcanza al menos el~85\,\% exigido en los requisitos E75.
+Las pruebas de integraci\'on (login, riesgo, detalle, agenda/candidatos, salud) aportan evidencia funcional complementaria sin pretender cubrir todo el monolito de endpoints en el porcentaje Coverlet.}
+
+\section{\rev{Privacidad, datos personales y Ley~25.326}}
+
+\rev{El prototipo opera con datos que pueden ser sensibles bajo la Ley Nacional de Protecci\'on de Datos Personales (Ley~25.326): registros de siniestros laborales, n\'omina de trabajadores y datos de visitas de prevenci\'on vinculados a establecimientos empleadores.}
+
+\rev{Las medidas adoptadas son:}
+\begin{itemize}
+	\item \rev{\textbf{Finalidad declarada:} los datos se usan exclusivamente para calcular el ranking de riesgo trimestral y planificar visitas de prevenci\'on; no se comparten con terceros ni se emplean para fines comerciales.}
+	\item \rev{\textbf{Anonimizaci\'on en el pipeline:} los identificadores de establecimiento y empleador (CUIT, raz\'on social) se reemplazan por hashes antes de importarse a la BD operativa.
+	El modelo generativo solo recibe evidencia ya agregada y desidentificada; no recibe nombres ni identificadores.}
+	\item \rev{\textbf{BD on-prem:} la BD core de la ART permanece en la infraestructura de la aseguradora.
+	El pipeline la consulta en solo lectura por VPN y no expone filas individuales a Internet.}
+	\item \rev{\textbf{Baja l\'ogica de usuarios:} la BD operativa registra la inactivaci\'on de cuentas sin eliminar el historial operativo asociado, de modo que las visitas pasadas no queden hu\'erfanas.
+	Una eliminaci\'on f\'isica queda planteada como mejora futura, sujeta a los plazos de retenci\'on que fije la aseguradora.}
+\end{itemize}
+
+\rev{El tratamiento de datos personales en el prototipo es acotado y de bajo riesgo directo sobre personas f\'isicas: el objeto de la predicci\'on es el establecimiento, no el empleado individual.
+La expansi\'on hacia datos nominales de trabajadores (por ejemplo, siniestros con nombre) requerir\'a una evaluaci\'on de impacto m\'as detallada y, posiblemente, el consentimiento expreso del responsable del fichero ante la AAIP.}
+
+\section{\rev{Riesgos de IA generativa y prompt injection}}
+
+\rev{El uso del modelo generativo introduce riesgos espec\'ificos que la anonimizaci\'on de datos no resuelve por s\'i sola.}
+
+\begin{itemize}
+	\item \rev{\textbf{Anonimizaci\'on no equivale a protecci\'on ante inyecci\'on:} quitar identificadores del dossier reduce la exposici\'on de datos, pero no impide que el contenido de campos de texto libre (observaciones de visitas anteriores, incumplimientos) contenga instrucciones maliciosas incrustadas.
+	Un campo ``Observaci\'on'' puede incluir texto que intente manipular la respuesta del modelo generativo.}
+	\item \rev{\textbf{Contenido de observaciones como entrada no confiable:} el texto ingresado por preventores o extra\'ido del sistema core se trata como no confiable.
+	La API lo inserta en el prompt dentro de delimitadores expl\'icitos (por ejemplo, \texttt{<observacion>...</observacion>}) y antepone una instrucci\'on de rol que restringe el comportamiento del modelo.}
+	\item \rev{\textbf{Delimitadores y formato fijo de salida:} el prompt solicita al modelo una respuesta en formato estructurado con cuatro secciones fijas (resumen ejecutivo, perfil de riesgo, incumplimientos a verificar y focos de la visita).
+	Una respuesta fuera de ese esquema se descarta o se etiqueta como err\'onea antes de persistirse en la BD operativa.}
+	\item \rev{\textbf{Sin acceso a datos en tiempo real:} el modelo generativo no tiene acceso a la BD operativa ni a Internet; solo procesa el dossier que la API le env\'ia.
+	Esto limita el impacto de una inyecci\'on exitosa a la respuesta de esa invocaci\'on, sin posibilidad de exfiltrar datos de otras filas.}
+\end{itemize}
+
+\rev{Estos controles son adecuados para el nivel de prototipo.
+En una versi\'on productiva ser\'{\i}a recomendable agregar un clasificador de salida que detecte respuestas fuera del esquema y registrar las invocaciones para auditor\'{\i}a.}

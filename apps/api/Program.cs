@@ -47,6 +47,7 @@ builder.Services.AddHttpClient<GeminiClient>(c =>
     if (timeoutSeconds < 30) timeoutSeconds = 30;
     c.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
 });
+builder.Services.AddScoped<IGeminiClient>(sp => sp.GetRequiredService<GeminiClient>());
 builder.Services.AddScoped<CopilotoService>();
 builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
 builder.Services.AddScoped<AuthTokenService>();
@@ -775,7 +776,7 @@ app.MapGet("/api/establecimientos/{id}/dossier", async (string id, AppDbContext 
 app.MapPost("/api/establecimientos/{id}/resumen-ia", async (
     string id,
     AppDbContext db,
-    GeminiClient gemini,
+    IGeminiClient gemini,
     ClaimsPrincipal principal,
     string? horizonte,
     bool? refrescar) =>
@@ -2102,7 +2103,7 @@ app.MapPost("/api/establecimientos/{id}/acta/sugerir", async (
     SugerirActaRequest request,
     ClaimsPrincipal principal,
     AppDbContext db,
-    GeminiClient gemini) =>
+    IGeminiClient gemini) =>
 {
     var user = await GetCurrentUserAsync(principal, db);
     if (user is null) return Results.Unauthorized();
@@ -2139,12 +2140,13 @@ app.MapPost("/api/establecimientos/{id}/acta/sugerir", async (
     if (checklistObs.Count > 0)
     {
         sb.AppendLine("Ítems del checklist con observación:");
-        foreach (var c in checklistObs) sb.Append("- ").AppendLine(c);
+        foreach (var c in checklistObs)
+            sb.Append("- ").AppendLine(PiiTextSanitizer.ForLlmOperationalNote(c, 80));
     }
     if (!string.IsNullOrWhiteSpace(request.Notas))
     {
-        sb.AppendLine("Notas del preventor:");
-        sb.AppendLine(request.Notas.Trim());
+        sb.AppendLine("Notas del preventor (saneadas):");
+        sb.AppendLine(PiiTextSanitizer.Scrub(request.Notas, 400));
     }
 
     try
@@ -2173,7 +2175,7 @@ app.MapPost("/api/establecimientos/{id}/acta/mejorar-hallazgo", async (
     MejorarHallazgoRequest request,
     ClaimsPrincipal principal,
     AppDbContext db,
-    GeminiClient gemini) =>
+    IGeminiClient gemini) =>
 {
     var user = await GetCurrentUserAsync(principal, db);
     if (user is null) return Results.Unauthorized();
@@ -2202,7 +2204,7 @@ app.MapPost("/api/establecimientos/{id}/acta/mejorar-hallazgo", async (
     if (!string.IsNullOrWhiteSpace(request.ItemLabel))
     {
         sb.AppendLine("Ítem del checklist vinculado:");
-        sb.AppendLine(request.ItemLabel.Trim());
+        sb.AppendLine(PiiTextSanitizer.ForLlmOperationalNote(request.ItemLabel, 80));
         sb.AppendLine();
     }
     if (!string.IsNullOrWhiteSpace(contexto))
@@ -2211,13 +2213,13 @@ app.MapPost("/api/establecimientos/{id}/acta/mejorar-hallazgo", async (
         sb.AppendLine(contexto);
         sb.AppendLine();
     }
-    sb.AppendLine("=== BORRADOR DEL PREVENTOR ===");
-    sb.AppendLine(borrador);
+    sb.AppendLine("=== BORRADOR DEL PREVENTOR (saneado) ===");
+    sb.AppendLine(PiiTextSanitizer.Scrub(borrador, 500));
     if (!string.IsNullOrWhiteSpace(request.Recomendacion))
     {
         sb.AppendLine();
         sb.AppendLine("Recomendación previa (mejorala si aporta):");
-        sb.AppendLine(request.Recomendacion.Trim());
+        sb.AppendLine(PiiTextSanitizer.Scrub(request.Recomendacion, 300));
     }
 
     try
@@ -2929,46 +2931,12 @@ static string ToSentenceCaseEs(string s)
     return result;
 }
 
-static string TruncateLabel(string s, int max)
-{
-    return FormatChecklistLabel(s, max);
-}
-
 static string ExtractContextoCortoDossier(string? dossierJson)
 {
     if (string.IsNullOrWhiteSpace(dossierJson)) return "";
     try
     {
-        using var doc = JsonDocument.Parse(dossierJson);
-        var root = doc.RootElement;
-        var sb = new StringBuilder();
-        if (root.TryGetProperty("visitas", out var vis) &&
-            vis.TryGetProperty("incumplimientos_frecuentes", out var inc) &&
-            inc.ValueKind == JsonValueKind.Array)
-        {
-            sb.AppendLine("Incumplimientos frecuentes:");
-            var i = 0;
-            foreach (var e in inc.EnumerateArray())
-            {
-                if (i++ >= 6) break;
-                var k = e.TryGetProperty("k", out var kv) ? kv.GetString() : null;
-                if (!string.IsNullOrWhiteSpace(k)) sb.Append("- ").AppendLine(TruncateLabel(k, 160));
-            }
-        }
-        if (root.TryGetProperty("accidentes", out var acc) &&
-            acc.TryGetProperty("top_forma", out var formas) &&
-            formas.ValueKind == JsonValueKind.Array)
-        {
-            sb.AppendLine("Formas de accidente frecuentes:");
-            var i = 0;
-            foreach (var e in formas.EnumerateArray())
-            {
-                if (i++ >= 4) break;
-                var k = e.TryGetProperty("k", out var kv) ? kv.GetString() : null;
-                if (!string.IsNullOrWhiteSpace(k)) sb.Append("- ").AppendLine(TruncateLabel(k, 120));
-            }
-        }
-        var ctx = sb.ToString().Trim();
+        var ctx = DossierLlmContextBuilder.BuildAggregatesOnly(dossierJson);
         return ctx.Length > 1200 ? ctx[..1200] + "…" : ctx;
     }
     catch
@@ -3436,111 +3404,23 @@ static string BandaPorAcierto(double pct)
     return "Bajo";
 }
 
-// Arma un prompt ANONIMIZADO (sin hash ni identificadores) para el resumen del preventor.
+// Arma un prompt ANONIMIZADO: solo agregados (sin relatos, observaciones ni prosa libre).
 static string BuildDossierPrompt(string dossierJson, string horizonte, string? banda, int? ranking)
 {
-    using var doc = JsonDocument.Parse(dossierJson);
-    var root = doc.RootElement;
     var sb = new StringBuilder();
 
     // Los datos van PRIMERO y las instrucciones AL FINAL: los modelos siguen
     // mejor la última instrucción y así evitamos que "razonen en voz alta".
     sb.AppendLine("=== DATOS HISTÓRICOS ANONIMIZADOS DE UN ESTABLECIMIENTO ===");
+    sb.AppendLine(
+        "Política de privacidad: este bloque contiene SOLO agregados (conteos y categorías). " +
+        "No incluye relatos, domicilios, nombres, CUIT, teléfonos ni observaciones en prosa.");
     sb.Append("Contexto del modelo predictivo: horizonte trimestral (próximos tres meses).");
     if (!string.IsNullOrWhiteSpace(banda)) sb.Append(" Banda de riesgo: ").Append(banda).Append('.');
     if (ranking is not null) sb.Append(" Posición en la priorización: #").Append(ranking).Append('.');
     sb.AppendLine();
     sb.AppendLine();
-
-    if (root.TryGetProperty("accidentes", out var acc) && acc.ValueKind == JsonValueKind.Object)
-    {
-        sb.AppendLine("ACCIDENTES HISTÓRICOS:");
-        if (acc.TryGetProperty("total", out var tot)) sb.Append("- Total período: ").Append(tot.GetRawText());
-        if (acc.TryGetProperty("ultimos_12m", out var u12)) sb.Append("; últimos 12 meses: ").Append(u12.GetRawText());
-        sb.AppendLine();
-        if (acc.TryGetProperty("por_anio", out var anio) && anio.ValueKind == JsonValueKind.Object)
-        {
-            sb.Append("- Por año:");
-            foreach (var p in anio.EnumerateObject()) sb.Append(' ').Append(p.Name).Append(':').Append(p.Value.GetRawText());
-            sb.AppendLine();
-        }
-        AppendTop(sb, acc, "top_forma", "- Formas más frecuentes");
-        AppendTop(sb, acc, "top_zona", "- Zonas del cuerpo afectadas");
-        AppendTop(sb, acc, "top_naturaleza", "- Naturaleza de la lesión");
-        AppendTop(sb, acc, "top_gravedad", "- Gravedad");
-        if (acc.TryGetProperty("recientes", out var recientes) && recientes.ValueKind == JsonValueKind.Array)
-        {
-            sb.AppendLine("- Relatos recientes:");
-            foreach (var r in recientes.EnumerateArray())
-            {
-                var fecha = r.TryGetProperty("fecha", out var f) ? f.GetString() : null;
-                var forma = r.TryGetProperty("forma", out var fo) ? fo.GetString() : null;
-                var relato = r.TryGetProperty("relato", out var re) ? re.GetString() : null;
-                if (string.IsNullOrWhiteSpace(relato)) continue;
-                sb.Append("  * [").Append(fecha).Append("] ");
-                if (!string.IsNullOrWhiteSpace(forma)) sb.Append(forma).Append(": ");
-                sb.AppendLine(relato);
-            }
-        }
-        sb.AppendLine();
-    }
-
-    if (root.TryGetProperty("visitas", out var vis) && vis.ValueKind == JsonValueKind.Object)
-    {
-        sb.Append("VISITAS PREVENTIVAS PREVIAS");
-        if (vis.TryGetProperty("total", out var vt)) sb.Append(" (total realizadas: ").Append(vt.GetRawText()).Append(')');
-        sb.AppendLine(":");
-
-        // Incumplimientos DISTINTOS agregados sobre todas las visitas, con la
-        // frecuencia (en cuántas visitas apareció) y la última fecha registrada.
-        if (vis.TryGetProperty("incumplimientos_frecuentes", out var inc) && inc.ValueKind == JsonValueKind.Array &&
-            inc.GetArrayLength() > 0)
-        {
-            sb.AppendLine("- Incumplimientos registrados (todos los distintos; \"n\" = en cuántas visitas apareció, mayor n = más persistente):");
-            foreach (var e in inc.EnumerateArray())
-            {
-                var k = e.TryGetProperty("k", out var kv) ? kv.GetString() : null;
-                if (string.IsNullOrWhiteSpace(k)) continue;
-                var n = e.TryGetProperty("n", out var nv) ? nv.GetRawText() : null;
-                var ultima = e.TryGetProperty("ultima", out var uv) && uv.ValueKind == JsonValueKind.String ? uv.GetString() : null;
-                sb.Append("  * ").Append(k);
-                if (n is not null) sb.Append(" (n=").Append(n);
-                if (!string.IsNullOrWhiteSpace(ultima)) sb.Append(", última ").Append(ultima);
-                if (n is not null) sb.Append(')');
-                sb.AppendLine();
-            }
-        }
-
-        if (vis.TryGetProperty("observaciones", out var obs) && obs.ValueKind == JsonValueKind.Array &&
-            obs.GetArrayLength() > 0)
-        {
-            sb.AppendLine("- Observaciones del preventor en visitas previas:");
-            foreach (var o in obs.EnumerateArray())
-            {
-                var texto = o.GetString();
-                if (!string.IsNullOrWhiteSpace(texto)) sb.Append("  * ").AppendLine(texto);
-            }
-        }
-
-        // Respaldo: si no hubiera agregación, usar las notas recientes.
-        if ((!vis.TryGetProperty("incumplimientos_frecuentes", out var incChk) || incChk.GetArrayLength() == 0) &&
-            vis.TryGetProperty("recientes", out var vr) && vr.ValueKind == JsonValueKind.Array)
-        {
-            foreach (var r in vr.EnumerateArray())
-            {
-                var fecha = r.TryGetProperty("fecha", out var f) ? f.GetString() : null;
-                var resultado = r.TryGetProperty("resultado", out var re) ? re.GetString() : null;
-                var obsTxt = r.TryGetProperty("observaciones", out var o2) ? o2.GetString() : null;
-                var incTxt = r.TryGetProperty("incumplimientos", out var i2) ? i2.GetString() : null;
-                sb.Append("  * [").Append(fecha).Append("] ");
-                if (!string.IsNullOrWhiteSpace(resultado)) sb.Append(resultado).Append(". ");
-                if (!string.IsNullOrWhiteSpace(obsTxt)) sb.Append("Obs: ").Append(obsTxt).Append(". ");
-                if (!string.IsNullOrWhiteSpace(incTxt)) sb.Append("Incumplimientos: ").Append(incTxt);
-                sb.AppendLine();
-            }
-        }
-    }
-
+    sb.AppendLine(DossierLlmContextBuilder.BuildAggregatesOnly(dossierJson));
     sb.AppendLine();
     sb.AppendLine("=== TAREA ===");
     sb.AppendLine(
@@ -3551,6 +3431,7 @@ static string BuildDossierPrompt(string dossierJson, string horizonte, string? b
     sb.AppendLine("- Empezá tu respuesta con una línea que diga exactamente: ===GUÍA=== y no escribas absolutamente nada antes de esa línea.");
     sb.AppendLine("- Respondé ÚNICAMENTE la guía final. NO muestres tu razonamiento, NO repitas estas instrucciones ni vuelquen los datos crudos, NO escribas nada en inglés.");
     sb.AppendLine("- Todo en español rioplatense, claro y concreto. No inventes datos que no figuren en el bloque de arriba. No uses el nombre de la empresa (no lo tenés).");
+    sb.AppendLine("- No inventes ni completes datos personales, domicilios ni identidades: no están en la entrada.");
     sb.AppendLine("- ANCLÁ cada punto a la evidencia: cuando cites un foco, indicá entre paréntesis el dato que lo respalda (p. ej. cantidad de accidentes, forma más frecuente, incumplimiento previo).");
     sb.AppendLine("- Ordená los focos por criticidad (frecuencia y gravedad), del más importante al menos.");
     sb.AppendLine("- Para las medidas de control/EPP sugeridas por buenas prácticas (no figuran en los datos), aclaralo con \"sugerencia:\".");
@@ -3564,7 +3445,7 @@ static string BuildDossierPrompt(string dossierJson, string horizonte, string? b
     sb.AppendLine("- (2-3 viñetas con números y tendencia temporal si la hay: formas, zonas y naturaleza predominantes)");
     sb.AppendLine();
     sb.AppendLine("**2. Incumplimientos previos a verificar**");
-    sb.AppendLine("- (incumplimientos u observaciones de visitas anteriores; marcá los que se repiten como \"recurrente / pendiente de subsanar\". Si no hay datos de visitas, escribí: \"Sin registros de visitas previas.\")");
+    sb.AppendLine("- (categorías agregadas de visitas anteriores; marcá las que se repiten como \"recurrente / pendiente de subsanar\". Si no hay datos de visitas, escribí: \"Sin registros de visitas previas.\")");
     sb.AppendLine();
     sb.AppendLine("**3. Focos priorizados para la próxima visita**");
     sb.AppendLine("- Foco (evidencia): acción concreta. EPP/control sugerido cuando aplique.");
@@ -3637,21 +3518,6 @@ static string LimpiarResumenIa(string? texto)
         }
     }
     return sb.ToString().Trim();
-}
-
-static void AppendTop(StringBuilder sb, JsonElement acc, string prop, string label)
-{
-    if (!acc.TryGetProperty(prop, out var arr) || arr.ValueKind != JsonValueKind.Array || arr.GetArrayLength() == 0)
-        return;
-    sb.Append(label).Append(": ");
-    var parts = new List<string>();
-    foreach (var e in arr.EnumerateArray())
-    {
-        var k = e.TryGetProperty("k", out var kv) ? kv.GetString() : null;
-        var n = e.TryGetProperty("n", out var nv) ? nv.GetRawText() : null;
-        if (!string.IsNullOrWhiteSpace(k)) parts.Add(n is null ? k : $"{k} ({n})");
-    }
-    sb.AppendLine(string.Join("; ", parts));
 }
 
 static double Median(List<double> values)
@@ -3911,3 +3777,6 @@ record MejorarHallazgoRequest(
     string? Severidad);
 record PatchHallazgoRequest(string? Estado);
 record CancelarVisitaRequest(string MotivoCancelacion);
+
+// Expone el entrypoint para WebApplicationFactory en tests.
+public partial class Program { }

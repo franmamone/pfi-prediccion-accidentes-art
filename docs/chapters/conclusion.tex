@@ -1,11 +1,32 @@
-\chapter{Conclusi\'on}\label{conclussions}
+\chapter{Conclusiones y trabajo futuro}\label{ch:conclusiones}
 
-\section{Resumen de aportes}
+\section{\rev{Resumen de aportes}}
 
-Completar.
+\rev{Este trabajo dise\~n\'o, implement\'o y evalu\'o el prototipo Prevex: un sistema predictivo que prioriza establecimientos empleadores en Argentina seg\'un su riesgo de accidentabilidad en un horizonte trimestral.
+El prototipo incorpora explicabilidad (valores SHAP), investigaci\'on con usuarios (encuesta, entrevistas y personas) y una aplicaci\'on operativa local para preventores y coordinadores de una aseguradora de riesgos del trabajo.}
 
-\section{Trabajo futuro}
+\rev{Los aportes principales son:}
+\begin{itemize}
+	\item \rev{\textbf{Panel de datos tabulares verificado:} construcci\'on de un panel establecimiento$\times$mes a partir de fuentes operativas reales (siniestros, n\'omina, prevenci\'on) con horizonte trimestral y partici\'on temporal estricta (2022--2023 entrenamiento, 2024 calibraci\'on, 2025 holdout).}
+	\item \rev{\textbf{Modelo predictivo con m\'etricas en holdout~2025:} XGBoost con PR-AUC de~0,515 y recall del~66,7\,\% al umbral~F2 en el a\~no que el modelo no vio.
+	La lista operativa de~1000 establecimientos alcanza una precisi\'on media mensual del~49,5\,\%, unas 19 veces la tasa base.
+	El tramo cr\'{\i}tico (top-50) llega al~93,5\,\%.}
+	\item \rev{\textbf{Explicabilidad auditable:} cada posici\'on del ranking incluye las contribuciones SHAP de los factores m\'as influyentes, permitiendo al preventor entender y cuestionar la priorizaci\'on.}
+	\item \rev{\textbf{Aplicaci\'on operativa funcional:} API REST (ASP.NET Core) y frontend React con autenticaci\'on JWT, agenda de visitas, generaci\'on de resumen narrativo mediante IA generativa anonimizada y estad\'isticas de cobertura.}
+	\item \nuevo{\textbf{Madurez operativa del prototipo:} copiloto normativo con corpus SRT en SQL, acta y hallazgos al cerrar visita, reagenda, asignaci\'on geogr\'afica asistida, MFA e invitaci\'on por correo.}
+	\item \rev{\textbf{Investigaci\'on con usuarios integrada:} encuesta y entrevistas que evidenciaron la brecha entre la planificaci\'on normativa y la pr\'actica reactiva de visitas, y que guiaron el dise\~no de la interfaz.}
+	\item \rev{\textbf{Resguardo de datos y privacidad:} arquitectura on-prem para la BD core, anonimizaci\'on por hashes antes de importar a la nube, y separaci\'on estricta entre el modelo predictivo (local) y el modelo generativo (recibe solo dossier desidentificado).}
+	\item \nuevo{\textbf{Validaci\'on automatizada:} suite xUnit con reporte Coverlet de cobertura de c\'odigo de la API en el umbral del~85\,\%.}
+\end{itemize}
 
-\Nico{Este es un ejemplo de comentario}
+\section{\rev{Trabajo futuro}}
 
-Completar.
+\rev{Las l\'ineas de trabajo identificadas para versiones posteriores del prototipo son:}
+\begin{itemize}
+	\item \nuevo{\textbf{Ampliar la suite de pruebas:} mantener el umbral Coverlet del~85\,\% y sumar casos de borde (fallos SMTP, recuperaci\'on MFA, concurrencia de agenda) a medida que crezca el producto.}
+	\item \rev{\textbf{Reentrenamiento peri\'odico:} incorporar los datos de 2024 al conjunto de entrenamiento y evaluar el modelo actualizado sobre per\'iodos m\'as recientes, manteniendo la partici\'on temporal estricta para no contaminar el holdout.}
+	\item \rev{\textbf{Autenticaci\'on institucional:} reemplazar el esquema JWT propio por el directorio de identidad de la ART (Active Directory o equivalente), eliminando la gesti\'on de contrase\~nas en el prototipo y simplificando el alta de usuarios.} \nuevo{El MFA TOTP del prototipo se mantiene como capa intermedia hasta esa integraci\'on.}
+	\item \rev{\textbf{Clasificador de salida para el modelo generativo:} validar que la respuesta del modelo generativo respete el esquema de cuatro secciones antes de persistirla en la BD operativa, y registrar todas las invocaciones para auditor\'{\i}a.}
+	\item \rev{\textbf{Evaluaci\'on de impacto de datos personales:} si el prototipo se extiende a datos nominales de trabajadores, realizar una evaluaci\'on formal bajo Ley~25.326 y notificar a la AAIP seg\'un corresponda.}
+	\item \rev{\textbf{Extensi\'on a otras aseguradoras:} la arquitectura AWS Free Tier y el pipeline offline est\'an dise\~nados para ser reutilizables con otra ART que disponga de un panel equivalente; documentar ese proceso de adaptaci\'on queda como tarea futura.}
+\end{itemize}

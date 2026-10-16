@@ -7,4 +7,5 @@
       <Property Name="DefaultStartup" Value="true" />
     </Properties>
   </Project>
+  <Project Path="apps/api/tests/PfiPrevencion.Api.Tests/PfiPrevencion.Api.Tests.csproj" />
 </Solution>

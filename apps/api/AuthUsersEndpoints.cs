@@ -232,6 +232,7 @@ public static class AuthUsersEndpoints
                 user.Nombre = req.Nombre.Trim();
             if (!string.IsNullOrWhiteSpace(req.Rol) && req.Rol is "Admin" or "Coordinador" or "Preventor")
                 user.Rol = req.Rol;
+            // Baja lógica: Activo=false (no se borra la fila ni el historial de agenda/auditoría).
             if (req.Activo is not null) user.Activo = req.Activo.Value;
             if (req.ZonaId is not null) user.ZonaId = req.ZonaId;
             if (req.Latitud is not null) user.Latitud = req.Latitud;

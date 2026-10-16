@@ -24,6 +24,13 @@
 
 % Para colores
 \usepackage[usenames,dvipsnames]{xcolor}
+% Revisiones devoluci\'on E50: texto nuevo o modificado en azul (quitar \rev al cerrar).
+\newcommand{\rev}[1]{\textcolor{blue}{#1}}
+% Alcance ampliado post-E50 (features nuevas): texto en rojo (quitar \nuevo al cerrar E75).
+\newcommand{\nuevo}[1]{\textcolor{red}{#1}}
+% Actualizaci\'on de encuesta (n>=160): texto en naranja para revisi\'on (quitar \enc al cerrar).
+\newcommand{\enc}[1]{\textcolor{orange}{#1}}
+\newcommand{\fuentepropia}{\rev{\textit{Fuente: elaboraci\'on propia.}}}
 
 % Para flotar figuras y tablas
 \usepackage{framed}
@@ -283,7 +290,7 @@
 	\tableofcontents
 	\input{chapters/chapter00}
 	\input{chapters/chapter01}
-	\input{chapters/chapter02}
+	% chapter02 (Estado del arte) quedó integrado en Antecedentes (chapter01).
 	\ifdeliverydescripcion
 		\input{chapters/chapter03}
 	\fi

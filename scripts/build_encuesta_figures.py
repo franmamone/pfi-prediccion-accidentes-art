@@ -1,6 +1,6 @@
 """Genera figuras PNG de la encuesta de user research (hito 50%).
 
-Lee el CSV de respuestas de Google Forms (n=156) y escribe gráficos en
+Lee el Excel/CSV de respuestas de Google Forms y escribe gr\'aficos en
 docs/figures/encuesta/.
 """
 
@@ -21,13 +21,14 @@ from matplotlib.path import Path as MplPath
 REPO = Path(__file__).resolve().parents[1]
 OUT = REPO / "docs" / "figures" / "encuesta"
 DEFAULT_CSV = REPO / "data" / "raw" / "encuesta" / "encuesta_prevencion_seguridad.csv"
+DEFAULT_XLSX_REPO = REPO / "data" / "raw" / "encuesta" / "encuesta_respuestas.xlsx"
 DOWNLOADS_CSV = Path(
     r"c:\Users\FranciscoDanteMamone\Downloads"
     r"\Encuesta sobre Prevención y Seguridad Laboral .csv"
     r"\Encuesta sobre Prevención y Seguridad Laboral .csv"
 )
 DEFAULT_XLSX = Path(
-    r"c:\Users\FranciscoDanteMamone\Documents\UADE\Tesis\50%"
+    r"c:\Users\FranciscoDanteMamone\Documents\UADE\Tesis"
     r"\Encuesta sobre Prevención y Seguridad Laboral  (Respuestas).xlsx"
 )
 
@@ -347,7 +348,10 @@ def ordered_series(
 
 def main() -> None:
     _style()
-    src = next((p for p in (DEFAULT_CSV, DOWNLOADS_CSV, DEFAULT_XLSX) if p.exists()), None)
+    src = next(
+        (p for p in (DEFAULT_XLSX, DEFAULT_XLSX_REPO, DEFAULT_CSV, DOWNLOADS_CSV) if p.exists()),
+        None,
+    )
     if src is None:
         raise SystemExit("No se encontró el archivo de encuesta.")
     print("fuente", src)

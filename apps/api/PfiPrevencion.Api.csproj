@@ -26,10 +26,22 @@
     <PackageReference Include="Otp.NET" Version="1.4.0" />
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(SkipSpaReference)' != 'true'">
     <ProjectReference Include="..\web\PfiPrevencion.Web.esproj">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="PfiPrevencion.Api.Tests" />
+  </ItemGroup>
+
+  <!-- El proyecto de tests vive bajo apps/api/tests; no debe entrar al compile de la API. -->
+  <ItemGroup>
+    <Compile Remove="tests\**\*" />
+    <Content Remove="tests\**\*" />
+    <EmbeddedResource Remove="tests\**\*" />
+    <None Remove="tests\**\*" />
   </ItemGroup>
 
   <ItemGroup>
