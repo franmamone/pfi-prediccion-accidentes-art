@@ -4,34 +4,34 @@ En Argentina, la prevenci\'on de accidentes de trabajo en el marco de las asegur
 
 En los \'ultimos a\~nos, el escenario comenz\'o a cambiar. La siniestralidad laboral sigue generando costos econ\'omicos y humanos relevantes, mientras el Estado promueve una gesti\'on m\'as planificada de la prevenci\'on. La Resoluci\'on SRT 48/2025 y los lineamientos de la Prevenci\'on 4.0 impulsan a las aseguradoras a aprovechar la informaci\'on que ya registran en sus sistemas para anticipar situaciones de riesgo, y no solo documentarlas cuando se materializan \parencite{srt_res48_2025,srt_prevencion40}. Surge as\'{\i} una oportunidad concreta: las aseguradoras disponen de a\~nos de datos sobre siniestros, p\'olizas y establecimientos empleadores que, debidamente tratados, podr\'{\i}an orientar decisiones preventivas con mayor criterio.
 
-\rev{El presente Proyecto Final de Ingenier\'{\i}a (PFI), titulado \emph{Prevex: sistema predictivo con inteligencia artificial para la prevenci\'on proactiva de accidentes laborales en aseguradoras de riesgos del trabajo de Argentina}, responde a esa necesidad.} Se propone dise\~nar una herramienta que permita identificar, con antelaci\'on, qu\'e establecimientos tienen mayor probabilidad de registrar accidentes de trabajo en un per\'{\i}odo determinado, de modo que inspectores y preventores puedan priorizar visitas, auditor\'{\i}as y acciones correctivas antes de que el siniestro ocurra. La soluci\'on se concibe como apoyo a la decisi\'on profesional: no reemplaza el juicio del especialista ni las instancias regulatorias, sino que busca hacer m\'as eficiente el uso de los recursos disponibles.
+El presente Proyecto Final de Ingenier\'{\i}a (PFI), titulado \emph{Prevex: sistema predictivo con inteligencia artificial para la prevenci\'on proactiva de accidentes laborales en aseguradoras de riesgos del trabajo de Argentina}, responde a esa necesidad. Se propone dise\~nar una herramienta que permita identificar, con antelaci\'on, qu\'e establecimientos tienen mayor probabilidad de registrar accidentes de trabajo en un per\'{\i}odo determinado, de modo que inspectores y preventores puedan priorizar visitas, auditor\'{\i}as y acciones correctivas antes de que el siniestro ocurra. La soluci\'on se concibe como apoyo a la decisi\'on profesional: no reemplaza el juicio del especialista ni las instancias regulatorias, sino que busca hacer m\'as eficiente el uso de los recursos disponibles.
 
-\rev{El prototipo Prevex ya incorpora investigaci\'on con usuarios (encuesta y entrevistas) y una aplicaci\'on operativa local para priorizar y gestionar visitas. Las secciones siguientes formalizan el objetivo, los objetivos espec\'{\i}ficos y el alcance del trabajo.}
+El prototipo Prevex ya incorpora investigaci\'on con usuarios (encuesta y entrevistas) y una aplicaci\'on operativa local para priorizar y gestionar visitas. Las secciones siguientes formalizan el objetivo, los objetivos espec\'{\i}ficos y el alcance del trabajo.
 
-\section{\rev{Objetivo general}}\label{sec:objetivo-general}
+\section{Objetivo general}\label{sec:objetivo-general}
 
-\rev{Dise\~nar, implementar y validar un prototipo de sistema predictivo (Prevex) que priorice establecimientos empleadores asegurados en Argentina seg\'un su riesgo de accidentabilidad en un horizonte trimestral, y que permita a preventores y coordinadores de una aseguradora de riesgos del trabajo planificar visitas con explicabilidad y registro operativo.}
+Dise\~nar, implementar y validar un prototipo de sistema predictivo (Prevex) que priorice establecimientos empleadores asegurados en Argentina seg\'un su riesgo de accidentabilidad en un horizonte trimestral, y que permita a preventores y coordinadores de una aseguradora de riesgos del trabajo planificar visitas con explicabilidad y registro operativo.
 
-\section{\rev{Objetivos espec\'{\i}ficos}}\label{sec:objetivos-especificos}
+\section{Objetivos espec\'{\i}ficos}\label{sec:objetivos-especificos}
 
 \begin{enumerate}
-	\item \rev{Construir un panel de datos tabulares a partir de fuentes operativas de una aseguradora (siniestros, n\'omina, prevenci\'on) y entrenar un modelo de clasificaci\'on (XGBoost) con horizonte trimestral.}
-	\item \rev{Generar rankings versionados con explicabilidad (valores SHAP) e importarlos a una base operativa desacoplada del sistema core.}
-	\item \rev{Desarrollar una aplicaci\'on web (API y frontend) para autenticaci\'on por roles, priorizaci\'on, detalle del establecimiento, agenda de visitas y estad\'isticas de cobertura.}
-	\item \rev{Incorporar investigaci\'on con usuarios (encuesta, entrevistas y personas) para alinear el dise\~no a la pr\'actica de preventores y coordinaci\'on.}
-	\item \rev{Documentar arquitectura, resguardo de datos personales (Ley 25.326) y criterios de validaci\'on del prototipo, dejando planteado el camino de pruebas automatizadas hacia la entrega siguiente.}
+	\item Construir un panel de datos tabulares a partir de fuentes operativas de una aseguradora (siniestros, n\'omina, prevenci\'on) y entrenar un modelo de clasificaci\'on (XGBoost) con horizonte trimestral.
+	\item Generar rankings versionados con explicabilidad (valores SHAP) e importarlos a una base operativa desacoplada del sistema core.
+	\item Desarrollar una aplicaci\'on web (API y frontend) para autenticaci\'on por roles, priorizaci\'on, detalle del establecimiento, agenda de visitas y estad\'isticas de cobertura.
+	\item Incorporar investigaci\'on con usuarios (encuesta, entrevistas y personas) para alinear el dise\~no a la pr\'actica de preventores y coordinaci\'on.
+	\item Documentar arquitectura, resguardo de datos personales (Ley 25.326) y criterios de validaci\'on del prototipo, dejando planteado el camino de pruebas automatizadas hacia la entrega siguiente.
 \end{enumerate}
 
-\section{\rev{Alcance}}\label{sec:alcance}
+\section{Alcance}\label{sec:alcance}
 
-\rev{El alcance del trabajo comprende:}
+El alcance del trabajo comprende:
 
 \begin{itemize}
-	\item \rev{Un prototipo funcional Prevex (SQL Server operativo \texttt{PfiPrevencion}, API .NET, frontend React), validado en entorno local y dise\~nado para desplegarse en AWS Free Tier seg\'un la arquitectura del Cap\'itulo~\ref{ch:metodologia}.}
-	\item \rev{Datos de una cartera de establecimientos de una aseguradora argentina (panel del orden de 35.500 establecimientos), anonimizados para el modelado.}
-	\item \rev{Horizonte predictivo trimestral y lista operativa acotada (hasta 1.000 establecimientos) para planificaci\'on de visitas.}
-	\item \rev{Roles Preventor, Coordinador y Administrador; idioma de la interfaz en espa\~nol.}
-	\item \rev{Demo geogr\'afica ilustrativa en Ciudad Aut\'onoma de Buenos Aires para asignaci\'on por proximidad (coordenadas de prueba).}
+	\item Un prototipo funcional Prevex (SQL Server operativo \texttt{PfiPrevencion}, API .NET, frontend React), validado en entorno local y dise\~nado para desplegarse en AWS Free Tier seg\'un la arquitectura del Cap\'itulo~\ref{ch:metodologia}.
+	\item Datos de una cartera de establecimientos de una aseguradora argentina (panel del orden de 35.500 establecimientos), anonimizados para el modelado.
+	\item Horizonte predictivo trimestral y lista operativa acotada (hasta 1.000 establecimientos) para planificaci\'on de visitas.
+	\item Roles Preventor, Coordinador y Administrador; idioma de la interfaz en espa\~nol.
+	\item Demo geogr\'afica ilustrativa en Ciudad Aut\'onoma de Buenos Aires para asignaci\'on por proximidad (coordenadas de prueba).
 	\item \nuevo{Copiloto normativo SRT con recuperaci\'on de fragmentos (\emph{chunks}) en SQL Server, respuestas guardadas por establecimiento y tema.}
 	\item \nuevo{Cierre de visita con acta estructurada, hallazgos abiertos y opci\'on de reagenda por plazo.}
 	\item \nuevo{Asignaci\'on asistida por distancia (Haversine), ancla visita a visita, score de carga y duraci\'on estimada por c\'apitas.}

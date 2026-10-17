@@ -1,0 +1,54 @@
+{
+  "moneda": "USD",
+  "horizonte_anos": 5,
+  "tasa_descuento": 0.12,
+  "inversion_inicial_usd": 8000.0,
+  "nota": "Inversion inicial de productizacion comercial.",
+  "escenarios": {
+    "pesimista": {
+      "label": "Pesimista",
+      "price_month": 800.0,
+      "arts": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "fixed_opex": 9000.0,
+      "var_per_art": 1200.0,
+      "cac": 2500.0,
+      "historia": "Un solo piloto a precio de entrada; sin escalar; opex fijo alto relativo al ingreso."
+    },
+    "base": {
+      "label": "Base",
+      "price_month": 1200.0,
+      "arts": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "fixed_opex": 11000.0,
+      "var_per_art": 1300.0,
+      "cac": 2500.0,
+      "historia": "Adopcion gradual vía canal de prevencion; precio de referencia."
+    },
+    "optimista": {
+      "label": "Optimista",
+      "price_month": 1500.0,
+      "arts": [
+        2,
+        4,
+        6,
+        8,
+        10
+      ],
+      "fixed_opex": 12000.0,
+      "var_per_art": 1400.0,
+      "cac": 3000.0,
+      "historia": "Replicacion en varias ART y upsell de precio medio."
+    }
+  }
+}

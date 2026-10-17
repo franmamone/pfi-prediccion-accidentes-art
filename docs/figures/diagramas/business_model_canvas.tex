@@ -1,0 +1,103 @@
+% Business Model Canvas Prevex (layout Osterwalder / Strategyzer)
+\begingroup
+\definecolor{PrevexBlue}{RGB}{12,74,140}
+\definecolor{BMCLine}{RGB}{55,65,81}
+\definecolor{BMCHead}{RGB}{15,23,42}
+\tikzset{
+  bmcbox/.style={
+    draw=BMCLine,
+    line width=0.7pt,
+    rectangle,
+    inner sep=5pt,
+    align=left,
+    font=\sffamily\footnotesize,
+    text=BMCHead,
+    anchor=north west,
+  },
+}
+% Titulo de bloque: icono azul Prevex + texto en negrita
+\newcommand{\bmchead}[2]{%
+  {\color{PrevexBlue}\Large#1}\hspace{0.35em}%
+  {\sffamily\bfseries\small\color{PrevexBlue}#2}%
+}
+\begin{tikzpicture}[x=1cm, y=1cm]
+  \def\Wsoc{4.6}
+  \def\Wmid{4.6}
+  \def\Wval{5.8}
+  \def\Htop{7.2}
+  \def\Hhalf{3.52}
+  \def\Hbot{3.1}
+  \def\gap{0.12}
+
+  \def\xsoc{0}
+  \pgfmathsetmacro{\xact}{\Wsoc+\gap}
+  \pgfmathsetmacro{\xval}{\xact+\Wmid+\gap}
+  \pgfmathsetmacro{\xrel}{\xval+\Wval+\gap}
+  \pgfmathsetmacro{\xseg}{\xrel+\Wmid+\gap}
+  \pgfmathsetmacro{\Wtot}{\xseg+\Wsoc}
+  \pgfmathsetmacro{\Wcost}{(\Wtot-\gap)/2}
+  \pgfmathsetmacro{\xrev}{\Wcost+\gap}
+
+  \node[anchor=south west, font=\sffamily\bfseries\large\color{PrevexBlue}, inner sep=0] at (0,7.85)
+    {Business Model Canvas: Prevex};
+
+  \node[bmcbox, minimum width=\Wsoc cm, minimum height=\Htop cm,
+        text width=\dimexpr\Wsoc cm-12pt\relax] (soc) at (\xsoc,7.65) {%
+    \bmchead{\faHandshake}{Socios clave}\\[5pt]
+    ART cliente; integradores de core ART; proveedor cloud; API de modelo generativo.
+  };
+
+  \node[bmcbox, minimum width=\Wmid cm, minimum height=\Hhalf cm,
+        text width=\dimexpr\Wmid cm-12pt\relax] (act) at (\xact,7.65) {%
+    \bmchead{\faTasks}{Actividades clave}\\[5pt]
+    Pipeline de datos; entrenamiento XGBoost; operaci\'on API/frontend; copiloto normativo y ranking.
+  };
+
+  \node[bmcbox, minimum width=\Wmid cm, minimum height=\Hhalf cm,
+        text width=\dimexpr\Wmid cm-12pt\relax] (rec) at (\xact,7.65-\Hhalf-\gap) {%
+    \bmchead{\faCogs}{Recursos clave}\\[5pt]
+    Panel tabular; modelo y SHAP; corpus SRT; infraestructura cloud; soporte.
+  };
+
+  \node[bmcbox, minimum width=\Wval cm, minimum height=\Htop cm,
+        text width=\dimexpr\Wval cm-12pt\relax] (val) at (\xval,7.65) {%
+    \bmchead{\faGift}{Propuestas de valor}\\[5pt]
+    Ranking trimestral explicable; preparaci\'on de visita con normativa SRT y dossier; cierre estructurado; asignaci\'on asistida. Apoyo a la decisi\'on, sin reemplazar al preventor.
+  };
+
+  \node[bmcbox, minimum width=\Wmid cm, minimum height=\Hhalf cm,
+        text width=\dimexpr\Wmid cm-12pt\relax] (rel) at (\xrel,7.65) {%
+    \bmchead{\faHeart}{Relaci\'on con clientes}\\[5pt]
+    Onboarding; soporte operativo; reentrenamiento del modelo; actualizaci\'on del corpus normativo.
+  };
+
+  \node[bmcbox, minimum width=\Wmid cm, minimum height=\Hhalf cm,
+        text width=\dimexpr\Wmid cm-12pt\relax] (can) at (\xrel,7.65-\Hhalf-\gap) {%
+    \bmchead{\faTruck}{Canales}\\[5pt]
+    Venta B2B a \'areas de prevenci\'on; canal con proveedores de core ART.
+  };
+
+  \node[bmcbox, minimum width=\Wsoc cm, minimum height=\Htop cm,
+        text width=\dimexpr\Wsoc cm-12pt\relax] (seg) at (\xseg,7.65) {%
+    \bmchead{\faUsers}{Segmentos de clientes}\\[5pt]
+    ART en Argentina con cartera de establecimientos y equipo de prevenci\'on (preventores y coordinadores). Pagador: la ART.
+  };
+
+  \pgfmathsetmacro{\ybot}{7.65-\Htop-\gap}
+  \node[bmcbox, minimum width=\Wcost cm, minimum height=\Hbot cm,
+        text width=\dimexpr\Wcost cm-12pt\relax] (cost) at (0,\ybot) {%
+    \bmchead{\faTags}{Estructura de costos}\\[5pt]
+    Fijos: cloud base, soporte, reentrenamiento. Variables: inferencia generativa, almacenamiento, CAC por ART nueva. Inversi\'on inicial de productizaci\'on.
+  };
+
+  \node[bmcbox, minimum width=\Wcost cm, minimum height=\Hbot cm,
+        text width=\dimexpr\Wcost cm-12pt\relax] (ing) at (\xrev,\ybot) {%
+    \bmchead{\faMoneyBillWave}{Fuentes de ingresos}\\[5pt]
+    Suscripci\'on SaaS mensual o anual por ART (un contrato por aseguradora), no por preventor. Precio de referencia base: USD~1.200/mes.
+  };
+
+  \node[anchor=north west, font=\sffamily\scriptsize\color{BMCLine}, inner sep=0]
+    at (0,\ybot-\Hbot-0.22)
+    {Fuente: adaptado de Osterwalder y Pigneur, Business Model Generation (2010).};
+\end{tikzpicture}
+\endgroup

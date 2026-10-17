@@ -1,12 +1,12 @@
-\chapter{\rev{Antecedentes}}\label{ch:antecedentes}\label{ch:marco-teorico}
+\chapter{Antecedentes}\label{ch:antecedentes}\label{ch:marco-teorico}
 
-\rev{Este cap\'itulo re\'une el marco conceptual y el estado del arte que sustentan Prevex. Primero se presentan los antecedentes de dominio y de tecnolog\'{\i}a (marco te\'orico); luego se sistematizan soluciones comerciales y trabajos acad\'emicos recientes (estado del arte).}
+Este cap\'itulo re\'une el marco conceptual y el estado del arte que sustentan Prevex. Primero se presentan los antecedentes de dominio y de tecnolog\'{\i}a (marco te\'orico); luego se sistematizan soluciones comerciales y trabajos acad\'emicos recientes (estado del arte).
 
-\section{\rev{Marco te\'orico}}\label{sec:marco-teorico}
+\section{Marco te\'orico}\label{sec:marco-teorico}
 
-\rev{El marco te\'orico organiza, en primer lugar, el dominio de la prevenci\'on en aseguradoras de riesgos del trabajo y la caracterizaci\'on de los datos; a continuaci\'on, los modelos predictivos, la explicabilidad y la arquitectura de software.}
+El marco te\'orico organiza, en primer lugar, el dominio de la prevenci\'on en aseguradoras de riesgos del trabajo y la caracterizaci\'on de los datos; a continuaci\'on, los modelos predictivos, la explicabilidad y la arquitectura de software.
 
-\subsection{\rev{Gesti\'on de riesgos laborales y el paradigma de la Prevenci\'on 4.0}}
+\subsection{Gesti\'on de riesgos laborales y el paradigma de la Prevenci\'on 4.0}
 
 Hist\'oricamente, la gesti\'on de la seguridad en el \'ambito laboral ha estado dominada por modelos de inspecci\'on y control reactivos. En estos esquemas, la actuaci\'on de las autoridades y de las aseguradoras de riesgos del trabajo se daba principalmente como respuesta a la ocurrencia de un siniestro o a la recepci\'on de una denuncia, con el fin de mitigar consecuencias legales y econ\'omicas. Sin embargo, los altos costos asociados a la siniestralidad y el impacto del ausentismo en la productividad empresarial han impulsado la necesidad de evolucionar hacia modelos proactivos y planificados.
 
@@ -18,15 +18,15 @@ En t\'erminos operativos, la adopci\'on de modelos de inteligencia artificial re
 
 Una vez incluido en el PESE, el empleador y su aseguradora deben cumplir obligaciones espec\'{\i}ficas durante un per\'{\i}odo de dos a\~nos, entre las que se destacan la confecci\'on del Informe General del Empleador (IGE), la suscripci\'on de un Plan de Reducci\'on de la Siniestralidad (PRS) con plan de visitas, la actualizaci\'on del Relevamiento General de Riesgos Laborales (RGRL) y el cumplimiento del plan de fiscalizaci\'on por parte de la aseguradora \parencite{srt_pese}. En este escenario, la implementaci\'on de un modelo predictivo permite identificar de manera temprana aquellos establecimientos con trayectorias de mayor riesgo. De este modo, la aseguradora puede intervenir preventivamente antes de que la empresa alcance los umbrales de inclusi\'on en el PESE, reduciendo costos de cumplimiento regulatorio y, fundamentalmente, evitando la materializaci\'on de da\~nos a la salud de los trabajadores.
 
-\subsection{\rev{Origen y caracterizaci\'on de los datos}}\label{sec:datos}
+\subsection{Origen y caracterizaci\'on de los datos}\label{sec:datos}
 
 El \emph{dataset} tabular del modelo proviene de una empresa desarrolladora del sistema core utilizado por las aseguradoras de riesgos del trabajo, que concentra en sus bases de datos el registro operativo de siniestros, p\'olizas y establecimientos empleadores. La extracci\'on cubre historia de accidentes de trabajo y variables asociadas (2022--2025) y se anonimiz\'o antes de cualquier uso anal\'{\i}tico. Es informaci\'on primaria, generada en el marco de la relaci\'on entre aseguradora y empleador, sin fuentes p\'ublicas masivas ni datos obtenidos mediante \emph{web scraping}.
 
-\rev{El panel operativo es del orden de 35.500 establecimientos.} Cada observaci\'on se construye a nivel de establecimiento y per\'{\i}odo (mes), con variables de estructura laboral (dotaci\'on, antig\"uedad, rotaci\'on), actividad econ\'omica (\rev{Clasificador Industrial Internacional Uniforme, CIIU}), trayectoria de siniestralidad (frecuencia, severidad, tipo de prestaci\'on), diagn\'osticos, edades de la plantilla y antecedentes de fiscalizaci\'on o inclusi\'on en programas como el PESE. La variable objetivo expresa si el establecimiento registra al menos un accidente en los tres meses siguientes al per\'{\i}odo de decisi\'on (horizonte trimestral).
+El panel operativo es del orden de 35.500 establecimientos. Cada observaci\'on se construye a nivel de establecimiento y per\'{\i}odo (mes), con variables de estructura laboral (dotaci\'on, antig\"uedad, rotaci\'on), actividad econ\'omica (Clasificador Industrial Internacional Uniforme, CIIU), trayectoria de siniestralidad (frecuencia, severidad, tipo de prestaci\'on), diagn\'osticos, edades de la plantilla y antecedentes de fiscalizaci\'on o inclusi\'on en programas como el PESE. La variable objetivo expresa si el establecimiento registra al menos un accidente en los tres meses siguientes al per\'{\i}odo de decisi\'on (horizonte trimestral).
 
 Previo al modelado se aplic\'o depuraci\'on de valores nulos y duplicados, estandarizaci\'on de formatos, codificaci\'on de variables categ\'oricas y construcci\'on de variables de tendencia (por ejemplo, siniestros acumulados en ventanas m\'oviles). La partici\'on es temporal: los \'arboles se ajustan con 2022--2023; 2024 fija el umbral de decisi\'on, sin reentrenar; el desempe\~no que se reporta es el holdout 2025, que el modelo no vio.
 
-\subsection{\rev{Modelos predictivos y machine learning para clasificaci\'on}}\label{sec:modelos-ml}
+\subsection{Modelos predictivos y machine learning para clasificaci\'on}\label{sec:modelos-ml}
 
 Para lograr la anticipaci\'on de siniestros, se recurre al Aprendizaje Autom\'atico (\emph{Machine Learning}), una rama de la Inteligencia Artificial que permite a los sistemas aprender e identificar patrones complejos a partir de datos hist\'oricos sin ser expl\'{\i}citamente programados \parencite{bishop2006}.
 
@@ -36,11 +36,11 @@ La literatura especializada en aprendizaje autom\'atico sobre datos tabulares ha
 
 En dominios como la siniestralidad laboral, adem\'as, suele presentarse un desbalance marcado entre clases: los accidentes constituyen eventos relativamente infrecuentes frente al conjunto de establecimientos sin siniestros en un per\'{\i}odo dado. En este escenario, la m\'etrica de exactitud (\emph{accuracy}) puede resultar enga\~nosa, ya que un modelo que prediga sistem\'aticamente la clase mayoritaria obtendr\'{\i}a un porcentaje elevado de aciertos sin detectar los casos de riesgo relevantes \parencite{he2009}. Por ello, en problemas de detecci\'on de eventos cr\'{\i}ticos resulta m\'as adecuado priorizar m\'etricas orientadas a la clase positiva, como la sensibilidad (\emph{recall}), que mide la proporci\'on de casos de accidente correctamente identificados. Ello permite minimizar los falsos negativos, es decir, establecimientos con riesgo real que el sistema clasificar\'{\i}a err\'oneamente como seguros, un error particularmente grave en un contexto preventivo.
 
-\rev{En la evaluaci\'on del prototipo tambi\'en se reportan m\'etricas adicionales. El \emph{PR-AUC} (\'area bajo la curva precisi\'on-recall) resume el equilibrio entre precisi\'on y recall a lo largo de umbrales, y es m\'as informativo que el ROC-AUC cuando la clase positiva es rara. El \emph{Brier score} mide el error cuadr\'atico medio entre la probabilidad predicha y el resultado binario observado (valores m\'as bajos indican mejor calibraci\'on). El umbral F2 es el punto de corte de decisi\'on que prioriza el recall respecto de la precisi\'on (el recall pesa el doble), alineado a un contexto preventivo donde omitir un establecimiento de riesgo es m\'as costoso que una visita extra.}
+En la evaluaci\'on del prototipo tambi\'en se reportan m\'etricas adicionales. El \emph{PR-AUC} (\'area bajo la curva precisi\'on-recall) resume el equilibrio entre precisi\'on y recall a lo largo de umbrales, y es m\'as informativo que el ROC-AUC cuando la clase positiva es rara. El \emph{Brier score} mide el error cuadr\'atico medio entre la probabilidad predicha y el resultado binario observado (valores m\'as bajos indican mejor calibraci\'on). El umbral F2 es el punto de corte de decisi\'on que prioriza el recall respecto de la precisi\'on (el recall pesa el doble), alineado a un contexto preventivo donde omitir un establecimiento de riesgo es m\'as costoso que una visita extra.
 
 En s\'{\i}ntesis, la combinaci\'on de clasificaci\'on supervisada, modelos de ensamble para datos tabulares y m\'etricas sensibles al desbalance de clases constituye la base conceptual que justifica el enfoque predictivo adoptado en este trabajo.
 
-\subsection{\rev{Inteligencia artificial explicable (XAI) y valores SHAP}}
+\subsection{Inteligencia artificial explicable (XAI) y valores SHAP}
 
 Uno de los principales obst\'aculos para la adopci\'on de modelos predictivos de alta complejidad como los algoritmos basados en \'arboles en entornos empresariales y regulatorios es su car\'acter de ``caja negra''. Si bien estos modelos pueden alcanzar un elevado desempe\~no predictivo, no ofrecen de manera intr\'{\i}nseca una explicaci\'on comprensible de los factores que conducen a una determinada clasificaci\'on. En el \'ambito de la prevenci\'on de riesgos laborales, esta limitaci\'on resulta especialmente relevante: un inspector o preventor no puede fundar de manera operativa una auditor\'{\i}a o una intervenci\'on preventiva apoy\'andose \'unicamente en un puntaje o probabilidad de riesgo desprovisto de interpretaci\'on.
 
@@ -50,7 +50,7 @@ Para hacer comprensibles las predicciones del modelo XGBoost, se utilizan los va
 
 As\'{\i}, la incorporaci\'on de XAI mediante valores SHAP no solo responde a una necesidad t\'ecnica de interpretabilidad, sino que constituye un requisito de usabilidad, trazabilidad y confianza en soluciones predictivas destinadas a entornos regulados, donde las decisiones deben poder explicarse ante equipos de prevenci\'on, auditor\'{\i}a y cumplimiento normativo \parencite{arrieta2020,lundberg2017}.
 
-\subsection{\rev{Arquitectura cloud computing y patrones de dise\~no de software}}
+\subsection{Arquitectura cloud computing y patrones de dise\~no de software}
 
 Un modelo predictivo solo aporta valor si puede ser usado en la operaci\'on diaria de la aseguradora. Sin embargo, por restricciones de seguridad y por la complejidad de los sistemas heredados (\emph{legacy}), como los ERP de las aseguradoras, no siempre resulta viable integrar el algoritmo directamente dentro de esas plataformas. Por ello, resulta adecuado desplegar la soluci\'on como un sistema independiente en la nube, accesible mediante una aplicaci\'on web que consuma los resultados del modelo sin modificar la infraestructura existente.
 
@@ -60,21 +60,21 @@ En cuanto al dise\~no del software, se adopta una arquitectura cliente-servidor 
 
 Esta separaci\'on facilita que cada componente evolucione de forma independiente, simplifica el mantenimiento y permite entregar una herramienta segura e interactiva, que opera sobre datos previamente anonimizados y no requiere acceso directo a los sistemas internos de la aseguradora.
 
-\section{\rev{Estado del arte}}\label{ch:estado-del-arte}\label{sec:estado-del-arte}
+\section{Estado del arte}\label{ch:estado-del-arte}\label{sec:estado-del-arte}
 
-\rev{Esta secci\'on sistematiza investigaciones, desarrollos y prototipos recientes vinculados a la predicci\'on de accidentabilidad laboral, con el fin de identificar limitaciones y fundamentar la brecha que Prevex busca resolver.}
+Esta secci\'on sistematiza investigaciones, desarrollos y prototipos recientes vinculados a la predicci\'on de accidentabilidad laboral, con el fin de identificar limitaciones y fundamentar la brecha que Prevex busca resolver.
 
-\subsection{\rev{Soluciones comerciales y de mercado vigentes}}
+\subsection{Soluciones comerciales y de mercado vigentes}
 
 En el \'ambito comercial y corporativo de las aseguradoras de riesgos del trabajo en la regi\'on, la adopci\'on de sistemas predictivos avanzados a\'un se encuentra en una fase incipiente. La mayor\'{\i}a de las soluciones de software denominadas \emph{Core de Seguros} operan bajo motores de reglas est\'aticas. Estos sistemas clasifican el riesgo de las empresas a partir de cruces de bases de datos simples: por ejemplo, si la empresa pertenece a un rubro de alto riesgo seg\'un el clasificador CIIU, es parte del programa PESE o si ya super\'o un l\'{\i}mite de siniestros denunciados.
 
-Si bien estas herramientas automatizan el control regulatorio, carecen de capacidad predictiva real: no aprenden de la trayectoria de los datos ni pueden identificar combinaciones no lineales de factores que derivan en un accidente. \rev{Las plataformas comerciales gen\'ericas de Business Intelligence y an\'alisis predictivo (por ejemplo DataRobot o SAP Analytics Cloud) incorporan m\'odulos de Machine Learning, pero suelen requerir perfiles de Ciencia de Datos para operarlas.} Esto las aleja del usuario final objetivo: el preventor o inspector de campo, quien necesita una herramienta interpretable y accionable de forma inmediata.
+Si bien estas herramientas automatizan el control regulatorio, carecen de capacidad predictiva real: no aprenden de la trayectoria de los datos ni pueden identificar combinaciones no lineales de factores que derivan en un accidente. Las plataformas comerciales gen\'ericas de Business Intelligence y an\'alisis predictivo (por ejemplo DataRobot o SAP Analytics Cloud) incorporan m\'odulos de Machine Learning, pero suelen requerir perfiles de Ciencia de Datos para operarlas. Esto las aleja del usuario final objetivo: el preventor o inspector de campo, quien necesita una herramienta interpretable y accionable de forma inmediata.
 
-\rev{La Tabla~\ref{tab:benchmark-comercial} resume esa comparaci\'on de forma sistem\'atica.}
+La Tabla~\ref{tab:benchmark-comercial} resume esa comparaci\'on de forma sistem\'atica.
 
 \begin{table}[htbp]
 	\centering
-	\caption{\rev{Comparaci\'on de enfoques comerciales frente a Prevex.} \fuentepropia}
+	\caption{Comparaci\'on de enfoques comerciales frente a Prevex. \fuentepropia}
 	\label{tab:benchmark-comercial}
 	\begin{tabular}{@{}p{0.22\textwidth}p{0.24\textwidth}p{0.24\textwidth}p{0.24\textwidth}@{}}
 		\hline
@@ -87,33 +87,33 @@ Si bien estas herramientas automatizan el control regulatorio, carecen de capaci
 	\end{tabular}
 \end{table}
 
-\rev{Este diagn\'ostico es coherente con lo se\~nalado en la literatura regional \parencite{zamora2024}:} incluso en el \'ambito acad\'emico el foco sigue puesto en la detecci\'on matem\'atica de patrones, sin traducirlos en interfaces operativas para los equipos de prevenci\'on. En consecuencia, existe una brecha entre las capacidades tecnol\'ogicas disponibles y las herramientas efectivamente utilizadas por los profesionales de seguridad y salud en el trabajo.
+Este diagn\'ostico es coherente con lo se\~nalado en la literatura regional \parencite{zamora2024}: incluso en el \'ambito acad\'emico el foco sigue puesto en la detecci\'on matem\'atica de patrones, sin traducirlos en interfaces operativas para los equipos de prevenci\'on. En consecuencia, existe una brecha entre las capacidades tecnol\'ogicas disponibles y las herramientas efectivamente utilizadas por los profesionales de seguridad y salud en el trabajo.
 
-\subsection{\rev{Antecedentes acad\'emicos recientes}}
+\subsection{Antecedentes acad\'emicos recientes}
 
 Para relevar el estado de la investigaci\'on cient\'{\i}fica, se analizaron trabajos de los \'ultimos cinco a\~nos en repositorios acad\'emicos de alto nivel (arXiv, IEEE Xplore, ScienceDirect, PubMed/PMC) y publicaciones regionales. La tendencia global demuestra un inter\'es creciente en reemplazar los m\'etodos estad\'{\i}sticos tradicionales por modelos de Machine Learning para la salud ocupacional.
 
-\subsubsection{\rev{Aplicaci\'on de modelos predictivos y limitaciones sectoriales}}
+\subsubsection{Aplicaci\'on de modelos predictivos y limitaciones sectoriales}
 
-Diversos autores han abordado la predicci\'on de accidentes utilizando algoritmos de ensamble y clasificaci\'on tradicional. Trabajos como el de \textcite{subauste2023} mediante Redes Bayesianas, o \textcite{mosquera2021} en la industria papelera, demuestran la viabilidad t\'ecnica de clasificar riesgos. Sin embargo, estos estudios frecuentemente reportan como limitaci\'on la dependencia a un \'unico sector econ\'omico o la dificultad de los modelos simples para generalizar sin caer en sobreajuste (\emph{overfitting}). \textcite{sarkar2022} representa un avance al aplicar Random Forest sobre \rev{66.405} registros de OSHA abarcando 20 categor\'{\i}as industriales en los Estados Unidos, logrando \emph{accuracy} de 0,895 para predicci\'on de hospitalizaci\'on. No obstante, su modelo clasifica la gravedad de lesiones pasadas, sin predecir eventos futuros a nivel de establecimiento empleador.
+Diversos autores han abordado la predicci\'on de accidentes utilizando algoritmos de ensamble y clasificaci\'on tradicional. Trabajos como el de \textcite{subauste2023} mediante Redes Bayesianas, o \textcite{mosquera2021} en la industria papelera, demuestran la viabilidad t\'ecnica de clasificar riesgos. Sin embargo, estos estudios frecuentemente reportan como limitaci\'on la dependencia a un \'unico sector econ\'omico o la dificultad de los modelos simples para generalizar sin caer en sobreajuste (\emph{overfitting}). \textcite{sarkar2022} representa un avance al aplicar Random Forest sobre 66.405 registros de OSHA abarcando 20 categor\'{\i}as industriales en los Estados Unidos, logrando \emph{accuracy} de 0,895 para predicci\'on de hospitalizaci\'on. No obstante, su modelo clasifica la gravedad de lesiones pasadas, sin predecir eventos futuros a nivel de establecimiento empleador.
 
-\subsubsection{\rev{Deep learning versus datos tabulares}}
+\subsubsection{Deep learning versus datos tabulares}
 
 Enfoques de vanguardia, como el propuesto por \textcite{yapi2025}, han intentado utilizar Redes Neuronales Recurrentes para predecir accidentes bas\'andose en series temporales de inspecciones previas. Aunque los resultados son prometedores y validan la importancia de las auditor\'{\i}as como variable predictiva, los autores coinciden en que el alt\'{\i}simo requerimiento computacional y la naturaleza de ``caja negra'' de estas redes dificultan su adopci\'on \'agil por parte de entidades aseguradoras. Este hallazgo es consistente con la evidencia m\'as amplia de la literatura: \textcite{grinsztajn2022} demostraron que los modelos basados en \'arboles de decisi\'on ensamblados superan sistem\'aticamente a las arquitecturas de aprendizaje profundo en datos tabulares heterog\'eneos, que son precisamente el tipo de datos que manejan las aseguradoras. Asimismo, \textcite{zermane2022} corroboraron que Random Forest supera a redes neuronales multicapa en conjuntos de datos de seguridad ocupacional, con \emph{accuracy} entre el 96\,\% y el 100\,\% en la predicci\'on de ca\'{\i}das fatales.
 
-\subsubsection{\rev{El desaf\'{\i}o de la explicabilidad}}
+\subsubsection{El desaf\'{\i}o de la explicabilidad}
 
 La literatura regional reciente subraya que el foco actual sigue puesto en la detecci\'on matem\'atica de patrones y tendencias \parencite{zamora2024}. Esto evidencia que la barrera principal para la implementaci\'on real no es la precisi\'on estad\'{\i}stica, sino la falta de interpretabilidad. Los modelos fallan en proveer a los equipos de auditor\'{\i}a las razones espec\'{\i}ficas para tomar acci\'on preventiva en campo.
 
 Esta limitaci\'on no es exclusiva de los trabajos regionales. A nivel global, la comunidad cient\'{\i}fica ha reconocido que el desaf\'{\i}o de la adopci\'on de modelos predictivos en entornos operativos y regulados no reside en alcanzar mayor \emph{accuracy}, sino en traducir las salidas del modelo en decisiones comprensibles para el usuario no t\'ecnico \parencite{arrieta2020}. En el dominio de la seguridad laboral, esto es particularmente cr\'{\i}tico: un preventor o inspector necesita entender por qu\'e un establecimiento fue marcado como de alto riesgo, no solo que lo fue. Sin esa explicaci\'on, la predicci\'on no puede fundamentar una auditor\'{\i}a, no puede comunicarse al empleador y no puede sostenerse ante una instancia regulatoria como la SRT.
 
-\subsection{\rev{Matriz de antecedentes}}
+\subsection{Matriz de antecedentes}
 
-A continuaci\'on se sistematizan siete enfoques representativos recientes, tanto a nivel internacional como regional, evaluando sus metodolog\'{\i}as, resultados y limitaciones con el fin de establecer la brecha de investigaci\'on que aborda el presente proyecto. \rev{La Tabla~\ref{tab:matriz-antecedentes} resume esa comparaci\'on.}
+A continuaci\'on se sistematizan siete enfoques representativos recientes, tanto a nivel internacional como regional, evaluando sus metodolog\'{\i}as, resultados y limitaciones con el fin de establecer la brecha de investigaci\'on que aborda el presente proyecto. La Tabla~\ref{tab:matriz-antecedentes} resume esa comparaci\'on.
 
 \input{tables/matriz_antecedentes.tex}
 
-\subsection{\rev{Conclusiones del estado del arte}}
+\subsection{Conclusiones del estado del arte}
 
 La revisi\'on de la literatura y del mercado actual permite extraer cinco conclusiones fundamentales que justifican el alcance y el valor diferencial de este Proyecto Final de Ingenier\'{\i}a:
 

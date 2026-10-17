@@ -1,0 +1,100 @@
+\chapter{Modelo de negocio y viabilidad econ\'omica}\label{ch:negocio}
+
+\rev{Este cap\'{\i}tulo complementa el an\'alisis de competencias del Cap\'{\i}tulo~\ref{ch:descripcion} (FODA, Porter y Triple~P) con un modelo de sustentabilidad y un an\'alisis econ\'omico-financiero en d\'olares estadounidenses.
+Los n\'umeros son supuestos explicitados, coherentes con el alcance del prototipo y con la evidencia de user research; no representan un contrato comercial firmado.}
+
+\section{\rev{Qui\'en usa, qui\'en decide y qui\'en paga}}
+
+\rev{Prevex distingue con claridad tres roles econ\'omicos \parencite{osterwalder2010}:}
+
+\begin{table}[htbp]
+	\centering
+	\caption[Usuario, decisor y pagador de Prevex]{\rev{Usuario, decisor y pagador de Prevex.} \fuentepropia}
+	\label{tab:negocio-roles}
+	\small
+	\begin{tabular}{@{}p{0.22\textwidth}p{0.68\textwidth}@{}}
+		\hline
+		\textbf{Rol} & \textbf{Descripci\'on} \\
+		\hline
+		Usuario & Preventores y coordinadores de la ART: priorizan visitas, preparan intervenciones con el copiloto normativo, registran actas y reciben asignaciones. \\
+		Decisor & Gerencia o jefatura de prevenci\'on de la ART: aprueba la adopci\'on si el r\'edito operativo (cobertura, foco y trazabilidad) justifica el gasto. \\
+		Pagador & La ART, mediante suscripci\'on B2B. Es quien organiza las visitas, asume obligaciones regulatorias y cubre costos de siniestralidad. \\
+		\hline
+	\end{tabular}
+\end{table}
+
+\rev{La cadena de valor se extiende m\'as all\'a del pagador, sin confundir beneficiario con cliente.
+La ART gana eficiencia operativa (ordenamiento de visitas, dossier y normativa a mano, asignaci\'on asistida) y reduce exposici\'on a visitas mal planificadas y a costos de siniestros.
+Los establecimientos se benefician si aplican las recomendaciones del preventor (menos ausentismo, mayor productividad).
+Los trabajadores se benefician si el entorno laboral mejora y baja la probabilidad de accidentes leves, graves o fatales.
+El contrato, no obstante, lo paga la ART.}
+
+\section{\rev{Business Model Canvas}}
+
+\rev{El lienzo de modelo de negocio \parencite{osterwalder2010} resume c\'omo Prevex crea, entrega y captura valor.
+Los bloques de segmentos, propuesta de valor, ingresos y costos se apoyan en la encuesta, las entrevistas y el an\'alisis competitivo ya documentados.}
+
+\begin{landscape}
+\begin{figure}[htbp]
+	\centering
+	\rev{\resizebox{0.95\linewidth}{!}{\input{figures/diagramas/business_model_canvas}}}
+	\caption[Business Model Canvas de Prevex]{\rev{Business Model Canvas de Prevex.} \fuentepropia}
+	\label{fig:negocio-canvas}
+\end{figure}
+\end{landscape}
+
+\section{\rev{Fuentes de ingresos y estructura de costos}}
+
+\rev{La unidad de venta es la ART.
+El precio de referencia del escenario base es de USD~1.200 por mes (USD~14.400 por a\~no), con variantes de entrada (USD~800) y de upsell (USD~1.500).
+El fundamento es B2B de software vertical: un solo pagador institucional, valor concentrado en el \'area de prevenci\'on y disposici\'on a pagar condicionada al r\'edito, coherente con lo relevado en entrevistas.}
+
+\rev{Los costos se clasifican as\'{\i}:}
+\begin{itemize}
+	\item \rev{\textbf{Inversi\'on inicial:} USD~8.000 para endurecimiento productivo m\'{\i}nimo, despliegue, aspectos legales livianos, materiales comerciales y primer onboarding.}
+	\item \rev{\textbf{Costos fijos anuales:} infraestructura cloud base, monitoreo, soporte y ciclo de reentrenamiento del modelo.}
+	\item \rev{\textbf{Costos variables por ART:} uso de API generativa, almacenamiento incremental y costo de adquisici\'on (CAC) cuando ingresa una ART nueva.}
+\end{itemize}
+
+\input{tables/negocio/tab_supuestos}
+
+\section{\rev{Viabilidad econ\'omico-financiera}}
+
+\rev{El an\'alisis se realiza en USD (moneda estable), con horizonte de cinco a\~nos y tasa de descuento $k=12\%$ real, alineada a un costo de oportunidad razonable para software B2B en d\'olares.
+Se reportan VAN, TIR, payback simple y descontado, y punto de equilibrio en n\'umero de ART.
+Los flujos salen de los supuestos del modelo de negocio (precio, adopci\'on, opex fijo, variable y CAC).}
+
+\rev{Se construyen tres escenarios con historias distintas (no un ajuste porcentual uniforme):}
+
+\begin{itemize}
+	\item \rev{\textbf{Pesimista:} un solo piloto a precio de entrada (USD~800/mes) durante los cinco a\~nos, sin escalar, con opex fijo alto relativo al ingreso.}
+	\item \rev{\textbf{Base:} adopci\'on gradual hasta cinco ART, precio USD~1.200/mes.}
+	\item \rev{\textbf{Optimista:} replicaci\'on hasta diez ART y precio medio USD~1.500/mes.}
+\end{itemize}
+
+\input{tables/negocio/tab_flujo_base}
+
+\input{tables/negocio/tab_indicadores}
+
+\rev{Interpretaci\'on: en el escenario base el VAN es positivo (USD~74.359), la TIR supera a $k$ y el payback descontado ronda 1,8~a\~nos.
+El optimista refuerza esa conclusi\'on (VAN de USD~259.174).
+El pesimista, en cambio, no es viable: VAN negativo (USD~-12.395), sin TIR interpretable porque los flujos no recuperan la inversi\'on en el horizonte, y el payback no se completa en cinco a\~nos.
+Con una sola ART a precio de entrada, el ingreso no cubre de forma sostenida el opex fijo supuesto (punto de equilibrio cercano a~1,1~ART): hace falta cerrar el piloto \emph{y} escalar al menos a una segunda aseguradora, o mejorar margen, para que el proyecto genere valor.}
+
+\rev{Una sensibilidad de $k$ entre~10\% y~15\% no cambia el signo del VAN en base ni en optimista; el pesimista permanece negativo en ese rango.
+Por ello el plan comercial prioriza validar el primer piloto con evidencia de cobertura y satisfacci\'on del preventor antes de escalar CAC, y no asumir que un \'unico contrato a precio de entrada alcanza para sustentar la operaci\'on.}
+
+\section{\rev{Branding e identidad visual}}
+
+\rev{El nombre \emph{Prevex} combina prevenci\'on con explicabilidad: el producto no solo predice, sino que expone los factores que ordenan la lista (SHAP) y apoya la visita con evidencia normativa.}
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.42\textwidth]{figures/logo_prevex.png}
+	\caption[Logotipo de Prevex]{\rev{Logotipo de Prevex utilizado en la interfaz del prototipo.} \fuentepropia}
+	\label{fig:logo-prevex}
+\end{figure}
+
+\rev{El isotipo (escudo) evoca protecci\'on laboral; la tipograf\'{\i}a del wordmark busca legibilidad en barra superior y favicon.
+La paleta se mantiene sobria para un producto B2B de aseguradoras: contraste alto en UI, sin ornamentaci\'on que compita con el ranking y los estados de visita.
+La marca aparece en login, encabezado y materiales de la aplicaci\'on; en este documento se presenta como identidad del prototipo evaluado, no como campa\~na comercial.}

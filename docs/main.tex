@@ -24,7 +24,7 @@
 
 % Para colores
 \usepackage[usenames,dvipsnames]{xcolor}
-% Marcadores de revisi\'on E50/encuesta: identidad (texto negro entregable tras revisi\'on visual).
+% Marcadores de revisi\'on: identidad (texto negro entregable tras OK visual).
 \newcommand{\rev}[1]{#1}
 \newcommand{\nuevo}[1]{#1}
 \newcommand{\enc}[1]{#1}
@@ -294,6 +294,9 @@
 	\fi
 	\ifdeliverymetodologia
 		\input{chapters/chapter04}
+	\fi
+	\ifdeliverynegocio
+		\input{chapters/chapter05_negocio}
 	\fi
 	\ifdeliveryconclusion
 		\input{chapters/conclusion}
