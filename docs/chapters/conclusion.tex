@@ -16,9 +16,22 @@ Los aportes principales son:
 	\item \nuevo{\textbf{Madurez operativa del prototipo:} copiloto normativo con corpus SRT en SQL, acta y hallazgos al cerrar visita, reagenda, asignaci\'on geogr\'afica asistida, MFA e invitaci\'on por correo.}
 	\item \textbf{Investigaci\'on con usuarios integrada:} encuesta y entrevistas que evidenciaron la brecha entre la planificaci\'on normativa y la pr\'actica reactiva de visitas, y que guiaron el dise\~no de la interfaz.
 	\item \textbf{Resguardo de datos y privacidad:} arquitectura on-prem para la BD core, anonimizaci\'on por hashes antes de importar a la nube, y separaci\'on estricta entre el modelo predictivo (local) y el modelo generativo (recibe solo dossier desidentificado).
-	\item \nuevo{\textbf{Validaci\'on automatizada:} suite xUnit con reporte Coverlet de cobertura de c\'odigo de la API en el umbral del~85\,\%.}
+	\item \nuevo{\textbf{Validaci\'on automatizada:} suite xUnit con reporte Coverlet de cobertura de l\'{\i}neas del~95,14\,\% en el alcance de dominio (umbral~85\,\%).}
 	\item \rev{\textbf{Modelo de negocio y viabilidad:} canvas B2B con la ART como pagadora, escenarios en USD y branding Prevex (Cap\'{\i}tulo~\ref{ch:negocio}), que conectan el prototipo con una hip\'otesis de sustentabilidad revisable.}
 \end{itemize}
+
+\section{Cumplimiento de objetivos}
+
+Respecto del objetivo general (Secci\'on~\ref{sec:objetivo-general}), el prototipo prioriza establecimientos con horizonte trimestral, ofrece explicabilidad SHAP y soporta la planificaci\'on operativa de visitas en la aplicaci\'on Prevex.
+
+Los objetivos espec\'{\i}ficos (Secci\'on~\ref{sec:objetivos-especificos}) se cubren as\'{\i}:
+\begin{enumerate}
+	\item Panel tabular y modelo XGBoost trimestral: Cap\'{\i}tulo~\ref{ch:metodologia}, resultados en holdout~2025.
+	\item Rankings versionados con SHAP e importaci\'on a BD operativa: Cap\'{\i}tulo~\ref{ch:metodologia} y aplicaci\'on documentada en la demo.
+	\item Aplicaci\'on web por roles (priorizaci\'on, detalle, agenda, estad\'isticas): Cap\'{\i}tulos~\ref{ch:descripcion} y~\ref{ch:metodologia}.
+	\item Investigaci\'on con usuarios: Cap\'{\i}tulo~\ref{ch:descripcion} y anexos de encuesta y entrevistas.
+	\item Arquitectura, Ley~25.326 y validaci\'on (incluidas pruebas automatizadas): Cap\'{\i}tulo~\ref{ch:metodologia}; el modelo de negocio se desarrolla en el Cap\'{\i}tulo~\ref{ch:negocio}.
+\end{enumerate}
 
 \section{Trabajo futuro}
 

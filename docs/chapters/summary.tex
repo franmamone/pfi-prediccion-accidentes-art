@@ -1,33 +1,10 @@
 \chapter*{Resumen}
 
-%% Si se quiere enviar este resumen en una p\'agina a alguien, descomentar esto.
-
-%\begin{center}
-%\textbf{\large Universidad Argentina De la Empresa}
-
-%\textbf{Facultad de Ingenier\'{\i}a y Ciencias Exactas}
-
-%\textbf{Departamento de Tecnolog\'{\i}a Inform\'atica}
-
-%\end{center}
-
-%\begin{center}
-%\large Ingenier\'{\i}a en Inform\'atica
-%\end{center}
-
-%\begin{center}
-%\textbf{\large Título de la PFI}
-%\end{center}
-
-%\begin{center}
-%Apellido, Nombres
-%Apellido, Nombres
-%\end{center}
-
-%\noindent 
-Acá va el resumen. \Fermat{He encontrado una demostración absolutamente maravillosa, pero el margen de esta hoja es demasiado estrecho para incluirla}
-
-Con el siguiente comando se imprime el interlineado en el documento pdf. \\
-Interlineado simple: 12pt.\\
-Interlineado esperado: 18pt.\\
-Interlineado exacto de este documento: \the\baselineskip.
+Prevex es un prototipo de sistema predictivo para priorizar visitas de prevenci\'on en aseguradoras de riesgos del trabajo (ART) de Argentina.
+A partir de un panel tabular construido con datos operativos de una aseguradora (siniestros, n\'omina y prevenci\'on), se entrena un modelo XGBoost con horizonte trimestral y se genera un ranking explicable mediante valores SHAP.
+El prototipo incluye una aplicaci\'on web (API .NET y frontend React) para preventores, coordinadores y administradores: lista operativa, detalle del establecimiento, agenda, estad\'isticas, copiloto normativo anclado a corpus SRT, acta de cierre, asignaci\'on geogr\'afica asistida y autenticaci\'on con MFA.
+La investigaci\'on con usuarios (encuesta y entrevistas) orient\'o el dise\~no.
+En holdout~2025 el modelo alcanza PR-AUC de~0,515 y recall del~66,7\,\% al umbral F2; la lista de~1000 obtiene precisi\'on media mensual de~49,5\,\%.
+La API se valida con pruebas automatizadas (cobertura Coverlet del~95,14\,\% en el alcance de dominio).
+Se documentan adem\'as el resguardo bajo Ley~25.326, un modelo de negocio B2B (paga la ART) y un an\'alisis de viabilidad econ\'omica en USD.
+El despliegue productivo completo en nube queda fuera del alcance del prototipo, que se valida en entorno local y se dise\~na para AWS Free Tier.

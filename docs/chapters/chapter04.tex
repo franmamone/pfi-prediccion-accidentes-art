@@ -4,7 +4,8 @@ Esta secci\'on documenta las decisiones de implementaci\'on del prototipo: metod
 
 \section{Metodolog\'ia}
 
-El desarrollo adopta un enfoque iterativo:
+El desarrollo adopta un enfoque iterativo, alineado a un ciclo \'agil de entrega incremental: cada iteraci\'on entrega un incremento usable (datos, modelo, ranking, aplicaci\'on u operaci\'on) y se valida antes de avanzar.
+Las etapas principales son:
 \begin{enumerate}
 	\item ingenier\'ia de datos sobre la BD core de la ART (vistas y panel establecimiento$\times$mes);
 	\item entrenamiento y evaluaci\'on de un modelo XGBoost con horizonte trimestral (accidentaci\'on en los tres meses siguientes);
@@ -348,12 +349,12 @@ La cobertura de c\'odigo se mide con Coverlet.
 El reporte E75 toma como alcance los servicios de dominio y el \texttt{AppDbContext}, entre ellos geo, MFA, plantillas de correo, tokens e invitaciones.
 Quedan fuera del umbral el composition root en \texttt{Program.cs}, los clientes de I/O externo hacia Gemini y SMTP, y el servicio de copiloto; este \'ultimo se ejercita en integraci\'on, pero no suma al denominador del porcentaje.
 El artefacto vigente est\'a en \texttt{docs/evidence/coverage/}, con el XML de Cobertura y un resumen.
-Al cierre de esta revisi\'on, la cobertura de l\'{\i}neas alcanza al menos el~85\,\% exigido en los requisitos E75.
+Al cierre de esta revisi\'on, la cobertura de l\'{\i}neas del alcance de dominio es del~95,14\,\% (umbral exigido: 85\,\%), seg\'un el resumen en \texttt{docs/evidence/coverage/}.
 Las pruebas de integraci\'on sobre login, riesgo, detalle, agenda con candidatos y salud aportan evidencia funcional complementaria; no pretenden que el porcentaje Coverlet cubra todo el monolito de endpoints.}
 
 \rev{A partir de esos resultados se tomaron decisiones de dise\~no, no solo mediciones.
 El holdout~2025 confirma que el ranking aporta precisi\'on muy por encima de la tasa base: se mantiene el horizonte trimestral y la lista operativa de~1000 como contrato del producto.
-La suite Coverlet por encima del 85\% en el alcance de dominio se interpreta como evidencia suficiente para el prototipo; no se ampl\'{\i}a el umbral al monolito completo en esta etapa.
+La suite Coverlet (95,14\,\% de l\'{\i}neas en el alcance de dominio) se interpreta como evidencia suficiente para el prototipo; no se ampl\'{\i}a el umbral al monolito completo en esta etapa.
 Las pruebas sobre proyecci\'on del dossier al modelo generativo motivaron la pol\'{\i}tica de enviar solo agregados (sin relatos ni observaciones hist\'oricas), documentada en la secci\'on de riesgos de IA generativa.
 Fallos o huecos en MFA, correo y asignaci\'on geogr\'afica se cubrieron con pruebas de integraci\'on dedicadas antes de dar por cerrada la madurez operativa del hito.}
 
