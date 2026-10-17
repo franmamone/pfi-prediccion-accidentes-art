@@ -1,0 +1,234 @@
+% Persona 3: Administrador del prototipo
+\begingroup
+\fontsize{7.5}{9.7}\selectfont
+\ifdefined\pcolw\else\newlength{\pcolw}\fi
+\ifdefined\pfootw\else\newlength{\pfootw}\fi
+\definecolor{PInk}{RGB}{15,118,110}
+\definecolor{PTeal}{RGB}{13,148,136}
+\definecolor{PBlue}{RGB}{37,99,235}
+\definecolor{PSlate}{RGB}{71,85,105}
+\definecolor{PEmr}{RGB}{5,150,105}
+\definecolor{PAmb}{RGB}{217,119,6}
+\definecolor{PRed}{RGB}{220,38,38}
+\definecolor{PVio}{RGB}{124,58,237}
+\definecolor{PInd}{RGB}{67,56,202}
+\definecolor{PSky}{RGB}{2,132,199}
+\definecolor{PPlum}{RGB}{190,24,93}
+\newcommand{\PDot}[1]{%
+  \tikz[baseline=-0.42ex]\fill[#1] (0,0) circle (1.85pt);%
+  \hspace{0.48em}%
+}
+\newcommand{\PTit}[1]{\makebox[\linewidth][c]{\sffamily\bfseries #1}}
+\tikzset{
+  pchip/.style={
+    sharp corners,
+    rounded corners=7.7pt,
+    inner xsep=6.8pt,
+    inner ysep=0pt,
+    minimum height=15.4pt,
+    text height=0.68em,
+    text depth=0.22em,
+    font=\sffamily\bfseries\scriptsize,
+    draw=none,
+    line width=0pt,
+    outer sep=0pt,
+    align=center,
+    anchor=base,
+  },
+}
+\newcommand{\PPills}[6]{%
+  \begin{tikzpicture}[baseline=0.22em, rounded corners=0pt, sharp corners]
+    \node[pchip, fill=#1, text=#2] (p1) {#3};
+    \node[pchip, fill=#4, text=#5, base right=4.2pt of p1] (p2) {#6};
+  \end{tikzpicture}%
+}
+\newcommand{\PCaja}[4][south]{%
+  \noindent
+  \begin{tikzpicture}[baseline=(current bounding box.#1)]
+    \begin{scope}[shift={(0.4pt,-1.8pt)}]
+      \node[
+        fill=black,
+        opacity=0.18,
+        text opacity=0,
+        rounded corners=13pt,
+        inner xsep=8.4pt,
+        inner ysep=5.8pt,
+        outer sep=0pt,
+        align=left,
+        font=\fontsize{7.5}{9.7}\selectfont\sffamily,
+        text width=\dimexpr#2-16.8pt\relax,
+      ] {#4};
+    \end{scope}
+    \node[
+      fill=#3!9,
+      rounded corners=13pt,
+      inner xsep=8.4pt,
+      inner ysep=5.8pt,
+      outer sep=0pt,
+      text=black,
+      align=left,
+      font=\fontsize{7.5}{9.7}\selectfont\sffamily,
+      text width=\dimexpr#2-16.8pt\relax,
+    ] (pcard) {#4};
+    \fill[#3, rounded corners=2.1pt]
+      ([xshift=2.2pt,yshift=5.2pt]pcard.south west)
+      rectangle
+      ([xshift=5.7pt,yshift=-5.2pt]pcard.north west);
+  \end{tikzpicture}%
+}
+
+\begin{tikzpicture}
+  \node[
+    rounded corners=16pt,
+    inner sep=0pt,
+    outer sep=0pt,
+    fill=black!3.5,
+  ] {%
+    \begin{minipage}{0.988\linewidth}
+      \begin{tikzpicture}
+        \node[
+          fill=PInk,
+          rounded corners=12pt,
+          inner sep=0pt,
+          outer sep=0pt,
+          text width=\linewidth-1.4pt,
+        ] {%
+          \begin{minipage}{\linewidth}
+            \vspace{7pt}
+            \hspace{9pt}%
+            \begin{minipage}{0.60\linewidth}
+              \begin{tikzpicture}[baseline=-0.55ex]
+                \fill[white] (0,0) circle (0.34cm);
+                \node[font=\sffamily\bfseries\scriptsize, color=PInk] at (0,0) {AM};
+              \end{tikzpicture}%
+              \hspace{6pt}%
+              \raisebox{0.15ex}{\textcolor{white}{\sffamily\bfseries\Large Andr\'es Molina}}\\[3pt]
+              \hspace{1pt}\textcolor{white}{\sffamily\scriptsize Mantener el acceso ordenado para que el equipo trabaje sin fricci\'on}\\[2pt]
+              \textcolor{white!88}{\sffamily\tiny Administrador del prototipo $\cdot$ ART $\cdot$ persona de soporte}
+            \end{minipage}%
+            \hfill
+            \begin{minipage}{0.34\linewidth}
+              \raggedleft
+              \PPills{white}{PInk}{Admin}{PSlate}{white}{Cuentas y roles}\\[5pt]
+              \textcolor{white!88}{\sffamily\tiny Uso puntual, cr\'{\i}tico}
+            \end{minipage}%
+            \hspace{9pt}%
+            \vspace{7pt}
+          \end{minipage}%
+        };
+      \end{tikzpicture}
+
+      \vspace{8pt}
+      \raggedright
+      \begin{minipage}{\dimexpr\linewidth-22pt\relax}
+        \setlength{\pcolw}{\dimexpr(\linewidth-16pt)/3\relax}
+        \setlength{\pfootw}{\dimexpr(\linewidth-8pt)/2\relax}
+
+        \PCaja{\linewidth}{PTeal}{%
+          {\color{PTeal}\PTit{Qui\'en es y c\'omo trabaja}}\\[4pt]
+          T\'ecnico de sistemas interno de la ART, responsable de la configuraci\'on inicial y del mantenimiento operativo de Prevex.
+          Conoce la estructura de roles (Preventor, Coordinador, Administrador) pero no opera en campo ni arma el plan de visitas.
+          Su trabajo es que el equipo entre, que quien sale del \'area no siga entrando, y que el historial de visitas no se pierda al dar de baja una cuenta.
+          Cuando hace falta, exige MFA y manda la invitaci\'on por correo para que el alta no dependa de contrase\~nas compartidas.
+        }
+
+        \vspace{9pt}
+        \noindent
+        \begin{minipage}[t]{\pcolw}
+          \PCaja[north]{\pcolw}{PBlue}{%
+            {\color{PBlue}\PTit{Contexto de uso}}\\[4pt]
+            \PDot{PBlue}D\'onde: panel de usuarios y configuraci\'on del prototipo.\\[2.6pt]
+            \PDot{PBlue}Cu\'ando: altas al incorporar preventores; bajas al rotar el equipo.\\[2.6pt]
+            \PDot{PBlue}Por qu\'e: sin acceso ordenado el ranking y la agenda no sirven.\\[2.6pt]
+            \PDot{PBlue}Competencia: roles y cuentas; no el modelo predictivo.
+          }
+        \end{minipage}%
+        \hspace{8pt}%
+        \begin{minipage}[t]{\pcolw}
+          \PCaja[north]{\pcolw}{PSlate}{%
+            {\color{PSlate}\PTit{Herramientas de hoy}}\\[4pt]
+            \PDot{PSlate}Altas y bajas manuales o por tickets de sistemas.\\[2.6pt]
+            \PDot{PSlate}Cuentas compartidas o reutilizadas entre turnos.\\[2.6pt]
+            \PDot{PSlate}Poco control de qui\'en dej\'o de operar en campo.\\[2.6pt]
+            \PDot{PSlate}Sin MFA ni invitaci\'on trazable por correo.
+          }
+        \end{minipage}%
+        \hspace{8pt}%
+        \begin{minipage}[t]{\pcolw}
+          \PCaja[north]{\pcolw}{PEmr}{%
+            {\color{PEmr}\PTit{Motivaciones}}\\[4pt]
+            \PDot{PEmr}Que solo usuarios activos entren a Prevex.\\[2.6pt]
+            \PDot{PEmr}Conservar el historial de visitas al dar de baja.\\[2.6pt]
+            \PDot{PEmr}Evitar contrase\~nas compartidas en el equipo.\\[2.6pt]
+            \PDot{PEmr}Poder exigir MFA cuando la pol\'{\i}tica lo pida.
+          }
+        \end{minipage}
+
+        \vspace{9pt}
+        \noindent
+        \begin{minipage}[t]{\pcolw}
+          \PCaja[north]{\pcolw}{PAmb}{%
+            {\color{PAmb}\PTit{Objetivos}}\\[4pt]
+            \PDot{PAmb}Alta, edici\'on y baja l\'ogica de usuarios (HU-10 / RF-10).\\[2.6pt]
+            \PDot{PAmb}Asignar roles Preventor, Coordinador o Administrador.\\[2.6pt]
+            \PDot{PAmb}Invitar por correo y exigir MFA cuando corresponda (HU-16 / RF-16).\\[2.6pt]
+            \PDot{PAmb}Auditar que inactivos no puedan autenticarse.
+          }
+        \end{minipage}%
+        \hspace{8pt}%
+        \begin{minipage}[t]{\pcolw}
+          \PCaja[north]{\pcolw}{PRed}{%
+            {\color{PRed}\PTit{Frustraciones}}\\[4pt]
+            \PDot{PRed}Procesos manuales para dar de baja usuarios.\\[2.6pt]
+            \PDot{PRed}Cuentas que se reasignan y pierden trazabilidad.\\[2.6pt]
+            \PDot{PRed}Borrar un usuario y arrastrar el historial de visitas.\\[2.6pt]
+            \PDot{PRed}Altas lentas si hay que inventar y comunicar claves.
+          }
+        \end{minipage}%
+        \hspace{8pt}%
+        \begin{minipage}[t]{\pcolw}
+          \PCaja[north]{\pcolw}{PVio}{%
+            {\color{PVio}\PTit{H\'abitos}}\\[4pt]
+            \PDot{PVio}Prefiere baja l\'ogica a borrar filas.\\[2.6pt]
+            \PDot{PVio}Revisa roles antes de habilitar acceso al ranking.\\[2.6pt]
+            \PDot{PVio}Usa invitaci\'on por correo en altas nuevas.\\[2.6pt]
+            \PDot{PVio}No opera la agenda de campo: deja eso a Preventor y Coordinaci\'on.
+          }
+        \end{minipage}
+
+        \vspace{10pt}
+        \PCaja{\linewidth}{PInd}{%
+          {\color{PInd}\PTit{Escenario}}\\[4pt]
+          Entra un preventor nuevo al \'area: Andr\'es crea la cuenta, asigna rol Preventor y env\'{\i}a la invitaci\'on por correo.
+          Si la pol\'{\i}tica lo exige, marca MFA obligatorio antes del primer acceso completo.
+          Meses despu\'es esa persona rota de sector: la da de baja l\'ogica.
+          Las visitas que ya carg\'o siguen visibles en el historial del establecimiento; solo deja de autenticarse.
+        }
+
+        \vspace{9pt}
+        \noindent
+        \begin{minipage}[t]{\pfootw}
+          \PCaja[north]{\pfootw}{PSky}{%
+            {\color{PSky}\PTit{Qu\'e necesita de Prevex}}\\[4pt]
+            \PDot{PSky}ABM de usuarios con baja l\'ogica (HU-10 / RF-10).\\[2.6pt]
+            \PDot{PSky}Invitaci\'on y recuperaci\'on por correo (HU-16 / RF-16).\\[2.6pt]
+            \PDot{PSky}MFA TOTP opcional u obligatorio por usuario (RNF-01).\\[2.6pt]
+            \PDot{PSky}Que el historial de visitas no dependa de que la cuenta siga activa.
+          }
+        \end{minipage}%
+        \hspace{8pt}%
+        \begin{minipage}[t]{\pfootw}
+          \PCaja[north]{\pfootw}{PPlum}{%
+            {\color{PEmr}\PTit{\'Exito}}\\[3pt]
+            Alta, edici\'on o baja l\'ogica en menos de dos minutos, sin perder visitas asociadas ni dejar cuentas hu\'erfanas.\\[5pt]
+            {\color{PPlum}\PTit{Temor}}\\[3pt]
+            Que un ex integrante siga entrando; que borrar una cuenta borre el rastro operativo del establecimiento.
+          }
+        \end{minipage}
+
+        \vspace{4pt}
+      \end{minipage}
+    \end{minipage}%
+  };
+\end{tikzpicture}
+\endgroup

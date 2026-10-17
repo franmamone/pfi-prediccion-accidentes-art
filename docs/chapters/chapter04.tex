@@ -74,8 +74,8 @@ El mismo dise\~no se puede reutilizar con otra aseguradora.
 
 \begin{figure}[htbp]
 	\centering
-	\input{figures/diagramas/arquitectura_aws_freetier}
-	\caption{Arquitectura propuesta en AWS Free Tier. \fuentepropia}
+	\includegraphics[width=\textwidth]{figures/diagramas/arquitectura_aws_freetier.jpg}
+	\caption{\rev{Arquitectura propuesta en AWS Free Tier (on-prem, EC2 y servicios AWS).} \fuentepropia}
 	\label{fig:aws-ft}
 \end{figure}
 
@@ -133,7 +133,7 @@ El modelo externo no recibe qui\'en es el establecimiento ni el empleador; recib
 El texto se guarda en la BD operativa para no reiterar la llamada.
 Si no hay dossier, no hay invocaci\'on.
 
-\nuevo{En la madurez operativa del prototipo, ese apoyo se concreta como un \emph{copiloto normativo}: el Preventor elige un tema (RGRL, PESE, RAR, entre otros) y la API recupera fragmentos de normativa SRT almacenados como \emph{chunks} en SQL Server (sin base vectorial), los combina con el dossier del establecimiento y produce una respuesta con citas.
+\nuevo{En la madurez operativa del prototipo, ese apoyo se concreta como un \emph{copiloto normativo}: el Preventor elige un tema (RGRL, PESE, RAR, entre otros) y la API recupera fragmentos de normativa SRT almacenados como \emph{chunks} en SQL Server, los combina con el dossier del establecimiento y produce una respuesta con citas.
 Las respuestas pueden guardarse por establecimiento y tema.
 Al cerrar una visita, el mismo circuito alimenta sugerencias de acta y hallazgos abiertos, siempre con dossier desidentificado y controles frente a prompt injection en texto libre.}
 
@@ -146,7 +146,8 @@ La explicaci\'on auditable del puntaje sigue siendo SHAP, calculada en el pipeli
 \subsection*{\nuevo{Asignaci\'on geogr\'afica y reagenda}}
 
 \nuevo{La asignaci\'on de visitas usa coordenadas de demostraci\'on en CABA.
-El score de un candidato combina distancia Haversine al ancla de la ruta (visita anterior o siguiente del d\'{\i}a; si no hay visitas, la base del Preventor) con un peso por horas ya cargadas.
+La distancia entre dos puntos se calcula con la f\'ormula de Haversine: una estimaci\'on en kil\'ometros a partir de latitud y longitud (distancia geod\'esica aproximada), implementada en el helper de la API sin librer\'{\i}a externa ni motor de mapas.
+El score de un candidato combina esa distancia al ancla de la ruta (visita anterior o siguiente del d\'{\i}a; si no hay visitas, la base del Preventor) con un peso por horas ya cargadas.
 La duraci\'on estimada depende de las c\'apitas del establecimiento (heur\'{\i}stica 1\,h / 2\,h / 3\,h).
 No se optimiza tr\'ansito en tiempo real.
 La reagenda registra un plazo de seguimiento al cerrar la visita y vuelve a exponer el establecimiento en la lista operativa con estado \texttt{reagendar}.}
@@ -328,12 +329,14 @@ Cada pantalla del recorrido documentado en la Secci\'on~\ref{sec:demo} fue ejerc
 \rev{Las m\'etricas de calidad del modelo predictivo est\'an detalladas en la secci\'on de Resultados del modelo: PR-AUC de~0,515, recall del~66,7\,\% al umbral F2 y precisi\'on media mensual de~49,5\,\% en la lista de~1000 (v\'ease la Tabla~\ref{tab:metricas-holdout} y la Tabla~\ref{tab:precision-topk}).
 Estas m\'etricas se calculan sobre el holdout~2025, que el modelo no vio durante el entrenamiento ni durante la calibraci\'on del umbral.}
 
-\nuevo{Adem\'as de las pruebas manuales, la API se valida con una suite automatizada (xUnit) que combina pruebas unitarias e integraci\'on HTTP (\texttt{WebApplicationFactory} contra SQL LocalDB de prueba, con dobles de Gemini y SMTP).
+\nuevo{Adem\'as de las pruebas manuales, la API se valida con una suite automatizada en xUnit.
+Esa suite combina pruebas unitarias con pruebas de integraci\'on HTTP: arranca la API con \texttt{WebApplicationFactory}, usa SQL LocalDB de prueba y reemplaza Gemini y SMTP por dobles.
 La cobertura de c\'odigo se mide con Coverlet.
-El reporte E75 se calcula sobre los servicios de dominio y el \texttt{AppDbContext} (geo, MFA, plantillas de correo, tokens e invitaciones), excluyendo el composition root (\texttt{Program.cs}), los clientes de I/O externo (Gemini/SMTP) y el servicio de copiloto (cuyo flujo se ejercita en integraci\'on pero no entra al denominador del umbral).
-El artefacto vigente queda en \texttt{docs/evidence/coverage/} (Cobertura XML y resumen).
-Al cierre de esta revisi\'on, esa cobertura de l\'{\i}neas alcanza al menos el~85\,\% exigido en los requisitos E75.
-Las pruebas de integraci\'on (login, riesgo, detalle, agenda/candidatos, salud) aportan evidencia funcional complementaria sin pretender cubrir todo el monolito de endpoints en el porcentaje Coverlet.}
+El reporte E75 toma como alcance los servicios de dominio y el \texttt{AppDbContext}, entre ellos geo, MFA, plantillas de correo, tokens e invitaciones.
+Quedan fuera del umbral el composition root en \texttt{Program.cs}, los clientes de I/O externo hacia Gemini y SMTP, y el servicio de copiloto; este \'ultimo se ejercita en integraci\'on, pero no suma al denominador del porcentaje.
+El artefacto vigente est\'a en \texttt{docs/evidence/coverage/}, con el XML de Cobertura y un resumen.
+Al cierre de esta revisi\'on, la cobertura de l\'{\i}neas alcanza al menos el~85\,\% exigido en los requisitos E75.
+Las pruebas de integraci\'on sobre login, riesgo, detalle, agenda con candidatos y salud aportan evidencia funcional complementaria; no pretenden que el porcentaje Coverlet cubra todo el monolito de endpoints.}
 
 \section{\rev{Privacidad, datos personales y Ley~25.326}}
 
@@ -355,18 +358,20 @@ La expansi\'on hacia datos nominales de trabajadores (por ejemplo, siniestros co
 
 \section{\rev{Riesgos de IA generativa y prompt injection}}
 
-\rev{El uso del modelo generativo introduce riesgos espec\'ificos que la anonimizaci\'on de datos no resuelve por s\'i sola.}
+\nuevo{El control principal frente a prompt injection y a filtrado de prosa sensible es no enviar texto libre hist\'orico al modelo generativo.
+La gu\'{\i}a de visita y el contexto del copiloto se arman solo con agregados del dossier: conteos, tops por categor\'{\i}a e incumplimientos ya agrupados.
+Relatos de accidentes, observaciones de visitas previas y notas de acta no entran en ese prompt.
+As\'{\i} se elimina la v\'{\i}a m\'as habitual de inyecci\'on: un campo ``Observaci\'on'' del core o de una visita antigua con instrucciones maliciosas incrustadas.}
 
 \begin{itemize}
-	\item \rev{\textbf{Anonimizaci\'on no equivale a protecci\'on ante inyecci\'on:} quitar identificadores del dossier reduce la exposici\'on de datos, pero no impide que el contenido de campos de texto libre (observaciones de visitas anteriores, incumplimientos) contenga instrucciones maliciosas incrustadas.
-	Un campo ``Observaci\'on'' puede incluir texto que intente manipular la respuesta del modelo generativo.}
-	\item \rev{\textbf{Contenido de observaciones como entrada no confiable:} el texto ingresado por preventores o extra\'ido del sistema core se trata como no confiable.
-	La API lo inserta en el prompt dentro de delimitadores expl\'icitos (por ejemplo, \texttt{<observacion>...</observacion>}) y antepone una instrucci\'on de rol que restringe el comportamiento del modelo.}
-	\item \rev{\textbf{Delimitadores y formato fijo de salida:} el prompt solicita al modelo una respuesta en formato estructurado con cuatro secciones fijas (resumen ejecutivo, perfil de riesgo, incumplimientos a verificar y focos de la visita).
-	Una respuesta fuera de ese esquema se descarta o se etiqueta como err\'onea antes de persistirse en la BD operativa.}
-	\item \rev{\textbf{Sin acceso a datos en tiempo real:} el modelo generativo no tiene acceso a la BD operativa ni a Internet; solo procesa el dossier que la API le env\'ia.
-	Esto limita el impacto de una inyecci\'on exitosa a la respuesta de esa invocaci\'on, sin posibilidad de exfiltrar datos de otras filas.}
+	\item \nuevo{\textbf{Entrada acotada a agregados:} la API proyecta el dossier con un builder dedicado; las pruebas unitarias verifican que relatos y observaciones no aparecen en el texto enviado a Gemini.}
+	\item \nuevo{\textbf{Texto operativo residual:} si un hallazgo o etiqueta corta de la app a\'un se incluye, pasa por un saneo tipado y, si parece domicilio o identificador, se omite el detalle.
+	El \'unico texto a mano que puede viajar de forma consciente es el borrador que el Preventor escribe en el momento al pedir sugerir o mejorar un hallazgo del acta; ese borrador tambi\'en se sanea antes del llamado.}
+	\item \rev{\textbf{Formato fijo de salida:} el prompt pide una respuesta estructurada con secciones fijas.
+	Una respuesta fuera de ese esquema se descarta o se etiqueta como err\'onea antes de persistirse.}
+	\item \rev{\textbf{Sin acceso a datos en tiempo real:} el modelo generativo no tiene acceso a la BD operativa ni a Internet; solo procesa el bloque que la API le env\'ia.
+	El impacto de una manipulaci\'on queda limitado a esa invocaci\'on, sin leer otras filas.}
 \end{itemize}
 
-\rev{Estos controles son adecuados para el nivel de prototipo.
-En una versi\'on productiva ser\'{\i}a recomendable agregar un clasificador de salida que detecte respuestas fuera del esquema y registrar las invocaciones para auditor\'{\i}a.}
+\nuevo{Con esa pol\'{\i}tica, el riesgo de prompt injection sobre el dossier hist\'orico queda controlado en el prototipo porque la prosa libre ya no es entrada del modelo.
+Queda como mejora productiva endurecer a\'un m\'as los flujos puntuales de acta en vivo y registrar invocaciones para auditor\'{\i}a.}

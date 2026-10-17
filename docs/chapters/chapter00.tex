@@ -27,15 +27,14 @@ En los \'ultimos a\~nos, el escenario comenz\'o a cambiar. La siniestralidad lab
 \rev{El alcance del trabajo comprende:}
 
 \begin{itemize}
-	\item \rev{Un prototipo funcional en entorno local (SQL Server operativo \texttt{PfiPrevencion}, API .NET, frontend React), con marca Prevex.}
+	\item \rev{Un prototipo funcional Prevex (SQL Server operativo \texttt{PfiPrevencion}, API .NET, frontend React), validado en entorno local y dise\~nado para desplegarse en AWS Free Tier seg\'un la arquitectura del Cap\'itulo~\ref{ch:metodologia}.}
 	\item \rev{Datos de una cartera de establecimientos de una aseguradora argentina (panel del orden de 35.500 establecimientos), anonimizados para el modelado.}
 	\item \rev{Horizonte predictivo trimestral y lista operativa acotada (hasta 1.000 establecimientos) para planificaci\'on de visitas.}
 	\item \rev{Roles Preventor, Coordinador y Administrador; idioma de la interfaz en espa\~nol.}
 	\item \rev{Demo geogr\'afica ilustrativa en Ciudad Aut\'onoma de Buenos Aires para asignaci\'on por proximidad (coordenadas de prueba).}
-	\item \nuevo{Copiloto normativo SRT con recuperaci\'on de fragmentos (\emph{chunks}) en SQL Server (sin base vectorial), respuestas guardadas por establecimiento y tema.}
+	\item \nuevo{Copiloto normativo SRT con recuperaci\'on de fragmentos (\emph{chunks}) en SQL Server, respuestas guardadas por establecimiento y tema.}
 	\item \nuevo{Cierre de visita con acta estructurada, hallazgos abiertos y opci\'on de reagenda por plazo.}
-	\item \nuevo{Asignaci\'on asistida por distancia (Haversine), ancla visita a visita, score de carga y duraci\'on estimada por c\'apitas; autenticaci\'on con MFA TOTP opcional/obligatorio por administraci\'on e invitaci\'on por correo.}
+	\item \nuevo{Asignaci\'on asistida por distancia (Haversine), ancla visita a visita, score de carga y duraci\'on estimada por c\'apitas.}
+	\item \nuevo{Autenticaci\'on con MFA TOTP opcional u obligatorio seg\'un administraci\'on, e invitaci\'on de usuarios por correo.}
 \end{itemize}
 
-\rev{Queda fuera de este alcance (trabajo futuro o entregas posteriores): despliegue productivo completo en AWS como \'unico ambiente obligatorio; base vectorial de normativa; optimizaci\'on de rutas en tr\'ansito real.}
-\nuevo{La cobertura de pruebas automatizadas de la API (umbral del 85\,\% con reporte Coverlet) se documenta en la secci\'on de Validaci\'on del sistema.}

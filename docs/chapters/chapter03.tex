@@ -28,7 +28,7 @@ Tambi\'en se incorporan los resultados de la investigaci\'on con usuarios (encue
 	\item \textbf{HU-07.} Como coordinador, quiero ver estad\'isticas de cobertura, precisi\'on observada y factores SHAP agregados para evaluar el uso real del ranking.
 	\item \textbf{HU-08.} Como coordinador, quiero asignar visitas a un Preventor para distribuir la capacidad del equipo.
 	\item \textbf{HU-09.} Como Preventor, coordinador o administrador, quiero consultar el panel de estad\'isticas para interpretar el desempe\~no del modelo sin depender de un rol espec\'ifico de an\'alisis.
-	\item \textbf{HU-10.} \rev{Como administrador, quiero dar de alta, editar datos y dar de baja l\'ogica (Activo=false) a usuarios del prototipo, para controlar el acceso sin perder el historial de operaciones de ese usuario.}
+	\item \textbf{HU-10.} \rev{Como administrador, quiero dar de alta, editar datos y dar de baja l\'ogica a usuarios del prototipo, para controlar el acceso sin perder el historial de operaciones de ese usuario.}
 	\item \textbf{HU-11.} Como usuario, quiero alternar tema claro/oscuro y colapsar el men\'u para trabajar con comodidad en jornadas largas.
 	\item \textbf{HU-12.} Como coordinador, quiero distinguir motivos predictivos de obligaciones regulatorias (PRS) para no mezclar prioridades.
 	\item \nuevo{\textbf{HU-13.} Como Preventor, quiero consultar un copiloto normativo acotado (RGRL, PESE, RAR u otros temas) con citas del corpus SRT y guardar la respuesta para preparar la visita.}
@@ -259,8 +259,8 @@ La transcripci\'on depurada integra el Anexo~\ref{anexo:entrevista-daniel-oscar}
 
 Las personas condensan la encuesta y las entrevistas a perfiles de ART.
 Cada ficha incluye lema, biograf\'{\i}a, contexto de uso, herramientas actuales, motivaciones, objetivos, frustraciones, h\'abitos, un escenario y criterios de \'exito.
-Mart\'{\i}n R\'{\i}os es la persona primaria (actor Preventor, HU-02 a HU-06); Laura Ferrero es la de coordinaci\'on (HU-07, HU-08, HU-12).
-\rev{Se incluyen tres personas: Mart\'{\i}n R\'{\i}os (Preventor de campo), Laura Ferrero (Coordinadora) y el Administrador del prototipo, cuya ficha se presenta a continuaci\'on.}
+Mart\'{\i}n R\'{\i}os es la persona primaria (actor Preventor, HU-02 a HU-06); Laura Ferrero es la de coordinaci\'on (HU-07, HU-08, HU-12); Andr\'es Molina es el administrador del prototipo (HU-10, HU-16).
+\rev{Se incluyen tres personas con ficha completa: Mart\'{\i}n R\'{\i}os (Preventor de campo), Laura Ferrero (Coordinadora) y Andr\'es Molina (Administrador).}
 
 \clearpage
 \begin{figure}[H]
@@ -279,22 +279,20 @@ Mart\'{\i}n R\'{\i}os es la persona primaria (actor Preventor, HU-02 a HU-06); L
 \end{figure}
 
 \clearpage
+\begin{figure}[H]
+	\centering
+	\input{figures/diagramas/persona_administrador}
+	\caption{\rev{Persona de soporte: Andr\'es Molina, Administrador del prototipo.} \fuentepropia}
+	\label{fig:persona-administrador}
+\end{figure}
 
-Las Figuras~\ref{fig:persona-preventor} y~\ref{fig:persona-coordinadora} cierran el mismo circuito que el prototipo ya implementa.
+\clearpage
+
+Las Figuras~\ref{fig:persona-preventor},~\ref{fig:persona-coordinadora} y~\ref{fig:persona-administrador} cierran el mismo circuito que el prototipo ya implementa.
 Mart\'{\i}n necesita ranking trimestral, ficha explicable y agenda propia, con el score como dato interno.
 Laura necesita mapa de cobertura, asignaci\'on de visitas y no mezclar P.E.S.E.\ o PRS con la prioridad predictiva.
+\rev{Andr\'es necesita altas y bajas ordenadas, invitaci\'on por correo y MFA cuando corresponda, sin perder el historial de visitas.}
 \enc{La encuesta ($n=248$) explica por qu\'e ese circuito importa: afuera la prevenci\'on casi no se ve, as\'{\i} que el valor de Prevex es primero eficiencia interna del \'area, no un tablero para el empleador.}
-
-\rev{\subsubsection*{Persona 3: Administrador del prototipo}}
-
-\begin{description}
-	\item[\rev{Lema}] \rev{Mantener el acceso ordenado para que el equipo trabaje sin fricci\'on.}
-	\item[\rev{Biograf\'{\i}a}] \rev{T\'ecnico de sistemas interno de la ART, responsable de la configuraci\'on inicial y del mantenimiento operativo del prototipo. Conoce la estructura de roles pero no opera en campo.}
-	\item[\rev{Contexto de uso}] \rev{Accede al panel administrativo para crear cuentas, asignar roles, desactivar usuarios que salen del equipo y auditar la cobertura general.}
-	\item[\rev{Motivaciones y objetivos}] \rev{Controlar el acceso (RF-10), asegurar que los Preventores activos tengan cuenta vigente y que los inactivos no puedan ingresar, y conservar el historial de visitas previas sin importar el estado del usuario.}
-	\item[\rev{Frustraciones}] \rev{Procesos manuales para dar de baja usuarios; falta de trazabilidad cuando se reasignan cuentas entre preventores.}
-	\item[\rev{Criterio de \'exito}] \rev{Puede dar de alta, editar y dar de baja l\'ogica a un usuario en menos de dos minutos, sin perder el historial de visitas asociadas.}
-\end{description}
 
 \begin{table}[H]
 	\centering
@@ -313,7 +311,7 @@ Laura necesita mapa de cobertura, asignaci\'on de visitas y no mezclar P.E.S.E.\
 		HU-07, HU-08, HU-09, HU-12; \nuevo{HU-15} &
 		RF-02, RF-04, RF-07, RF-08; \nuevo{RF-08 geo}; RNF-06 \\
 		\hline
-		\rev{Administrador (sistema)} &
+		\rev{Andr\'es Molina (administrador)} &
 		\rev{HU-10}; \nuevo{HU-16} &
 		\rev{RF-10; RNF-01, RNF-02}; \nuevo{RF-16} \\
 		\hline
