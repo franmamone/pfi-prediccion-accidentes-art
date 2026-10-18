@@ -364,6 +364,7 @@ apps/**/obj/
 apps/**/node_modules/
 apps/**/dist/
 apps/api/wwwroot/
+publish/
 apps/**/.env
 apps/**/*.user
 infra/aws/*.env.local
