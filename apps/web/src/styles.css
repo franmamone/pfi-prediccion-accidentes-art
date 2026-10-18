@@ -1745,13 +1745,55 @@ table.data tr:hover td {
 .asignacion-layout {
   display: grid;
   grid-template-columns: 1.2fr 1fr;
+  grid-template-areas: "map list";
   gap: 12px;
   min-height: 240px;
+  align-items: stretch;
+  position: relative;
+  z-index: 0;
+}
+
+.asignacion-layout .asignacion-map {
+  grid-area: map;
+}
+
+.asignacion-layout .candidatos-list {
+  grid-area: list;
 }
 
 @media (max-width: 720px) {
+  /* Columna: preventores arriba (altura fija usable), mapa abajo. */
   .asignacion-layout {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    grid-template-columns: none;
+    grid-template-areas: none;
+    min-height: 0;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .asignacion-layout .candidatos-list {
+    flex: 0 0 auto;
+    flex-shrink: 0;
+    min-height: 168px;
+    height: min(38dvh, 260px);
+    max-height: min(38dvh, 260px);
+    position: relative;
+    z-index: 5;
+    background: var(--bg-2);
+    border-radius: 10px;
+    padding: 6px;
+    border: 1px solid var(--stroke);
+  }
+
+  .asignacion-layout .asignacion-map {
+    flex: 0 0 150px;
+    flex-shrink: 0;
+    height: 150px;
+    max-height: 150px;
+    position: relative;
+    z-index: 0;
   }
 }
 
@@ -1759,8 +1801,36 @@ table.data tr:hover td {
   height: 260px;
   border-radius: 10px;
   overflow: hidden;
+  /* iOS: overflow alone no clippea panes con transform de Leaflet. */
+  clip-path: inset(0 round 10px);
+  -webkit-clip-path: inset(0 round 10px);
   border: 1px solid var(--stroke);
   background: var(--bg-3);
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
+  contain: layout paint;
+  transform: translateZ(0);
+}
+
+/* Contener panes de Leaflet (z-index por defecto 200–700). */
+.asignacion-map .leaflet-container {
+  z-index: 0 !important;
+  height: 100% !important;
+  width: 100% !important;
+}
+
+.asignacion-map .leaflet-pane,
+.asignacion-map .leaflet-map-pane,
+.asignacion-map .leaflet-tile-pane,
+.asignacion-map .leaflet-overlay-pane,
+.asignacion-map .leaflet-shadow-pane,
+.asignacion-map .leaflet-marker-pane,
+.asignacion-map .leaflet-tooltip-pane,
+.asignacion-map .leaflet-popup-pane,
+.asignacion-map .leaflet-top,
+.asignacion-map .leaflet-bottom {
+  z-index: 0 !important;
 }
 
 .candidatos-list {
@@ -1774,7 +1844,9 @@ table.data tr:hover td {
   overflow: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
-  background: transparent;
+  background: var(--bg-2);
+  position: relative;
+  z-index: 2;
 }
 
 .candidato-item {
@@ -2663,6 +2735,11 @@ a.badge {
     padding: 2px 2px 10px;
   }
 
+  /* Sin esto flex achica la lista de preventores a 1px cuando entra el mapa. */
+  .programar-modal-scroll > * {
+    flex-shrink: 0;
+  }
+
   /* Selects dentro del scroll: abrir hacia arriba para no cortarse. */
   .programar-modal-scroll .ui-select-pop {
     top: auto;
@@ -2741,17 +2818,31 @@ a.badge {
   }
 
   .asignacion-map {
-    height: 200px;
+    height: 150px;
+    max-height: 150px;
     isolation: isolate;
     z-index: 0;
   }
 
   .asignacion-layout {
     min-height: 0;
+    flex-shrink: 0;
   }
 
-  .candidatos-list {
-    max-height: min(42dvh, 320px);
+  .asignacion-layout .candidatos-list {
+    flex-shrink: 0;
+    min-height: 168px;
+    height: min(38dvh, 260px);
+    max-height: min(38dvh, 260px);
+  }
+
+  /* Fecha/hora y lista por encima de cualquier pane Leaflet suelto. */
+  .programar-modal-scroll .fecha-hora-row,
+  .programar-modal-scroll .recomendado-banner,
+  .programar-modal-scroll .candidatos-list,
+  .programar-modal-scroll .ui-select {
+    position: relative;
+    z-index: 6;
   }
 
   .programar-modal-wide {
@@ -4748,6 +4839,8 @@ table.data tbody tr:hover td {
 }
 
 .ui-select-value {
+  min-width: 0;
+  flex: 1 1 auto;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -4842,6 +4935,8 @@ table.data tbody tr:hover td {
 }
 
 .ui-select-option > span {
+  min-width: 0;
+  flex: 1 1 auto;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -5167,14 +5262,26 @@ table.data tbody tr:hover td {
 .acta-modal .ui-select {
   max-width: 100%;
   min-width: 0;
+  width: 100%;
 }
 
+/* RGRL labels son largos: el pop no puede ser max-content (rompe el ancho mobile). */
+.acta-modal .ui-select-pop,
 .acta-modal .acta-extra-tema .ui-select-pop {
   z-index: 90;
-  width: 100%;
-  max-width: 100%;
-  right: 0;
   left: 0;
+  right: 0;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+}
+
+.acta-modal .ui-select-option > span {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 0;
 }
 
 .acta-add-extra {
@@ -5325,22 +5432,67 @@ table.data tbody tr:hover td {
     max-height: min(92dvh, 100%);
     gap: 10px;
     padding-bottom: 0;
+    overflow-x: hidden;
+    box-sizing: border-box;
   }
 
   .acta-modal-scroll {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
     padding: 2px 2px 10px;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .acta-modal-scroll > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .acta-fieldset {
+    padding: 10px;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .acta-check-item,
+  .acta-extras,
+  .acta-checklist-group,
+  .acta-obs-note,
+  .acta-extra-tema {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .acta-extra-head {
+    flex-wrap: wrap;
+    gap: 6px;
   }
 
   .acta-modal-scroll .ui-select-pop,
-  .acta-reagenda .ui-select-pop {
+  .acta-reagenda .ui-select-pop,
+  .acta-modal .acta-extra-tema .ui-select-pop {
     top: auto;
     bottom: calc(100% + 6px);
     max-height: min(240px, 45dvh);
     overflow: auto;
-    width: 100%;
-    max-width: 100%;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    left: 0;
+    right: 0;
+  }
+
+  .acta-modal .ui-select-trigger {
+    font-size: 16px;
+    min-height: 44px;
+    height: auto;
+    min-width: 0;
   }
 
   .acta-modal .acta-modal-foot.modal-actions {
@@ -5372,12 +5524,28 @@ table.data tbody tr:hover td {
     grid-template-columns: 1fr;
   }
 
+  .acta-check-states {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .acta-state-btn {
+    flex: 1 1 auto;
+    text-align: center;
+    padding: 8px 6px;
+    font-size: 12px;
+  }
+
   .acta-obs-note-row {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
+    min-width: 0;
   }
 
   .acta-obs-note-row textarea {
     font-size: 16px;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
   }
 }
 

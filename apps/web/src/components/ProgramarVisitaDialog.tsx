@@ -231,15 +231,7 @@ export function ProgramarVisitaDialog({ item, horizonte, onClose, onDone }: Prop
                   </div>
                 ) : (
                   <div className="asignacion-layout">
-                    {establecimiento && (
-                      <AsignacionMap
-                        establecimiento={establecimiento}
-                        candidatos={candidatos}
-                        seleccionadoId={usuarioId}
-                        recomendadoId={recomendadoId}
-                        onSelect={elegirPreventor}
-                      />
-                    )}
+                    {/* Lista antes que el mapa en el DOM: en móvil Leaflet no puede taparla al montarse. */}
                     <ul
                       className="candidatos-list"
                       onMouseLeave={() => setHoverId(null)}
@@ -279,6 +271,16 @@ export function ProgramarVisitaDialog({ item, horizonte, onClose, onDone }: Prop
                         </li>
                       ))}
                     </ul>
+                    {establecimiento && (
+                      <AsignacionMap
+                        key={`map-${fecha}-${item.idEstablecimiento}`}
+                        establecimiento={establecimiento}
+                        candidatos={candidatos}
+                        seleccionadoId={usuarioId}
+                        recomendadoId={recomendadoId}
+                        onSelect={elegirPreventor}
+                      />
+                    )}
                   </div>
                 )}
               </>

@@ -20,13 +20,16 @@ function FitBounds({
 }) {
   const map = useMap();
   useEffect(() => {
+    // Tras montar en un modal (p. ej. al cambiar de domingo a lunes) el tamaño puede ser 0.
+    const t = window.setTimeout(() => map.invalidateSize(), 80);
     const pts: [number, number][] = [[establecimiento.latitud, establecimiento.longitud]];
     for (const c of candidatos) pts.push([c.latitud, c.longitud]);
     if (pts.length === 1) {
       map.setView(pts[0], 13);
-      return;
+    } else {
+      map.fitBounds(pts, { padding: [28, 28], maxZoom: 14 });
     }
-    map.fitBounds(pts, { padding: [28, 28], maxZoom: 14 });
+    return () => window.clearTimeout(t);
   }, [map, establecimiento, candidatos]);
   return null;
 }

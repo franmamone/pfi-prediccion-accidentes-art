@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   fetchAgenda,
@@ -109,6 +109,8 @@ export function AgendaPage() {
   const [deepLinkReady, setDeepLinkReady] = useState(() => !searchParams.get("visita"));
   const [realizarItem, setRealizarItem] = useState<AgendaItem | null>(null);
   const [cancelarItem, setCancelarItem] = useState<AgendaItem | null>(null);
+  const agendaDrawerRef = useRef<HTMLElement | null>(null);
+  const agendaActionsRef = useRef<HTMLDivElement | null>(null);
 
   // Reprogramación (solo gestión)
   const [editando, setEditando] = useState(false);
@@ -228,6 +230,17 @@ export function AgendaPage() {
   useEffect(() => {
     setEditando(false);
   }, [selectedId]);
+
+  // Semana/mes: el drawer queda debajo del calendario; al elegir una visita bajamos solo.
+  useEffect(() => {
+    if (selectedId == null) return;
+    if (vista !== "semana" && vista !== "mes") return;
+    const id = window.requestAnimationFrame(() => {
+      const target = agendaActionsRef.current ?? agendaDrawerRef.current;
+      target?.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [selectedId, vista]);
 
   function periodoLabel(): string {
     if (vista === "mes") return capitalize(cursor.toLocaleDateString("es-AR", { month: "long", year: "numeric" }));
@@ -405,7 +418,7 @@ export function AgendaPage() {
         </div>
 
         {selected && (
-          <aside className="agenda-drawer panel">
+          <aside className="agenda-drawer panel" ref={agendaDrawerRef}>
             <div className="agenda-drawer-head">
               <div>
                 <span className={`badge ${selected.bandaOrigen ?? "medio"}`}>
@@ -560,6 +573,8 @@ export function AgendaPage() {
                 Ver ficha del establecimiento
               </Link>
             </div>
+            {/* Ancla: en semana/mes bajamos hasta acá para ver acciones sin scroll manual. */}
+            <div ref={agendaActionsRef} className="agenda-drawer-anchor" aria-hidden />
           </aside>
         )}
       </div>
