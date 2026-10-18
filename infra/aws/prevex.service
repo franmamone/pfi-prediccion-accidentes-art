@@ -1,0 +1,16 @@
+[Unit]
+Description=Prevex API (.NET)
+After=network.target docker.service
+Wants=docker.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/ec2-user/prevex/publish
+EnvironmentFile=/home/ec2-user/prevex/prevex.env
+ExecStart=/home/ec2-user/.dotnet/dotnet /home/ec2-user/prevex/publish/PfiPrevencion.Api.dll
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
