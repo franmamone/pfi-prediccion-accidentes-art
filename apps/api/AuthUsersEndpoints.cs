@@ -63,13 +63,15 @@ public static class AuthUsersEndpoints
             if (string.IsNullOrWhiteSpace(req.MfaToken) || string.IsNullOrWhiteSpace(req.Code))
                 return Results.BadRequest(new { error = "Falta el código MFA." });
             var principal = ValidateMfaPendingToken(req.MfaToken, jwtKey, jwtIssuer);
-            if (principal is null) return Results.Unauthorized();
+            if (principal is null)
+                return Results.Json(new { error = "El paso MFA expiró. Volvé a iniciar sesión." }, statusCode: StatusCodes.Status401Unauthorized);
             var sub = principal.FindFirstValue(JwtRegisteredClaimNames.Sub)
                 ?? principal.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!int.TryParse(sub, out var userId)) return Results.Unauthorized();
+            if (!int.TryParse(sub, out var userId))
+                return Results.Json(new { error = "El paso MFA expiró. Volvé a iniciar sesión." }, statusCode: StatusCodes.Status401Unauthorized);
             var user = await db.Usuarios.FirstOrDefaultAsync(u => u.Id == userId && u.Activo);
             if (user is null || !user.MfaEnabled || string.IsNullOrWhiteSpace(user.MfaSecret))
-                return Results.Unauthorized();
+                return Results.Json(new { error = "No se pudo verificar MFA para este usuario." }, statusCode: StatusCodes.Status401Unauthorized);
 
             var ok = MfaService.VerifyCode(user.MfaSecret, req.Code);
             if (!ok && MfaService.TryConsumeRecovery(user.MfaRecoveryHashes, req.Code, out var updated))
@@ -78,7 +80,8 @@ public static class AuthUsersEndpoints
                 ok = true;
                 await db.SaveChangesAsync();
             }
-            if (!ok) return Results.Unauthorized();
+            if (!ok)
+                return Results.Json(new { error = "Código MFA incorrecto." }, statusCode: StatusCodes.Status401Unauthorized);
 
             var token = CreateSessionToken(user, jwtKey, jwtIssuer);
             return Results.Ok(new { access_token = token, token_type = "Bearer", user = ToUserDtoExt(user) });

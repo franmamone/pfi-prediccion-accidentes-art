@@ -1243,6 +1243,7 @@ table.data tr:hover td {
   border: 1px solid var(--stroke);
   background: var(--bg-1);
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
+  box-sizing: border-box;
 }
 
 .section-title-row .info-calc-panel,
@@ -1256,6 +1257,45 @@ table.data tr:hover td {
 .score-with-info .info-calc-panel {
   left: 0;
   right: auto;
+}
+
+.info-calc-backdrop {
+  display: none;
+}
+
+/* Mobile: panel centrado en pantalla (no anclado al borde del botón). */
+@media (max-width: 640px) {
+  .info-hint-mobile .info-calc-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 85;
+    border: none;
+    padding: 0;
+    margin: 0;
+    background: rgba(15, 23, 42, 0.45);
+    cursor: pointer;
+  }
+
+  .info-hint-mobile .info-calc-panel,
+  .info-hint-mobile.align-end .info-calc-panel,
+  .section-title-row .info-hint-mobile .info-calc-panel,
+  .collapsible-trailing .info-hint-mobile .info-calc-panel,
+  .collapsible-head .info-hint-mobile .info-calc-panel,
+  .score-with-info .info-hint-mobile .info-calc-panel {
+    position: fixed;
+    left: 50%;
+    right: auto;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: min(420px, calc(100vw - 32px));
+    max-width: calc(100vw - 32px);
+    max-height: min(70dvh, 520px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    z-index: 90;
+    box-shadow: 0 20px 48px rgba(15, 23, 42, 0.28);
+  }
 }
 
 .info-calc-panel-head {

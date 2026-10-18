@@ -512,6 +512,16 @@ export function clearSession(): void {
   localStorage.removeItem(USER_KEY);
 }
 
+function isAuthCredentialPath(path: string): boolean {
+  return (
+    path === "/api/auth/login" ||
+    path === "/api/auth/mfa" ||
+    path.startsWith("/api/auth/forgot-password") ||
+    path.startsWith("/api/auth/reset-password") ||
+    path.startsWith("/api/auth/aceptar-invitacion")
+  );
+}
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
   if (init.body) headers.set("Content-Type", "application/json");
@@ -519,11 +529,6 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (token) headers.set("Authorization", `Bearer ${token}`);
 
   const response = await fetch(path, { ...init, headers });
-  if (response.status === 401) {
-    clearSession();
-    throw new Error("Sesión expirada. Volvé a iniciar sesión.");
-  }
-
   const text = await response.text();
   const parseJson = (): unknown => {
     if (!text.trim()) return null;
@@ -535,6 +540,20 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
       );
     }
   };
+
+  if (response.status === 401) {
+    const parsed = parseJson() as { error?: string; detail?: string; title?: string } | null;
+    const authAttempt = isAuthCredentialPath(path);
+    if (!authAttempt) {
+      clearSession();
+    }
+    const fallback = authAttempt
+      ? path === "/api/auth/mfa"
+        ? "Código MFA incorrecto."
+        : "Email o contraseña incorrectos."
+      : "Sesión expirada. Volvé a iniciar sesión.";
+    throw new Error(parsed?.error || parsed?.detail || parsed?.title || fallback);
+  }
 
   if (!response.ok) {
     const parsed = parseJson() as { error?: string; title?: string; detail?: string } | null;

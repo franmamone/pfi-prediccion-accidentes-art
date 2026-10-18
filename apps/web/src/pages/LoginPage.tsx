@@ -39,8 +39,29 @@ export function LoginPage() {
 
   if (user) return <Navigate to={resolveAfterLogin(user, nextParam)} replace />;
 
+  function validateBeforeSubmit(): string | null {
+    if (mfaToken) {
+      const code = mfaCode.trim();
+      if (!code) return "Ingresá el código de tu app Authenticator.";
+      if (!/^\d{6}$/.test(code) && code.length < 8) {
+        return "El código MFA debe tener 6 dígitos (o un código de recuperación).";
+      }
+      return null;
+    }
+    const em = email.trim();
+    if (!em) return "Ingresá tu email.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return "El email no tiene un formato válido.";
+    if (!password) return "Ingresá tu contraseña.";
+    return null;
+  }
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    const validation = validateBeforeSubmit();
+    if (validation) {
+      setError(validation);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -49,7 +70,7 @@ export function LoginPage() {
         navigate(resolveAfterLogin(loggedIn, nextParam));
         return;
       }
-      const result = await login(email, password);
+      const result = await login(email.trim(), password);
       if ("mfaRequired" in result && result.mfaRequired) {
         setMfaToken(result.mfaToken);
         return;
@@ -83,9 +104,17 @@ export function LoginPage() {
               <label htmlFor="email">Email</label>
               <input
                 id="email"
+                type="email"
+                inputMode="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (error) setError(null);
+                }}
                 autoComplete="username"
+                autoCapitalize="none"
+                spellCheck={false}
+                required
               />
             </div>
             <div className="field password-field">
@@ -94,8 +123,12 @@ export function LoginPage() {
                 id="password"
                 type={showPassword ? "text" : "password"}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (error) setError(null);
+                }}
                 autoComplete="current-password"
+                required
               />
               <button
                 type="button"

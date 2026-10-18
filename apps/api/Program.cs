@@ -128,11 +128,17 @@ app.MapGet("/api/health", async (AppDbContext db) =>
 
 app.MapPost("/api/auth/login", async (LoginRequest request, AppDbContext db) =>
 {
-    var email = request.Email.Trim().ToLowerInvariant();
-    var user = await db.Usuarios.FirstOrDefaultAsync(u => u.Email == email && u.Activo);
-    if (user is null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+    var email = (request.Email ?? "").Trim().ToLowerInvariant();
+    var password = request.Password ?? "";
+    if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
     {
-        return Results.Unauthorized();
+        return Results.BadRequest(new { error = "Completá email y contraseña." });
+    }
+
+    var user = await db.Usuarios.FirstOrDefaultAsync(u => u.Email == email && u.Activo);
+    if (user is null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
+    {
+        return Results.Json(new { error = "Email o contraseña incorrectos." }, statusCode: StatusCodes.Status401Unauthorized);
     }
 
     if (user.DebeCambiarPassword)

@@ -1,6 +1,8 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { IconInfo } from "../icons";
 
+const MOBILE_MQ = "(max-width: 640px)";
+
 type InfoHintProps = {
   title: string;
   body: string;
@@ -14,6 +16,17 @@ export function InfoHint({ title, body, footer, open, onToggle }: InfoHintProps)
   const rootRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const [alignEnd, setAlignEnd] = useState(false);
+  const [mobileCenter, setMobileCenter] = useState(
+    () => typeof window !== "undefined" && window.matchMedia(MOBILE_MQ).matches,
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia(MOBILE_MQ);
+    const sync = () => setMobileCenter(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -34,7 +47,7 @@ export function InfoHint({ title, body, footer, open, onToggle }: InfoHintProps)
   }, [open, onToggle]);
 
   useLayoutEffect(() => {
-    if (!open || !rootRef.current || !panelRef.current) {
+    if (!open || mobileCenter || !rootRef.current || !panelRef.current) {
       setAlignEnd(false);
       return;
     }
@@ -44,10 +57,13 @@ export function InfoHint({ title, body, footer, open, onToggle }: InfoHintProps)
     const overflowsRight = rootRect.left + panelWidth > window.innerWidth - margin;
     const nearRightEdge = rootRect.right > window.innerWidth * 0.55;
     setAlignEnd(overflowsRight || nearRightEdge);
-  }, [open, body, footer]);
+  }, [open, body, footer, mobileCenter]);
 
   return (
-    <div className={`info-hint${alignEnd ? " align-end" : ""}`} ref={rootRef}>
+    <div
+      className={`info-hint${alignEnd ? " align-end" : ""}${mobileCenter ? " info-hint-mobile" : ""}`}
+      ref={rootRef}
+    >
       <button
         type="button"
         className={`info-circle-btn${open ? " open" : ""}`}
@@ -59,6 +75,14 @@ export function InfoHint({ title, body, footer, open, onToggle }: InfoHintProps)
       >
         <IconInfo size={14} />
       </button>
+      {open && mobileCenter ? (
+        <button
+          type="button"
+          className="info-calc-backdrop"
+          aria-label="Cerrar información"
+          onClick={onToggle}
+        />
+      ) : null}
       {open && (
         <div
           ref={panelRef}
