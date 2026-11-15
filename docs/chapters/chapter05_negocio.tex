@@ -46,14 +46,16 @@ Los bloques de segmentos, propuesta de valor, ingresos y costos se apoyan en la 
 \section{\rev{Fuentes de ingresos y estructura de costos}}
 
 \rev{La unidad de venta es la ART.
-El precio de referencia del escenario base es de USD~1.200 por mes (USD~14.400 por a\~no), con variantes de entrada (USD~800) y de upsell (USD~1.500).
-El fundamento es B2B de software vertical: un solo pagador institucional, valor concentrado en el \'area de prevenci\'on y disposici\'on a pagar condicionada al r\'edito, coherente con lo relevado en entrevistas.}
+El mercado de referencia son las \textbf{22 aseguradoras registradas} publicadas por el Estado nacional para elecci\'on del empleador \parencite{srtartlistado}.
+El precio de referencia es \textbf{el mismo} en los tres escenarios: USD~500 por mes (USD~6.000 por a\~no).
+Lo que diferencia pesimista, base y optimista es la \textbf{cartera fija} de clientes (1, 3 o 5 ART durante los cinco a\~nos), no la tarifa ni una rampa gradual.}
 
 \rev{Los costos se clasifican as\'{\i}:}
 \begin{itemize}
-	\item \rev{\textbf{Inversi\'on inicial:} USD~8.000 para endurecimiento productivo m\'{\i}nimo, despliegue, aspectos legales livianos, materiales comerciales y primer onboarding.}
-	\item \rev{\textbf{Costos fijos anuales:} infraestructura cloud base, monitoreo, soporte y ciclo de reentrenamiento del modelo.}
-	\item \rev{\textbf{Costos variables por ART:} uso de API generativa, almacenamiento incremental y costo de adquisici\'on (CAC) cuando ingresa una ART nueva.}
+	\item \rev{\textbf{Inversi\'on inicial (capex):} USD~8.000 de productizaci\'on m\'{\i}nima (despliegue endurecido, aspectos legales livianos, materiales comerciales y primer onboarding). No es solo la factura de cloud ni de la API generativa, y no incluye las horas del PFI.}
+	\item \rev{\textbf{Costos fijos anuales (opex fijo):} infraestructura cloud base, monitoreo, soporte y ciclo de reentrenamiento del modelo (USD~3.000, unos USD~250 por mes).}
+	\item \rev{\textbf{Costos variables por ART:} uso de API generativa y almacenamiento incremental (USD~800 por ART-a\~no).}
+	\item \rev{\textbf{CAC:} costo de adquisici\'on al incorporar una ART nueva (USD~3.000). En cartera fija se concentra en el a\~no~1.}
 \end{itemize}
 
 \input{tables/negocio/tab_supuestos}
@@ -64,25 +66,29 @@ El fundamento es B2B de software vertical: un solo pagador institucional, valor 
 Se reportan VAN, TIR, payback simple y descontado, y punto de equilibrio en n\'umero de ART.
 Los flujos salen de los supuestos del modelo de negocio (precio, adopci\'on, opex fijo, variable y CAC).}
 
-\rev{Se construyen tres escenarios con historias distintas (no un ajuste porcentual uniforme):}
+\rev{Se construyen tres escenarios con el mismo precio y distinta cartera fija.
+La cartera se expresa tambi\'en como fracci\'on del mercado de~22 ART:}
 
 \begin{itemize}
-	\item \rev{\textbf{Pesimista:} un solo piloto a precio de entrada (USD~800/mes) durante los cinco a\~nos, sin escalar, con opex fijo alto relativo al ingreso.}
-	\item \rev{\textbf{Base:} adopci\'on gradual hasta cinco ART, precio USD~1.200/mes.}
-	\item \rev{\textbf{Optimista:} replicaci\'on hasta diez ART y precio medio USD~1.500/mes.}
+	\item \rev{\textbf{Pesimista:} una ART fija los cinco a\~nos (~5\,\% del mercado) a USD~500/mes.}
+	\item \rev{\textbf{Base:} tres ART fijas (~14\,\% del mercado), mismo precio.}
+	\item \rev{\textbf{Optimista:} cinco ART fijas (~23\,\% del mercado), mismo precio.}
 \end{itemize}
 
 \input{tables/negocio/tab_flujo_base}
 
 \input{tables/negocio/tab_indicadores}
 
-\rev{Interpretaci\'on: en el escenario base el VAN es positivo (USD~74.359), la TIR supera a $k$ y el payback descontado ronda 1,8~a\~nos.
-El optimista refuerza esa conclusi\'on (VAN de USD~259.174).
-El pesimista, en cambio, no es viable: VAN negativo (USD~-12.395), sin TIR interpretable porque los flujos no recuperan la inversi\'on en el horizonte, y el payback no se completa en cinco a\~nos.
-Con una sola ART a precio de entrada, el ingreso no cubre de forma sostenida el opex fijo supuesto (punto de equilibrio cercano a~1,1~ART): hace falta cerrar el piloto \emph{y} escalar al menos a una segunda aseguradora, o mejorar margen, para que el proyecto genere valor.}
+\rev{Interpretaci\'on: con precio \'unico, la viabilidad depende de cu\'antas ART permanecen contratadas.
+En el escenario base el VAN es positivo (USD~29.384), la TIR supera a $k$ (~97\,\%) y el payback descontado ronda 1,5~a\~nos.
+El optimista, con cinco clientes, refuerza esa lectura (VAN de USD~61.517; payback de~1,0~a\~no).
+El pesimista, con una sola ART, queda casi neutro / levemente negativo: VAN de USD~-2.748, TIR cercana a~0\,\% y el payback no se completa en cinco a\~nos.
+El ingreso anual es USD~6.000 frente a opex fijo de USD~3.000, variable de USD~800, CAC de USD~3.000 en el a\~no~1 y capex de productizaci\'on de USD~8.000.
+Tras el primer a\~no el margen operativo ronda USD~2.200 anuales: insuficiente para recuperar la inversi\'on al~12\,\% en el horizonte.
+La lectura comercial es que el piloto \'unico no alcanza; con tres ART el proyecto ya genera valor. El plan prioriza validar el primer contrato y cerrar un peque\~no portafolio antes de escalar CAC.}
 
-\rev{Una sensibilidad de $k$ entre~10\% y~15\% no cambia el signo del VAN en base ni en optimista; el pesimista permanece negativo en ese rango.
-Por ello el plan comercial prioriza validar el primer piloto con evidencia de cobertura y satisfacci\'on del preventor antes de escalar CAC, y no asumir que un \'unico contrato a precio de entrada alcanza para sustentar la operaci\'on.}
+\rev{Una sensibilidad de $k$ entre~10\% y~15\% no cambia el signo del VAN en base ni en optimista; el pesimista permanece en torno a neutro / levemente negativo.
+Los n\'umeros siguen siendo supuestos expl\'{\i}citos, no un contrato firmado.}
 
 \section{\rev{Branding e identidad visual}}
 

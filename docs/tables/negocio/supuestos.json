@@ -7,7 +7,7 @@
   "escenarios": {
     "pesimista": {
       "label": "Pesimista",
-      "price_month": 800.0,
+      "price_month": 500.0,
       "arts": [
         1,
         1,
@@ -15,40 +15,40 @@
         1,
         1
       ],
-      "fixed_opex": 9000.0,
-      "var_per_art": 1200.0,
-      "cac": 2500.0,
-      "historia": "Un solo piloto a precio de entrada; sin escalar; opex fijo alto relativo al ingreso."
+      "fixed_opex": 3000.0,
+      "var_per_art": 800.0,
+      "cac": 3000.0,
+      "historia": "Una ART fija los 5 anos (~5% del mercado) a USD 500/mes. VAN cercano a cero / levemente negativo; TIR ~0%; no recupera en el horizonte."
     },
     "base": {
       "label": "Base",
-      "price_month": 1200.0,
+      "price_month": 500.0,
       "arts": [
-        1,
-        2,
         3,
-        4,
-        5
+        3,
+        3,
+        3,
+        3
       ],
-      "fixed_opex": 11000.0,
-      "var_per_art": 1300.0,
-      "cac": 2500.0,
-      "historia": "Adopcion gradual vía canal de prevencion; precio de referencia."
+      "fixed_opex": 3000.0,
+      "var_per_art": 800.0,
+      "cac": 3000.0,
+      "historia": "Tres ART fijas los 5 anos (~14% del mercado); mismo precio USD 500/mes."
     },
     "optimista": {
       "label": "Optimista",
-      "price_month": 1500.0,
+      "price_month": 500.0,
       "arts": [
-        2,
-        4,
-        6,
-        8,
-        10
+        5,
+        5,
+        5,
+        5,
+        5
       ],
-      "fixed_opex": 12000.0,
-      "var_per_art": 1400.0,
+      "fixed_opex": 3000.0,
+      "var_per_art": 800.0,
       "cac": 3000.0,
-      "historia": "Replicacion en varias ART y upsell de precio medio."
+      "historia": "Cinco ART fijas los 5 anos (~23% del mercado); mismo precio USD 500/mes."
     }
   }
 }

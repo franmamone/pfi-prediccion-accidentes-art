@@ -18,34 +18,43 @@ K = 0.12  # tasa de descuento real en USD
 HORIZON = 5
 I0 = 8000.0  # inversion inicial
 
-# Costos unitarios comunes (USD / ano por ART activa), ajustables por escenario.
+# Mercado: 22 ART registradas (argentina.gob.ar / SRT).
+# Cartera fija (misma cantidad de ART los 5 anos). Mismo precio; cambia solo N clientes.
+# Alineado a la slide del hito 90%: precio 500, opex fijo 3000, var 800, CAC 3000, capex 8000, k=12%.
 ASSUMPTIONS = {
     "pesimista": {
         "label": "Pesimista",
-        "price_month": 800.0,
+        "price_month": 500.0,
         "arts": [1, 1, 1, 1, 1],
-        "fixed_opex": 9000.0,
-        "var_per_art": 1200.0,
-        "cac": 2500.0,
-        "historia": "Un solo piloto a precio de entrada; sin escalar; opex fijo alto relativo al ingreso.",
+        "fixed_opex": 3000.0,
+        "var_per_art": 800.0,
+        "cac": 3000.0,
+        "historia": (
+            "Una ART fija los 5 anos (~5% del mercado) a USD 500/mes. "
+            "VAN cercano a cero / levemente negativo; TIR ~0%; no recupera en el horizonte."
+        ),
     },
     "base": {
         "label": "Base",
-        "price_month": 1200.0,
-        "arts": [1, 2, 3, 4, 5],
-        "fixed_opex": 11000.0,
-        "var_per_art": 1300.0,
-        "cac": 2500.0,
-        "historia": "Adopcion gradual vía canal de prevencion; precio de referencia.",
+        "price_month": 500.0,
+        "arts": [3, 3, 3, 3, 3],
+        "fixed_opex": 3000.0,
+        "var_per_art": 800.0,
+        "cac": 3000.0,
+        "historia": (
+            "Tres ART fijas los 5 anos (~14% del mercado); mismo precio USD 500/mes."
+        ),
     },
     "optimista": {
         "label": "Optimista",
-        "price_month": 1500.0,
-        "arts": [2, 4, 6, 8, 10],
-        "fixed_opex": 12000.0,
-        "var_per_art": 1400.0,
+        "price_month": 500.0,
+        "arts": [5, 5, 5, 5, 5],
+        "fixed_opex": 3000.0,
+        "var_per_art": 800.0,
         "cac": 3000.0,
-        "historia": "Replicacion en varias ART y upsell de precio medio.",
+        "historia": (
+            "Cinco ART fijas los 5 anos (~23% del mercado); mismo precio USD 500/mes."
+        ),
     },
 }
 
@@ -248,14 +257,16 @@ def write_latex(scenarios: list[dict]) -> None:
             [fmt_usd(p["van"]), fmt_usd(b["van"]), fmt_usd(o["van"])],
         )
     )
+    def fmt_tir(x: float | None) -> str:
+        # Si no hay cambio de signo, n/d. Si es negativa, se reporta (sigue siendo interpretable).
+        if x is None:
+            return "n/d"
+        return fmt_pct(x) + "\\%"
+
     lines.append(
         row(
             "TIR",
-            [
-                (fmt_pct(p["tir"]) + "\\%") if p["tir"] is not None else "n/d",
-                (fmt_pct(b["tir"]) + "\\%") if b["tir"] is not None else "n/d",
-                (fmt_pct(o["tir"]) + "\\%") if o["tir"] is not None else "n/d",
-            ],
+            [fmt_tir(p["tir"]), fmt_tir(b["tir"]), fmt_tir(o["tir"])],
         )
     )
     lines.append(
@@ -340,7 +351,7 @@ def write_latex(scenarios: list[dict]) -> None:
         f"Opex fijo anual & {fmt_usd(p['fixed_opex'])} & {fmt_usd(b['fixed_opex'])} & {fmt_usd(o['fixed_opex'])} \\\\",
         f"Costo variable / ART-ano & {fmt_usd(p['var_per_art'])} & {fmt_usd(b['var_per_art'])} & {fmt_usd(o['var_per_art'])} \\\\",
         f"CAC por ART nueva & {fmt_usd(p['cac'])} & {fmt_usd(b['cac'])} & {fmt_usd(o['cac'])} \\\\",
-        f"ART a\\~no 5 & {p['rows'][-1]['arts']} & {b['rows'][-1]['arts']} & {o['rows'][-1]['arts']} \\\\",
+        f"ART fijas (5 a\\~nos) & {p['rows'][-1]['arts']} & {b['rows'][-1]['arts']} & {o['rows'][-1]['arts']} \\\\",
         r"\hline",
         r"\end{tabular}",
         r"\end{table}",
