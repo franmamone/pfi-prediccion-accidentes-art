@@ -344,6 +344,13 @@ data/raw/*
 data/processed/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
+# Datasets de entrega PFI (anonimizados)
+!data/raw/*.csv
+!data/raw/*.parquet
+!data/raw/*.md
+!data/raw/encuesta/
+!data/raw/encuesta/**
+!data/processed/*.parquet
 reports/*
 !reports/.gitkeep
 !reports/README.md
@@ -352,11 +359,16 @@ reports/*
 reports/dataset/*
 !reports/dataset/.gitkeep
 !reports/dataset/README.md
+!reports/dataset/data_quality_audit.json
+!reports/ranking/
+!reports/ranking/**
 .ipynb_checkpoints/
 models/*.json
 models/*.ubj
 models/*.joblib
 *.parquet
+!data/raw/*.parquet
+!data/processed/*.parquet
 
 # App .NET / Node
 apps/**/bin/

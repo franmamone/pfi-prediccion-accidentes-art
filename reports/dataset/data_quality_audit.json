@@ -1,0 +1,764 @@
+{
+  "periodo_accidentes_min": "2022-01",
+  "periodo_accidentes_max": "2025-12",
+  "accidentes_por_mes": [
+    {
+      "periodo": "2022-01",
+      "accidentes": 291,
+      "establecimientos": 219
+    },
+    {
+      "periodo": "2022-02",
+      "accidentes": 378,
+      "establecimientos": 270
+    },
+    {
+      "periodo": "2022-03",
+      "accidentes": 514,
+      "establecimientos": 337
+    },
+    {
+      "periodo": "2022-04",
+      "accidentes": 524,
+      "establecimientos": 349
+    },
+    {
+      "periodo": "2022-05",
+      "accidentes": 560,
+      "establecimientos": 368
+    },
+    {
+      "periodo": "2022-06",
+      "accidentes": 570,
+      "establecimientos": 379
+    },
+    {
+      "periodo": "2022-07",
+      "accidentes": 510,
+      "establecimientos": 348
+    },
+    {
+      "periodo": "2022-08",
+      "accidentes": 619,
+      "establecimientos": 389
+    },
+    {
+      "periodo": "2022-09",
+      "accidentes": 572,
+      "establecimientos": 397
+    },
+    {
+      "periodo": "2022-10",
+      "accidentes": 531,
+      "establecimientos": 348
+    },
+    {
+      "periodo": "2022-11",
+      "accidentes": 560,
+      "establecimientos": 387
+    },
+    {
+      "periodo": "2022-12",
+      "accidentes": 465,
+      "establecimientos": 330
+    },
+    {
+      "periodo": "2023-01",
+      "accidentes": 389,
+      "establecimientos": 251
+    },
+    {
+      "periodo": "2023-02",
+      "accidentes": 381,
+      "establecimientos": 284
+    },
+    {
+      "periodo": "2023-03",
+      "accidentes": 615,
+      "establecimientos": 425
+    },
+    {
+      "periodo": "2023-04",
+      "accidentes": 541,
+      "establecimientos": 369
+    },
+    {
+      "periodo": "2023-05",
+      "accidentes": 589,
+      "establecimientos": 399
+    },
+    {
+      "periodo": "2023-06",
+      "accidentes": 550,
+      "establecimientos": 367
+    },
+    {
+      "periodo": "2023-07",
+      "accidentes": 484,
+      "establecimientos": 320
+    },
+    {
+      "periodo": "2023-08",
+      "accidentes": 641,
+      "establecimientos": 406
+    },
+    {
+      "periodo": "2023-09",
+      "accidentes": 543,
+      "establecimientos": 348
+    },
+    {
+      "periodo": "2023-10",
+      "accidentes": 581,
+      "establecimientos": 370
+    },
+    {
+      "periodo": "2023-11",
+      "accidentes": 523,
+      "establecimientos": 358
+    },
+    {
+      "periodo": "2023-12",
+      "accidentes": 416,
+      "establecimientos": 266
+    },
+    {
+      "periodo": "2024-01",
+      "accidentes": 391,
+      "establecimientos": 259
+    },
+    {
+      "periodo": "2024-02",
+      "accidentes": 408,
+      "establecimientos": 269
+    },
+    {
+      "periodo": "2024-03",
+      "accidentes": 481,
+      "establecimientos": 299
+    },
+    {
+      "periodo": "2024-04",
+      "accidentes": 490,
+      "establecimientos": 301
+    },
+    {
+      "periodo": "2024-05",
+      "accidentes": 536,
+      "establecimientos": 347
+    },
+    {
+      "periodo": "2024-06",
+      "accidentes": 482,
+      "establecimientos": 303
+    },
+    {
+      "periodo": "2024-07",
+      "accidentes": 483,
+      "establecimientos": 308
+    },
+    {
+      "periodo": "2024-08",
+      "accidentes": 628,
+      "establecimientos": 384
+    },
+    {
+      "periodo": "2024-09",
+      "accidentes": 605,
+      "establecimientos": 380
+    },
+    {
+      "periodo": "2024-10",
+      "accidentes": 589,
+      "establecimientos": 382
+    },
+    {
+      "periodo": "2024-11",
+      "accidentes": 604,
+      "establecimientos": 392
+    },
+    {
+      "periodo": "2024-12",
+      "accidentes": 491,
+      "establecimientos": 336
+    },
+    {
+      "periodo": "2025-01",
+      "accidentes": 432,
+      "establecimientos": 281
+    },
+    {
+      "periodo": "2025-02",
+      "accidentes": 542,
+      "establecimientos": 345
+    },
+    {
+      "periodo": "2025-03",
+      "accidentes": 611,
+      "establecimientos": 414
+    },
+    {
+      "periodo": "2025-04",
+      "accidentes": 616,
+      "establecimientos": 411
+    },
+    {
+      "periodo": "2025-05",
+      "accidentes": 622,
+      "establecimientos": 442
+    },
+    {
+      "periodo": "2025-06",
+      "accidentes": 610,
+      "establecimientos": 400
+    },
+    {
+      "periodo": "2025-07",
+      "accidentes": 584,
+      "establecimientos": 415
+    },
+    {
+      "periodo": "2025-08",
+      "accidentes": 659,
+      "establecimientos": 441
+    },
+    {
+      "periodo": "2025-09",
+      "accidentes": 737,
+      "establecimientos": 478
+    },
+    {
+      "periodo": "2025-10",
+      "accidentes": 735,
+      "establecimientos": 488
+    },
+    {
+      "periodo": "2025-11",
+      "accidentes": 637,
+      "establecimientos": 466
+    },
+    {
+      "periodo": "2025-12",
+      "accidentes": 577,
+      "establecimientos": 397
+    }
+  ],
+  "visitas_por_mes": [
+    {
+      "periodo": "2022-01",
+      "visitas_realizadas": 798,
+      "filas": 864
+    },
+    {
+      "periodo": "2022-02",
+      "visitas_realizadas": 1291,
+      "filas": 1376
+    },
+    {
+      "periodo": "2022-03",
+      "visitas_realizadas": 687,
+      "filas": 676
+    },
+    {
+      "periodo": "2022-04",
+      "visitas_realizadas": 552,
+      "filas": 538
+    },
+    {
+      "periodo": "2022-05",
+      "visitas_realizadas": 575,
+      "filas": 552
+    },
+    {
+      "periodo": "2022-06",
+      "visitas_realizadas": 1026,
+      "filas": 1023
+    },
+    {
+      "periodo": "2022-07",
+      "visitas_realizadas": 610,
+      "filas": 622
+    },
+    {
+      "periodo": "2022-08",
+      "visitas_realizadas": 781,
+      "filas": 780
+    },
+    {
+      "periodo": "2022-09",
+      "visitas_realizadas": 633,
+      "filas": 637
+    },
+    {
+      "periodo": "2022-10",
+      "visitas_realizadas": 694,
+      "filas": 694
+    },
+    {
+      "periodo": "2022-11",
+      "visitas_realizadas": 521,
+      "filas": 539
+    },
+    {
+      "periodo": "2022-12",
+      "visitas_realizadas": 365,
+      "filas": 346
+    },
+    {
+      "periodo": "2023-01",
+      "visitas_realizadas": 570,
+      "filas": 551
+    },
+    {
+      "periodo": "2023-02",
+      "visitas_realizadas": 515,
+      "filas": 479
+    },
+    {
+      "periodo": "2023-03",
+      "visitas_realizadas": 741,
+      "filas": 712
+    },
+    {
+      "periodo": "2023-04",
+      "visitas_realizadas": 687,
+      "filas": 680
+    },
+    {
+      "periodo": "2023-05",
+      "visitas_realizadas": 463,
+      "filas": 413
+    },
+    {
+      "periodo": "2023-06",
+      "visitas_realizadas": 451,
+      "filas": 409
+    },
+    {
+      "periodo": "2023-07",
+      "visitas_realizadas": 759,
+      "filas": 732
+    },
+    {
+      "periodo": "2023-08",
+      "visitas_realizadas": 539,
+      "filas": 503
+    },
+    {
+      "periodo": "2023-09",
+      "visitas_realizadas": 471,
+      "filas": 425
+    },
+    {
+      "periodo": "2023-10",
+      "visitas_realizadas": 589,
+      "filas": 556
+    },
+    {
+      "periodo": "2023-11",
+      "visitas_realizadas": 778,
+      "filas": 767
+    },
+    {
+      "periodo": "2023-12",
+      "visitas_realizadas": 295,
+      "filas": 249
+    },
+    {
+      "periodo": "2024-01",
+      "visitas_realizadas": 5905,
+      "filas": 6340
+    },
+    {
+      "periodo": "2024-02",
+      "visitas_realizadas": 194,
+      "filas": 177
+    },
+    {
+      "periodo": "2024-03",
+      "visitas_realizadas": 281,
+      "filas": 262
+    },
+    {
+      "periodo": "2024-04",
+      "visitas_realizadas": 215,
+      "filas": 190
+    },
+    {
+      "periodo": "2024-05",
+      "visitas_realizadas": 219,
+      "filas": 195
+    },
+    {
+      "periodo": "2024-06",
+      "visitas_realizadas": 223,
+      "filas": 200
+    },
+    {
+      "periodo": "2024-07",
+      "visitas_realizadas": 217,
+      "filas": 201
+    },
+    {
+      "periodo": "2024-08",
+      "visitas_realizadas": 292,
+      "filas": 258
+    },
+    {
+      "periodo": "2024-09",
+      "visitas_realizadas": 356,
+      "filas": 320
+    },
+    {
+      "periodo": "2024-10",
+      "visitas_realizadas": 344,
+      "filas": 310
+    },
+    {
+      "periodo": "2024-11",
+      "visitas_realizadas": 292,
+      "filas": 258
+    },
+    {
+      "periodo": "2024-12",
+      "visitas_realizadas": 288,
+      "filas": 262
+    },
+    {
+      "periodo": "2025-01",
+      "visitas_realizadas": 2859,
+      "filas": 2899
+    },
+    {
+      "periodo": "2025-02",
+      "visitas_realizadas": 311,
+      "filas": 292
+    },
+    {
+      "periodo": "2025-03",
+      "visitas_realizadas": 307,
+      "filas": 273
+    },
+    {
+      "periodo": "2025-04",
+      "visitas_realizadas": 253,
+      "filas": 229
+    },
+    {
+      "periodo": "2025-05",
+      "visitas_realizadas": 333,
+      "filas": 287
+    },
+    {
+      "periodo": "2025-06",
+      "visitas_realizadas": 386,
+      "filas": 393
+    },
+    {
+      "periodo": "2025-07",
+      "visitas_realizadas": 375,
+      "filas": 345
+    },
+    {
+      "periodo": "2025-08",
+      "visitas_realizadas": 396,
+      "filas": 375
+    },
+    {
+      "periodo": "2025-09",
+      "visitas_realizadas": 377,
+      "filas": 414
+    },
+    {
+      "periodo": "2025-10",
+      "visitas_realizadas": 340,
+      "filas": 324
+    },
+    {
+      "periodo": "2025-11",
+      "visitas_realizadas": 405,
+      "filas": 448
+    },
+    {
+      "periodo": "2025-12",
+      "visitas_realizadas": 395,
+      "filas": 405
+    }
+  ],
+  "nomina_por_mes": [
+    {
+      "periodo": "2022-01",
+      "establecimientos_con_nomina": 10096,
+      "dotacion_total": 146831
+    },
+    {
+      "periodo": "2022-02",
+      "establecimientos_con_nomina": 10109,
+      "dotacion_total": 146657
+    },
+    {
+      "periodo": "2022-03",
+      "establecimientos_con_nomina": 10165,
+      "dotacion_total": 147161
+    },
+    {
+      "periodo": "2022-04",
+      "establecimientos_con_nomina": 10196,
+      "dotacion_total": 146337
+    },
+    {
+      "periodo": "2022-05",
+      "establecimientos_con_nomina": 10276,
+      "dotacion_total": 147375
+    },
+    {
+      "periodo": "2022-06",
+      "establecimientos_con_nomina": 10320,
+      "dotacion_total": 148234
+    },
+    {
+      "periodo": "2022-07",
+      "establecimientos_con_nomina": 10369,
+      "dotacion_total": 147971
+    },
+    {
+      "periodo": "2022-08",
+      "establecimientos_con_nomina": 10413,
+      "dotacion_total": 147693
+    },
+    {
+      "periodo": "2022-09",
+      "establecimientos_con_nomina": 10434,
+      "dotacion_total": 147964
+    },
+    {
+      "periodo": "2022-10",
+      "establecimientos_con_nomina": 10453,
+      "dotacion_total": 149442
+    },
+    {
+      "periodo": "2022-11",
+      "establecimientos_con_nomina": 10556,
+      "dotacion_total": 150893
+    },
+    {
+      "periodo": "2022-12",
+      "establecimientos_con_nomina": 10546,
+      "dotacion_total": 149570
+    },
+    {
+      "periodo": "2023-01",
+      "establecimientos_con_nomina": 10552,
+      "dotacion_total": 150155
+    },
+    {
+      "periodo": "2023-02",
+      "establecimientos_con_nomina": 10523,
+      "dotacion_total": 150077
+    },
+    {
+      "periodo": "2023-03",
+      "establecimientos_con_nomina": 10526,
+      "dotacion_total": 150517
+    },
+    {
+      "periodo": "2023-04",
+      "establecimientos_con_nomina": 10577,
+      "dotacion_total": 152681
+    },
+    {
+      "periodo": "2023-05",
+      "establecimientos_con_nomina": 10600,
+      "dotacion_total": 151142
+    },
+    {
+      "periodo": "2023-06",
+      "establecimientos_con_nomina": 10617,
+      "dotacion_total": 151508
+    },
+    {
+      "periodo": "2023-07",
+      "establecimientos_con_nomina": 10642,
+      "dotacion_total": 151927
+    },
+    {
+      "periodo": "2023-08",
+      "establecimientos_con_nomina": 10675,
+      "dotacion_total": 152379
+    },
+    {
+      "periodo": "2023-09",
+      "establecimientos_con_nomina": 10692,
+      "dotacion_total": 152343
+    },
+    {
+      "periodo": "2023-10",
+      "establecimientos_con_nomina": 10720,
+      "dotacion_total": 152815
+    },
+    {
+      "periodo": "2023-11",
+      "establecimientos_con_nomina": 10717,
+      "dotacion_total": 152709
+    },
+    {
+      "periodo": "2023-12",
+      "establecimientos_con_nomina": 10707,
+      "dotacion_total": 153459
+    },
+    {
+      "periodo": "2024-01",
+      "establecimientos_con_nomina": 10670,
+      "dotacion_total": 152418
+    },
+    {
+      "periodo": "2024-02",
+      "establecimientos_con_nomina": 10651,
+      "dotacion_total": 150588
+    },
+    {
+      "periodo": "2024-03",
+      "establecimientos_con_nomina": 10643,
+      "dotacion_total": 150250
+    },
+    {
+      "periodo": "2024-04",
+      "establecimientos_con_nomina": 10670,
+      "dotacion_total": 150915
+    },
+    {
+      "periodo": "2024-05",
+      "establecimientos_con_nomina": 10643,
+      "dotacion_total": 148454
+    },
+    {
+      "periodo": "2024-06",
+      "establecimientos_con_nomina": 10646,
+      "dotacion_total": 148267
+    },
+    {
+      "periodo": "2024-07",
+      "establecimientos_con_nomina": 10653,
+      "dotacion_total": 149117
+    },
+    {
+      "periodo": "2024-08",
+      "establecimientos_con_nomina": 10664,
+      "dotacion_total": 149260
+    },
+    {
+      "periodo": "2024-09",
+      "establecimientos_con_nomina": 10694,
+      "dotacion_total": 149336
+    },
+    {
+      "periodo": "2024-10",
+      "establecimientos_con_nomina": 10711,
+      "dotacion_total": 149668
+    },
+    {
+      "periodo": "2024-11",
+      "establecimientos_con_nomina": 10721,
+      "dotacion_total": 149938
+    },
+    {
+      "periodo": "2024-12",
+      "establecimientos_con_nomina": 10723,
+      "dotacion_total": 150663
+    },
+    {
+      "periodo": "2025-01",
+      "establecimientos_con_nomina": 10772,
+      "dotacion_total": 153699
+    },
+    {
+      "periodo": "2025-02",
+      "establecimientos_con_nomina": 10756,
+      "dotacion_total": 153404
+    },
+    {
+      "periodo": "2025-03",
+      "establecimientos_con_nomina": 10742,
+      "dotacion_total": 154000
+    },
+    {
+      "periodo": "2025-04",
+      "establecimientos_con_nomina": 10727,
+      "dotacion_total": 152504
+    },
+    {
+      "periodo": "2025-05",
+      "establecimientos_con_nomina": 10752,
+      "dotacion_total": 149836
+    },
+    {
+      "periodo": "2025-06",
+      "establecimientos_con_nomina": 10768,
+      "dotacion_total": 150106
+    },
+    {
+      "periodo": "2025-07",
+      "establecimientos_con_nomina": 10805,
+      "dotacion_total": 151467
+    },
+    {
+      "periodo": "2025-08",
+      "establecimientos_con_nomina": 10815,
+      "dotacion_total": 152862
+    },
+    {
+      "periodo": "2025-09",
+      "establecimientos_con_nomina": 10868,
+      "dotacion_total": 153073
+    },
+    {
+      "periodo": "2025-10",
+      "establecimientos_con_nomina": 10904,
+      "dotacion_total": 154631
+    },
+    {
+      "periodo": "2025-11",
+      "establecimientos_con_nomina": 11377,
+      "dotacion_total": 212753
+    },
+    {
+      "periodo": "2025-12",
+      "establecimientos_con_nomina": 11425,
+      "dotacion_total": 212606
+    }
+  ],
+  "cobertura_nomina": {
+    "establecimientos_universo": 35869,
+    "establecimientos_con_nomina_alguna_vez": 14306,
+    "pct_universo_con_nomina": 39.88
+  },
+  "anomalias": [
+    {
+      "tipo": "pico_visitas",
+      "periodo": "2024-01",
+      "valor": 5905,
+      "mediana": 428.0,
+      "nota": "Posible carga masiva; revisar antes de usar como baseline operativo."
+    },
+    {
+      "tipo": "pico_visitas",
+      "periodo": "2025-01",
+      "valor": 2859,
+      "mediana": 428.0,
+      "nota": "Posible carga masiva; revisar antes de usar como baseline operativo."
+    }
+  ],
+  "leakage_atributos_estaticos": {
+    "universo_es_snapshot_actual": true,
+    "campos_potencialmente_no_historicos": [
+      "cantidad_capitas",
+      "nivel_seguridad_empleador",
+      "nivel_seguridad_establecimiento",
+      "actividad_ciiu_establecimiento",
+      "actividad_ciiu_empleador",
+      "antiguedad_establecimiento_meses"
+    ],
+    "mitigacion": "Usar estos campos como proxy estático documentado; no interpretar como serie temporal reconstruida. Historial de accidentes/visitas/nómina sí es temporal."
+  },
+  "recomendacion_export": "Desplegar vistas SQL actualizadas (hasta 2025-12), exportar CSV desde SSMS y convertir a parquet con scripts/*_csv_to_parquet.py"
+}
