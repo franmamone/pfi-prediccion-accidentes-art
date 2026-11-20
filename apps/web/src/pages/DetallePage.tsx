@@ -68,13 +68,12 @@ export function DetallePage() {
     tema: string;
   };
 
-  /** Botonera fija (sin chat libre): misma para todos los establecimientos. */
+  /** Botonera fija (sin chat libre): misma para todos los establecimientos.
+   * PESE/PRS y RAR/exámenes quedan ocultos en UI; el backend sigue soportándolos. */
   const copilotoChips: CopilotoChip[] = [
     { label: "Qué verificar (RGRL)", tema: "rgrl_checklist" },
     { label: "Accidentes previos", tema: "accidentes_previos" },
     { label: "Visitas previas", tema: "visitas_previas" },
-    { label: "PESE / PRS", tema: "pese" },
-    { label: "RAR / exámenes", tema: "rar_examenes" },
   ];
 
   // Al abrir un establecimiento, siempre entrar por la ficha agrupada.
