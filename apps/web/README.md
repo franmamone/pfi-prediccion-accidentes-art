@@ -23,7 +23,7 @@ npm run dev
 Vite en `http://localhost:5173` proxifica `/api` → `http://localhost:5011`.
 
 Login: usuarios reales (invitar desde Usuarios).  
-Demo cercanía CABA: `prev.palermo@pfi.local` … `prev.caballito@pfi.local` / `Prev123!`
+Demo cercanía CABA: `prev.palermo@prevex.local` … `prev.caballito@prevex.local` / `Prev123!`
 
 ## Build
 

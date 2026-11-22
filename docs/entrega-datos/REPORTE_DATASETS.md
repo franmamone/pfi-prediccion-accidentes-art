@@ -13,11 +13,12 @@ Comparación de universo: `data/raw/COMPARACION_UNIVERSOS.md`
 
 ```
 data/
-  raw/                         # Fuentes exportadas desde ART_CORE (anonimizadas)
+  raw/                         # Fuentes exportadas (anonimizadas): csv + parquet
     accidentes_ml.csv|.parquet
     establecimientos_universo.csv|.parquet   # activas: FechaBaja IS NULL
     prevencion_establecimiento_mes.csv|.parquet
     nomina_establecimiento_mes.csv|.parquet
+    encuesta/                  # respuestas de encuesta (csv/xlsx)
     COMPARACION_UNIVERSOS.md
   processed/
     panel_establecimiento_mes.parquet        # panel ML establecimiento × mes

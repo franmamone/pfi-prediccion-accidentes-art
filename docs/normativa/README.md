@@ -1,7 +1,6 @@
 # Corpus normativo Prevex (RAG)
 
-Fuentes canónicas para el copiloto y las sugerencias de acta.  
-Plan detallado: [`docs/presentacion/PLAN_75.md`](../presentacion/PLAN_75.md).
+Fuentes canónicas para el copiloto y las sugerencias de acta.
 
 ## Incluidas
 

@@ -344,7 +344,7 @@ data/raw/*
 data/processed/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
-# Datasets de entrega PFI (anonimizados)
+# Datasets de entrega PFI (anonimizados): csv + parquet + notas + encuesta
 !data/raw/*.csv
 !data/raw/*.parquet
 !data/raw/*.md
@@ -377,6 +377,7 @@ apps/**/node_modules/
 apps/**/dist/
 apps/api/wwwroot/
 publish/
+artifacts/
 apps/**/.env
 apps/**/*.user
 infra/aws/*.env.local

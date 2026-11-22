@@ -137,13 +137,13 @@ def main() -> None:
     if prevencion is not None:
         print(f"Prevención cargada: {len(prevencion):,} filas est×mes", flush=True)
     else:
-        print("Prevención no encontrada (opcional). Ver docs/MEJORAS_ESTADO.md", flush=True)
+        print("Prevención no encontrada (opcional).", flush=True)
 
     nomina = _load_nomina()
     if nomina is not None:
         print(f"Nómina cargada: {len(nomina):,} filas est×mes", flush=True)
     else:
-        print("Nómina no encontrada (opcional). Ver docs/MEJORAS_ESTADO.md", flush=True)
+        print("Nómina no encontrada (opcional).", flush=True)
 
     eda_summary = run_eda(accidents)
 

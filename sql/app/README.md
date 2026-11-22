@@ -61,4 +61,4 @@ La cobertura operativa se refresca mientras la ventana está abierta y se congel
 ## Usuarios
 
 - Reales: crear por invitación / ABM en la app (no hay seed de admin genérico).
-- Demo cercanía CABA (API al arrancar): `prev.palermo@pfi.local` … `prev.caballito@pfi.local` / `Prev123!`
+- Demo cercanía CABA (API al arrancar): `prev.palermo@prevex.local` … `prev.caballito@prevex.local` / `Prev123!`
