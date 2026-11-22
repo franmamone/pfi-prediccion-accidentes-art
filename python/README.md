@@ -1,12 +1,11 @@
 # Pipeline ML — Python
 
-Exportación, EDA, panel **establecimiento × mes**, modelos XGBoost (1m / 3m) y ranking de riesgo.
+Panel **establecimiento × mes**, modelos XGBoost (1m / 3m) y ranking de riesgo a partir de los datasets anonimizados en `data/raw/`.
 
 ## Requisitos
 
 - Python 3.12+
-- ODBC Driver 17/18 for SQL Server (solo si exportás desde Python; el flujo habitual es SSMS)
-- Acceso a `ART_CORE` en la misma red que SSMS
+- Datasets en `data/raw/` (csv/parquet de entrega) y/o panel en `data/processed/`
 
 ## Setup
 
@@ -24,69 +23,48 @@ Notebooks (opcional): `pip install -r requirements.txt`
 
 ## Pipeline completo
 
+Con los parquet ya presentes en el repo:
+
 ```powershell
 $env:PYTHONPATH="src"
-python scripts/run_pipeline.py --horizon both
+python scripts/run_pipeline.py --skip-export --horizon both
 ```
 
-Pasos que ejecuta:
+Pasos habituales:
 
-1. Export SQL → `data/raw/*.parquet` (o CSV manual + conversiones)
-2. EDA → `reports/eda/`
-3. Panel → `data/processed/panel_establecimiento_mes.parquet`
-4. Entrenamiento → `models/model_pipeline_{1m,3m}.joblib`
-5. Evaluación → `reports/modelo/`, scored panels → `reports/ranking/`
-6. Ranking maestro → `reports/ranking/`
-7. SHAP → `reports/shap/` (omitible con `--skip-shap`)
-8. Reportes dataset → `reports/dataset/`
+1. Fuentes → `data/raw/*.parquet` (ya versionados en la entrega)
+2. Panel → `data/processed/panel_establecimiento_mes.parquet`
+3. Entrenamiento → `models/model_pipeline_{1m,3m}.joblib` (local; no versionado)
+4. Evaluación → `reports/modelo/` (local)
+5. Ranking / SHAP → `reports/ranking/` (hay copia de entrega versionada)
 
 ### Flags útiles
 
 | Flag | Uso |
 |------|-----|
-| `--skip-export` | Usar parquet ya exportado |
+| `--skip-export` | Usar parquet ya exportado (recomendado en entrega) |
 | `--skip-panel` | Reentrenar sin reconstruir el panel |
 | `--horizon 1m\|3m\|both` | Horizonte(s) a entrenar/evaluar |
 | `--skip-shap` | Omitir SHAP |
 | `--skip-ranking` | Omitir ranking maestro |
-| `--ablations` | Comparar aportes de features |
-
-### Universo de establecimientos
-
-1. En SSMS: `SELECT * FROM ml.vw_establecimientos_universo_ml` → `data/raw/establecimientos_universo.csv`
-2. `python scripts/universe_csv_to_parquet.py`
-3. `python scripts/run_pipeline.py --skip-export`
-
-## Export manual desde SSMS
-
-Si Python no conecta por SSPI o el `SELECT *` da timeout, exportá por año (ver `docs/export-datos-2025.md`) y luego:
-
-```powershell
-python scripts/csv_to_parquet.py --input data/raw
-python scripts/run_pipeline.py --skip-export --horizon both
-```
 
 ## Scripts por paso
 
 | Script | Salida principal |
 |--------|------------------|
-| `export_accidents.py` | `data/raw/accidentes_ml.parquet` |
-| `csv_to_parquet.py` | `data/raw/accidentes_ml.parquet` |
+| `csv_to_parquet.py` | `data/raw/*.parquet` desde CSV |
 | `universe_csv_to_parquet.py` | `data/raw/establecimientos_universo.parquet` |
-| `run_eda.py` | `reports/eda/` |
 | `build_panel.py` | `data/processed/panel_establecimiento_mes.parquet` |
-| `train_baseline.py` | `models/model_pipeline_*.joblib` + `reports/modelo/` |
-| `export_top_riesgo.py` | `reports/ranking/top_riesgo.csv` |
+| `run_pipeline.py` | Orquesta panel + train + ranking |
 | `audit_data_quality.py` | `reports/dataset/data_quality_audit.json` |
-| `parquet_to_csv.py` | dumps en `reports/legacy/` |
 
-Ver `reports/README.md` para la organización de artefactos.
+Ver `reports/README.md` y `docs/entrega-datos/REPORTE_DATASETS.md`.
 
 ## Grano del panel
 
-| Vista SQL | Panel |
-|-----------|-------|
-| 1 fila = 1 accidente | 1 fila = 1 establecimiento × mes |
+| Fuente | Panel |
+|--------|-------|
+| 1 fila = 1 accidente (export) | 1 fila = 1 establecimiento × mes |
 | Accidentes hasta 2025-11 | ~1,67M filas con universo completo |
 
 **Targets**
@@ -94,7 +72,7 @@ Ver `reports/README.md` para la organización de artefactos.
 - `target_accidente_mes_siguiente` (1m) — ≥1 accidente en T+1
 - `target_accidente_3m` (3m) — ≥1 accidente en T+1..T+3
 
-**Features:** solo información disponible antes del mes objetivo. Columnas post-accidente excluidas (`LEAKAGE_COLUMNS` en `config.py`).
+**Features:** solo información disponible antes del mes objetivo.
 
 ## Split temporal y métricas
 
@@ -106,16 +84,14 @@ Ver `reports/README.md` para la organización de artefactos.
 
 Métricas principales: PR-AUC, recall, **precision@top-K** (50 / 225) y lift vs visitas reales / historial / azar.
 
-## Artefactos del modelo
+## Artefactos
 
 | Archivo | Rol |
 |---------|-----|
-| `models/model_pipeline_1m.joblib` | Pipeline horizonte mensual |
-| `models/model_pipeline_3m.joblib` | Pipeline horizonte trimestral |
-| `reports/modelo/evaluation_metrics_{1m,3m}.json` | Métricas holdout + top-K |
-| `reports/modelo/baseline_comparison_{1m,3m}.json` | Modelo vs visitas/historial/azar |
-| `reports/ranking/ranking_maestro_*.csv` | Lista operativa |
-| `reports/ranking/ranking_contract.json` | Contrato API / React |
+| `data/raw/*.parquet` | Fuentes anonimizadas de entrega |
+| `data/processed/panel_establecimiento_mes.parquet` | Panel ML |
+| `reports/ranking/ranking_maestro_*` | Lista operativa (entrega) |
+| `models/model_pipeline_*.joblib` | Modelos entrenados (local) |
 
 ## Notebook
 

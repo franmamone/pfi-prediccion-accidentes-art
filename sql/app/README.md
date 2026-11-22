@@ -1,7 +1,7 @@
 # SQL Server — BD operativa de la app
 
 Base **PfiPrevencion** en `localhost` (instancia default).  
-No es el core ART (`ART_CORE`); solo rankings importados, agenda, visitas y usuarios.
+Esquema propio de Prevex: rankings importados, agenda, visitas y usuarios. No incluye el core de la ART.
 
 ## Requisitos
 

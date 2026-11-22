@@ -4,8 +4,7 @@
 **Alcance:** regeneración offline de CSV/parquet/panel + export del ranking ya vigente en la app.  
 **Importante:** este trabajo **no modifica** la app local ni la demo AWS (no hay reimport ni redeploy).
 
-Inventario máquina-legible: `docs/entrega-datos/inventario_datasets.json`  
-Comparación de universo: `data/raw/COMPARACION_UNIVERSOS.md`
+Inventario máquina-legible: `docs/entrega-datos/inventario_datasets.json`
 
 ---
 
@@ -19,7 +18,6 @@ data/
     prevencion_establecimiento_mes.csv|.parquet
     nomina_establecimiento_mes.csv|.parquet
     encuesta/                  # respuestas de encuesta (csv/xlsx)
-    COMPARACION_UNIVERSOS.md
   processed/
     panel_establecimiento_mes.parquet        # panel ML establecimiento × mes
   normativa/
@@ -56,7 +54,7 @@ docs/entrega-datos/
 - Target 1m evaluable: 1.649.974 filas; tasa positiva ≈ **0,97 %**
 - Target 3m evaluable: 1.578.236 filas; tasa positiva ≈ **2,15 %**
 
-**Universo vs histórico:** el ranking/app usó **35.505** (jul-2026). Hoy, con el mismo criterio documentado (`FechaBaja IS NULL`), hay **35.869** (cartera creció ~364). Detalle en `COMPARACION_UNIVERSOS.md`.
+**Universo vs histórico:** el ranking/app usó **35.505** (jul-2026). Con el criterio documentado (`FechaBaja IS NULL`), el export vigente tiene **35.869** (cartera creció ~364).
 
 ---
 
@@ -118,17 +116,12 @@ Snapshot app: `UniversoFilas = 35.505` (referencia del entrenamiento/export orig
 
 ---
 
-## 5. Origen SQL (reproducible)
+## 5. Origen de los datasets
 
-Base: `ART_CORE` / schema `ml`
+Los CSV/parquet de `data/raw/` se generaron offline desde vistas de extracción sobre el core de la ART (IDs hasheados, sin PII).  
+Los scripts SQL de esas vistas **no forman parte del repositorio de entrega** (resguardo fuera de Git).
 
-1. `sql/ml/00_bootstrap_schema.sql`
-2. `sql/ml/01_vw_siniestros_accidente_ml.sql`
-3. `sql/ml/05_vw_establecimientos_universo_ml.sql` (activas)
-4. `sql/ml/06_vw_prevencion_establecimiento_mes_ml.sql`
-5. `sql/ml/07_vw_nomina_establecimiento_mes_ml.sql` (+ tabla materializada temporal para export de nómina)
-
-Conversión: CSV con encabezado → parquet → `scripts/build_panel.py` → `scripts/audit_data_quality.py`.
+Pipeline local a partir de los archivos ya exportados: parquet → `scripts/build_panel.py` → `scripts/audit_data_quality.py`.
 
 ---
 

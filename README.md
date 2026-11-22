@@ -7,7 +7,7 @@ Proyecto Final de Ingeniería (UADE): sistema predictivo de accidentabilidad lab
 ```
 apps/           API .NET + frontend React (Vite)
 docs/           Informe LaTeX UADE + figuras/tablas
-sql/            Vistas SQL Server (ML) y esquema app
+sql/app/        Esquema SQL de la aplicación Prevex
 src/            Paquete Python `pfi_prediccion`
 scripts/        CLIs del pipeline (panel, train, ranking, import)
 data/raw/       Datasets anonimizados (csv/parquet) + encuesta
@@ -19,11 +19,11 @@ tests/          Tests unitarios Python
 
 ## Flujo de datos
 
-1. **SQL** — Vistas en el core ART (`sql/ml/`), datos hasta 2025-12  
-2. **Export** — Parquet en `data/raw/` (anonimizado)  
-3. **Panel** — Agregación establecimiento × mes con targets 1m y 3m  
-4. **Modelo** — XGBoost dual (horizontes `1m` / `3m`)  
-5. **Ranking** — Lista maestra de establecimientos en riesgo para Preventores  
+1. **Export** — Datos anonimizados en `data/raw/` (csv/parquet), período hasta 2025-12  
+2. **Panel** — Agregación establecimiento × mes con targets 1m y 3m  
+3. **Modelo** — XGBoost dual (horizontes `1m` / `3m`)  
+4. **Ranking** — Lista maestra de establecimientos en riesgo para Preventores  
+5. **App** — API + UI sobre ranking importado (`sql/app/`)
 
 Split oficial: **train 2022–2023 · calibración 2024 · holdout 2025**.
 
