@@ -21,7 +21,7 @@ const TABS: { key: EstadisticasSectionKey; label: string; count: number }[] = [
   { key: "operativa", label: "Cobertura operativa", count: 1 },
   { key: "shap", label: "Explicabilidad del modelo (SHAP)", count: 2 },
   { key: "composicion", label: "Composición y riesgo de la lista", count: 4 },
-  { key: "sectores", label: "Sectores", count: 2 },
+  { key: "sectores", label: "Sectores", count: 1 },
 ];
 
 export function EstadisticasPage() {
@@ -162,7 +162,6 @@ export function EstadisticasPage() {
 
           {tab === "sectores" && (
             <div className="charts-grid">
-              <BarChart title="Por sector" subtitle="Volumen en la lista maestra" data={data.bySector} />
               <BarChart
                 title="Top divisiones CIIU"
                 subtitle="Cantidad de establecimientos priorizados"

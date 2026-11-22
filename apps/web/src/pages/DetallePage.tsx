@@ -508,14 +508,6 @@ export function DetallePage() {
                         {item.ultimaVisitaHaceMeses != null ? `${item.ultimaVisitaHaceMeses} meses` : "sin visita"}
                       </div>
                     </div>
-                    <div className="kv" title={help("prs")}>
-                      <div className="k">PRS</div>
-                      <div className="v">{item.obligacionPrs ? "Sí" : "No"}</div>
-                    </div>
-                    <div className="kv" title={help("alerta")}>
-                      <div className="k">Alerta umbral</div>
-                      <div className="v">{item.alertaUmbral ? "Sí" : "No"}</div>
-                    </div>
                   </div>
                 </section>
 

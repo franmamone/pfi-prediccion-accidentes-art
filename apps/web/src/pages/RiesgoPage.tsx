@@ -4,7 +4,6 @@ import { fetchRiesgo, HORIZONTE_OPERATIVO, shortId, type RankingItem } from "../
 import { ciiuDivisionLabel } from "../ciiu";
 import {
   help,
-  tipCapitas,
   tipEfectividad,
   tipRanking,
   tipRiesgo,
@@ -35,7 +34,6 @@ export function RiesgoPage() {
   const banda = params.get("banda") || "";
   const sector = params.get("sector") || "";
   const q = params.get("q") || "";
-  const obligacionPrs = params.get("obligacionPrs") || "";
   const programada = params.get("programada") || "";
   const estadoOperativo = params.get("estado") || "";
   const [items, setItems] = useState<RankingItem[]>([]);
@@ -64,7 +62,6 @@ export function RiesgoPage() {
       banda: banda || undefined,
       sector: sector || undefined,
       q: q || undefined,
-      obligacionPrs: obligacionPrs || undefined,
       programada: programada || undefined,
       estadoOperativo: estadoOperativo || undefined,
       top: 1000,
@@ -93,7 +90,6 @@ export function RiesgoPage() {
     banda,
     sector,
     q,
-    obligacionPrs,
     programada,
     estadoOperativo,
     page,
@@ -187,19 +183,6 @@ export function RiesgoPage() {
             ]}
           />
         </div>
-        <div className="field">
-          <label title={help("prs")}>PRS</label>
-          <Select
-            value={obligacionPrs}
-            onChange={(v) => patch({ obligacionPrs: v })}
-            ariaLabel="Filtrar por PRS"
-            options={[
-              { value: "", label: "Todos" },
-              { value: "true", label: "Con PRS" },
-              { value: "false", label: "Sin PRS" },
-            ]}
-          />
-        </div>
         <div className="field" style={{ minWidth: 220, flex: 1 }}>
           <label title={help("establecimiento")}>Buscar</label>
           <input
@@ -253,7 +236,6 @@ export function RiesgoPage() {
               <Th id="efectividad">Efectividad histórica</Th>
               <Th id="banda">Riesgo</Th>
               <Th id="ciiu">Actividad</Th>
-              <Th id="capitas">Cápitas</Th>
               <Th id="ultimaVisita">Última visita</Th>
               <Th id="estadoOperativo">Estado</Th>
               <th title="Programar visita">Acción</th>
@@ -326,9 +308,6 @@ export function RiesgoPage() {
                   title={`${ciiuDivisionLabel(item.ciiuDivision)}. ${help("ciiu")}`}
                 >
                   {ciiuDivisionLabel(item.ciiuDivision)}
-                </td>
-                <td className="mono" title={tipCapitas(item.cantidadCapitas)}>
-                  {item.cantidadCapitas != null ? Math.round(item.cantidadCapitas).toLocaleString("es-AR") : "—"}
                 </td>
                 <td className="mono" title={tipUltimaVisita(item.ultimaVisitaHaceMeses)}>
                   {item.ultimaVisitaHaceMeses != null ? `${item.ultimaVisitaHaceMeses} m` : "sin visita"}

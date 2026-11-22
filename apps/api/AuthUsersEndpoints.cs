@@ -694,12 +694,12 @@ public static class AuthUsersEndpoints
         var zonaId = await db.Zonas.Select(z => (int?)z.Id).FirstOrDefaultAsync();
         var demos = new (string Email, string Nombre, double Lat, double Lon, string Barrio)[]
         {
-            ("prev.palermo@pfi.local", "Ana Palermo", -34.5875, -58.4250, "Palermo"),
-            ("prev.belgrano@pfi.local", "Bruno Belgrano", -34.5620, -58.4550, "Belgrano"),
-            ("prev.flores@pfi.local", "Carla Flores", -34.6280, -58.4630, "Flores"),
-            ("prev.boca@pfi.local", "Diego La Boca", -34.6345, -58.3630, "La Boca"),
-            ("prev.recoleta@pfi.local", "Elena Recoleta", -34.5870, -58.3925, "Recoleta"),
-            ("prev.caballito@pfi.local", "Facundo Caballito", -34.6200, -58.4400, "Caballito"),
+            ("prev.palermo@prevex.local", "Ana Palermo", -34.5875, -58.4250, "Palermo"),
+            ("prev.belgrano@prevex.local", "Bruno Belgrano", -34.5620, -58.4550, "Belgrano"),
+            ("prev.flores@prevex.local", "Carla Flores", -34.6280, -58.4630, "Flores"),
+            ("prev.boca@prevex.local", "Diego La Boca", -34.6345, -58.3630, "La Boca"),
+            ("prev.recoleta@prevex.local", "Elena Recoleta", -34.5870, -58.3925, "Recoleta"),
+            ("prev.caballito@prevex.local", "Facundo Caballito", -34.6200, -58.4400, "Caballito"),
         };
 
         var emails = demos.Select(d => d.Email).ToList();
