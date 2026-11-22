@@ -4,7 +4,7 @@
 
   Idempotente. Ejecutar sobre PfiPrevencion (localhost).
   Origen del dossier: data/processed/dossier_preventor.json
-  (accidentes y visitas previas de ART_CORE, anonimizados por hash).
+  (accidentes y visitas previas anonimizados por hash).
 */
 
 IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE name = N'app')

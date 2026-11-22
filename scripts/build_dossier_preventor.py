@@ -1,6 +1,6 @@
 """Construye el dossier del preventor por establecimiento (para los 259 vigentes).
 
-Fuentes (exportadas de ART_CORE vía MCP y copiadas a data/raw/contexto/):
+Fuentes (exportadas anonimizadas y copiadas a data/raw/contexto/):
   acc_agg.json     : id_est, total, y22..y25, ult12m   (1 fila/establecimiento)
   acc_forma.json   : id_est, top_forma  ("nombre:conteo|..." top-3)
   acc_zona.json    : id_est, top_zona
@@ -192,7 +192,7 @@ def main() -> None:
     payload = {
         "generado_en": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
         "referencia": REFERENCIA.isoformat(),
-        "fuente": "ART_CORE (anonimizado por hash de establecimiento)",
+        "fuente": "export anonimizado por hash de establecimiento",
         "establecimientos": establecimientos,
     }
     out = PROC / "dossier_preventor.json"

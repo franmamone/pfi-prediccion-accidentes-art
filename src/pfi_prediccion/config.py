@@ -92,7 +92,7 @@ HOLDOUT_YEAR = 2025
 TEST_YEAR = HOLDOUT_YEAR  # alias usado en explain.py
 
 # Capacidad operativa de referencia. La ART realiza ~7.500 visitas/año
-# (verificado en ART_CORE 2022-2024): campaña anual concentrada en Q1 (miles)
+# (verificado en fuente histórica 2022-2024): campaña anual concentrada en Q1 (miles)
 # y régimen estable ~270-330/mes el resto del año. 225/mes ≈ ritmo estable.
 CAPACITY_CRITICAL = 50
 CAPACITY_MONTHLY = 225

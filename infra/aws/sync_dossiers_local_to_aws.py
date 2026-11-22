@@ -1,7 +1,11 @@
-"""Copia EstablecimientoDossier + NormativaChunk desde SQL local a AWS (túnel :14333)."""
+"""Copia EstablecimientoDossier + NormativaChunk desde SQL local a AWS (túnel :14333).
+
+Requiere env: PFI_AWS_SQL_PASSWORD
+"""
 
 from __future__ import annotations
 
+import os
 import sys
 
 import pyodbc
@@ -10,10 +14,17 @@ LOCAL = (
     "DRIVER={ODBC Driver 18 for SQL Server};"
     "SERVER=localhost;DATABASE=PfiPrevencion;Trusted_Connection=yes;TrustServerCertificate=yes;"
 )
-AWS = (
-    "DRIVER={ODBC Driver 18 for SQL Server};"
-    "SERVER=127.0.0.1,14333;DATABASE=PfiPrevencion;UID=sa;PWD=REDACTED;TrustServerCertificate=yes;"
-)
+
+
+def aws_cs() -> str:
+    pwd = os.environ.get("PFI_AWS_SQL_PASSWORD", "").strip()
+    if not pwd:
+        raise SystemExit("Definí PFI_AWS_SQL_PASSWORD (password del SQL en AWS vía túnel).")
+    return (
+        "DRIVER={ODBC Driver 18 for SQL Server};"
+        "SERVER=127.0.0.1,14333;DATABASE=PfiPrevencion;UID=sa;"
+        f"PWD={pwd};TrustServerCertificate=yes;"
+    )
 
 
 def bulk(dst, table: str, cols: list[str], rows, identity: bool = False):
@@ -35,7 +46,7 @@ def bulk(dst, table: str, cols: list[str], rows, identity: bool = False):
 
 def main() -> int:
     src = pyodbc.connect(LOCAL)
-    dst = pyodbc.connect(AWS, autocommit=False)
+    dst = pyodbc.connect(aws_cs(), autocommit=False)
     sc, dc = src.cursor(), dst.cursor()
 
     dc.execute("DELETE FROM app.EstablecimientoDossier")

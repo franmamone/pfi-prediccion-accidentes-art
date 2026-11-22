@@ -6,8 +6,13 @@ CERT_DIR=/home/ec2-user/prevex/certs
 PFX="$CERT_DIR/prevex.pfx"
 CRT="$CERT_DIR/prevex.crt"
 KEY="$CERT_DIR/prevex.key"
-PASS='REDACTED'
-IP='0.0.0.0'
+# Password e IP por entorno (no hardcodear en el repo).
+PASS="${PREVEX_HTTPS_PASS:?Definí PREVEX_HTTPS_PASS}"
+IP="${PREVEX_PUBLIC_IP:-$(curl -s --max-time 3 http://169.254.169.254/latest/meta-data/public-ipv4 || true)}"
+if [[ -z "${IP}" ]]; then
+  echo "Definí PREVEX_PUBLIC_IP (IP pública de la instancia)." >&2
+  exit 1
+fi
 ENV_FILE=/home/ec2-user/prevex/prevex.env
 
 sudo mkdir -p "$CERT_DIR"

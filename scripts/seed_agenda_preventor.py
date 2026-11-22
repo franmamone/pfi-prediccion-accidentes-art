@@ -2,7 +2,7 @@
 
 Toma los primeros establecimientos del snapshot vigente 1m y crea visitas
 'programada' con fechas futuras, para que al iniciar sesión como
-Preventor@pfi.local se vean 'Mis visitas'.
+Preventor@prevex.local se vean 'Mis visitas'.
 
 Idempotente: no crea una visita si el establecimiento ya tiene una programada.
 """
@@ -25,11 +25,11 @@ def main() -> None:
     cur = cn.cursor()
 
     cur.execute(
-        "SELECT TOP 1 Id, Nombre FROM app.Usuarios WHERE Email = 'Preventor@pfi.local' AND Activo = 1"
+        "SELECT TOP 1 Id, Nombre FROM app.Usuarios WHERE Email = 'Preventor@prevex.local' AND Activo = 1"
     )
     row = cur.fetchone()
     if not row:
-        raise SystemExit("No existe el usuario Preventor@pfi.local (arrancá la API una vez para el seed).")
+        raise SystemExit("No existe el usuario Preventor@prevex.local (arrancá la API una vez para el seed).")
     usuario_id, usuario_nombre = row
 
     cur.execute(

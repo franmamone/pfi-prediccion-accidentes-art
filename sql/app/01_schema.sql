@@ -418,6 +418,6 @@ GO
 
 /* Usuarios reales: crear por invitación (Admin) o ABM en la app.
    Demo de cercanía: preventores por barrio CABA se seedan al arrancar la API
-   (prev.palermo@pfi.local … Prev123!). */
+   (prev.palermo@prevex.local … Prev123!). */
 PRINT 'Schema app aplicado en PfiPrevencion.';
 GO

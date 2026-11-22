@@ -1,11 +1,11 @@
 -- Admin y Coordinador para ver priorización (/riesgo). Password: Prev123!
 -- Hash BCrypt generado con python bcrypt (compatible con BCrypt.Net).
 
-IF NOT EXISTS (SELECT 1 FROM app.Usuarios WHERE Email = N'admin@pfi.local')
+IF NOT EXISTS (SELECT 1 FROM app.Usuarios WHERE Email = N'admin@prevex.local')
 BEGIN
   INSERT INTO app.Usuarios (Email, Nombre, PasswordHash, Rol, ZonaId, Activo, DebeCambiarPassword, CreadoEn)
   VALUES (
-    N'admin@pfi.local',
+    N'admin@prevex.local',
     N'Admin Demo',
     N'$2b$11$64ZRg0AFy3kxpAUff1c1fuouLZYu3yorLN/L.UXd1vYMmxCwRcYMm',
     N'Admin',
@@ -16,11 +16,11 @@ BEGIN
   );
 END;
 
-IF NOT EXISTS (SELECT 1 FROM app.Usuarios WHERE Email = N'coord@pfi.local')
+IF NOT EXISTS (SELECT 1 FROM app.Usuarios WHERE Email = N'coord@prevex.local')
 BEGIN
   INSERT INTO app.Usuarios (Email, Nombre, PasswordHash, Rol, ZonaId, Activo, DebeCambiarPassword, CreadoEn)
   VALUES (
-    N'coord@pfi.local',
+    N'coord@prevex.local',
     N'Coordinador Demo',
     N'$2b$11$64ZRg0AFy3kxpAUff1c1fuouLZYu3yorLN/L.UXd1vYMmxCwRcYMm',
     N'Coordinador',

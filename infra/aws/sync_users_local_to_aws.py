@@ -1,7 +1,13 @@
-"""Copia usuarios reales (con MFA) y su disponibilidad desde SQL local a AWS (túnel :14333)."""
+"""Copia usuarios reales (con MFA) y su disponibilidad desde SQL local a AWS (túnel :14333).
+
+Requiere env:
+  PFI_AWS_SQL_PASSWORD  — password SA del SQL en el túnel
+  PFI_SYNC_EMAILS       — emails a sincronizar, separados por coma
+"""
 
 from __future__ import annotations
 
+import os
 import sys
 
 import pyodbc
@@ -10,17 +16,24 @@ LOCAL = (
     "DRIVER={ODBC Driver 18 for SQL Server};"
     "SERVER=localhost;DATABASE=PfiPrevencion;Trusted_Connection=yes;TrustServerCertificate=yes;"
 )
-AWS = (
-    "DRIVER={ODBC Driver 18 for SQL Server};"
-    "SERVER=127.0.0.1,14333;DATABASE=PfiPrevencion;UID=sa;PWD=REDACTED;TrustServerCertificate=yes;"
-)
 
-# Cuentas reales usadas en local (no demos prev.*)
-REAL_EMAILS = (
-    "usuario@ejemplo.local",
-    "usuario@uade.local",
-    "usuario@ejemplo.local",
-)
+
+def aws_cs() -> str:
+    pwd = os.environ.get("PFI_AWS_SQL_PASSWORD", "").strip()
+    if not pwd:
+        raise SystemExit("Definí PFI_AWS_SQL_PASSWORD (password del SQL en AWS vía túnel).")
+    return (
+        "DRIVER={ODBC Driver 18 for SQL Server};"
+        "SERVER=127.0.0.1,14333;DATABASE=PfiPrevencion;UID=sa;"
+        f"PWD={pwd};TrustServerCertificate=yes;"
+    )
+
+
+def sync_emails() -> tuple[str, ...]:
+    raw = os.environ.get("PFI_SYNC_EMAILS", "").strip()
+    if not raw:
+        raise SystemExit("Definí PFI_SYNC_EMAILS (lista de emails separados por coma).")
+    return tuple(e.strip() for e in raw.split(",") if e.strip())
 
 USER_COLS = [
     "Email", "Nombre", "PasswordHash", "Rol", "ZonaId", "Activo", "CreadoEn",
@@ -30,19 +43,20 @@ USER_COLS = [
 
 
 def main() -> int:
+    real_emails = sync_emails()
     src = pyodbc.connect(LOCAL)
-    dst = pyodbc.connect(AWS, autocommit=False)
+    dst = pyodbc.connect(aws_cs(), autocommit=False)
     sc, dc = src.cursor(), dst.cursor()
 
-    placeholders = ",".join("?" for _ in REAL_EMAILS)
+    placeholders = ",".join("?" for _ in real_emails)
     sc.execute(
         f"SELECT Id, {','.join(USER_COLS)} FROM app.Usuarios WHERE Email IN ({placeholders})",
-        REAL_EMAILS,
+        real_emails,
     )
     rows = sc.fetchall()
-    if len(rows) != len(REAL_EMAILS):
+    if len(rows) != len(real_emails):
         found = {r[1] for r in rows}
-        missing = set(REAL_EMAILS) - found
+        missing = set(real_emails) - found
         print("Missing locally:", missing)
         return 1
 

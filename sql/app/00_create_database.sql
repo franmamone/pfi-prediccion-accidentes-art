@@ -1,5 +1,5 @@
 /*
-  BD operativa de la app de prevención (NO es el core ART/ART).
+  BD operativa de la app de prevención Prevex (no es el core de una ART).
 
   Instancia: localhost (SQL Server 2025 Developer)
   Base:      PfiPrevencion

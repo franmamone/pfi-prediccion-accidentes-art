@@ -1,7 +1,11 @@
-"""Copia snapshots vigentes (1m/3m) + items + SHAP/métricas desde SQL local a AWS (túnel SSH)."""
+"""Copia snapshots vigentes (1m/3m) + items + SHAP/métricas desde SQL local a AWS (túnel SSH).
+
+Requiere env: PFI_AWS_SQL_PASSWORD
+"""
 
 from __future__ import annotations
 
+import os
 import sys
 
 import pyodbc
@@ -13,14 +17,20 @@ LOCAL = (
     "Trusted_Connection=yes;"
     "TrustServerCertificate=yes;"
 )
-AWS = (
-    "DRIVER={ODBC Driver 18 for SQL Server};"
-    "SERVER=127.0.0.1,14333;"
-    "DATABASE=PfiPrevencion;"
-    "UID=sa;"
-    "PWD=REDACTED;"
-    "TrustServerCertificate=yes;"
-)
+
+
+def aws_cs() -> str:
+    pwd = os.environ.get("PFI_AWS_SQL_PASSWORD", "").strip()
+    if not pwd:
+        raise SystemExit("Definí PFI_AWS_SQL_PASSWORD (password del SQL en AWS vía túnel).")
+    return (
+        "DRIVER={ODBC Driver 18 for SQL Server};"
+        "SERVER=127.0.0.1,14333;"
+        "DATABASE=PfiPrevencion;"
+        "UID=sa;"
+        f"PWD={pwd};"
+        "TrustServerCertificate=yes;"
+    )
 
 SNAP_COLS = [
     "Id", "Periodo", "Horizonte", "GeneradoEn", "ArchivoOrigen", "Filas", "Criticos",
@@ -82,7 +92,7 @@ def main() -> int:
     print("Connecting local...")
     src = pyodbc.connect(LOCAL, autocommit=False)
     print("Connecting AWS via tunnel :14333...")
-    dst = pyodbc.connect(AWS, autocommit=False)
+    dst = pyodbc.connect(aws_cs(), autocommit=False)
 
     sc = src.cursor()
     snaps = fetchall(

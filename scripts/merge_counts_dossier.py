@@ -3,7 +3,7 @@
 Preserva los dossiers completos existentes (259) y agrega, para los
 establecimientos objetivo sin datos de accidentes, un bloque de accidentes
 "solo conteos" (total, últimos 12m y barras por año). Las categorías y relatos
-quedan vacíos: el MCP no permite STRING_AGG/ventana para traerlos a escala.
+quedan vacíos: el export de categorías/relatos a escala no se realizó en este paso.
 
 Lee todos los data/raw/contexto/counts/result_*.json (formato {"data":[...]}).
 """

@@ -12,8 +12,8 @@ from .config import env_bool, load_env
 def build_odbc_connection_string() -> str:
     load_env()
 
-    server = os.environ.get("PFI_SQL_SERVER", "SQLSERVER")
-    database = os.environ.get("PFI_SQL_DATABASE", "ART_CORE")
+    server = os.environ.get("PFI_SQL_SERVER", "localhost")
+    database = os.environ.get("PFI_SQL_DATABASE", "PfiPrevencion")
     driver = os.environ.get("PFI_SQL_DRIVER", "ODBC Driver 17 for SQL Server")
 
     if env_bool("PFI_SQL_TRUSTED_CONNECTION", default=True):
