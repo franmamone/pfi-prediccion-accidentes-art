@@ -3,35 +3,46 @@
 \section{Resumen de aportes}
 
 Este trabajo dise\~n\'o, implement\'o y evalu\'o el prototipo Prevex: un sistema predictivo que prioriza establecimientos empleadores en Argentina seg\'un su riesgo de accidentabilidad en un horizonte trimestral.
-El prototipo incorpora explicabilidad (valores SHAP), investigaci\'on con usuarios (encuesta, entrevistas y personas) y una aplicaci\'on operativa local para preventores y coordinadores de una aseguradora de riesgos del trabajo.
+El prototipo incorpora explicabilidad (valores SHAP), investigaci\'on con usuarios (encuesta, entrevistas y personas) y \corr{una aplicaci\'on operativa para preventores y coordinadores de una aseguradora de riesgos del trabajo, validada en entorno local y en demo desplegada en AWS Free Tier}.
 
 Los aportes principales son:
 \begin{itemize}
 	\item \textbf{Panel de datos tabulares verificado:} construcci\'on de un panel establecimiento$\times$mes a partir de fuentes operativas reales (siniestros, n\'omina, prevenci\'on) con horizonte trimestral y partici\'on temporal estricta (2022--2023 entrenamiento, 2024 calibraci\'on, 2025 holdout).
 	\item \textbf{Modelo predictivo con m\'etricas en holdout~2025:} XGBoost con PR-AUC de~0,515 y recall del~66,7\,\% al umbral~F2 en el a\~no que el modelo no vio.
 	La lista operativa de~1000 establecimientos alcanza una precisi\'on media mensual del~49,5\,\%, unas 19 veces la tasa base.
-	El tramo cr\'{\i}tico (top-50) llega al~93,5\,\%.
+	\corr{El tramo cr\'{\i}tico (top-50) llega al~93,5\,\% y supera con claridad tanto a las visitas reales (~17,8\,\%) como a una regla por historial (~58,2\,\%) en ese n\'ucleo.}
 	\item \textbf{Explicabilidad auditable:} cada posici\'on del ranking incluye las contribuciones SHAP de los factores m\'as influyentes, permitiendo al preventor entender y cuestionar la priorizaci\'on.
-	\item \textbf{Aplicaci\'on operativa funcional:} API REST (ASP.NET Core) y frontend React con autenticaci\'on JWT, agenda de visitas, generaci\'on de resumen narrativo mediante IA generativa anonimizada y estad\'isticas de cobertura.
+	\item \textbf{Aplicaci\'on operativa funcional:} API REST (ASP.NET Core) y frontend React con autenticaci\'on JWT, agenda de visitas, generaci\'on del resumen narrativo mediante IA generativa anonimizada y estad\'isticas de cobertura.
 	\item \nuevo{\textbf{Madurez operativa del prototipo:} copiloto normativo con corpus SRT en SQL, acta y hallazgos al cerrar visita, reagenda, asignaci\'on geogr\'afica asistida, MFA e invitaci\'on por correo.}
 	\item \textbf{Investigaci\'on con usuarios integrada:} encuesta y entrevistas que evidenciaron la brecha entre la planificaci\'on normativa y la pr\'actica reactiva de visitas, y que guiaron el dise\~no de la interfaz.
 	\item \textbf{Resguardo de datos y privacidad:} arquitectura on-prem para la BD core, anonimizaci\'on por hashes antes de importar a la nube, y separaci\'on estricta entre el modelo predictivo (local) y el modelo generativo (recibe solo dossier desidentificado).
-	\item \nuevo{\textbf{Validaci\'on automatizada:} suite xUnit con reporte Coverlet de cobertura de l\'{\i}neas del~95,14\,\% en el alcance de dominio (umbral~85\,\%).}
-	\item \rev{\textbf{Modelo de negocio y viabilidad:} canvas B2B con la ART como pagadora, escenarios en USD y branding Prevex (Cap\'{\i}tulo~\ref{ch:negocio}), que conectan el prototipo con una hip\'otesis de sustentabilidad revisable.}
+	\item \nuevo{\textbf{Validaci\'on automatizada:} suite xUnit con 39 pruebas aprobadas (0 fallidas) y Coverlet~95,14\,\% en el alcance de dominio (umbral~85\,\%).}
+	\item \corr{\textbf{Modelo de negocio y viabilidad:} canvas B2B con la ART como pagadora, escenarios en USD con tasa~$k=18\%$ y sueldos en el opex (Cap\'{\i}tulo~\ref{ch:negocio}).}
 \end{itemize}
 
 \section{Cumplimiento de objetivos}
 
-Respecto del objetivo general (Secci\'on~\ref{sec:objetivo-general}), el prototipo prioriza establecimientos con horizonte trimestral, ofrece explicabilidad SHAP y soporta la planificaci\'on operativa de visitas en la aplicaci\'on Prevex.
+\corr{Respecto del objetivo general (Secci\'on~\ref{sec:objetivo-general}), el prototipo prioriza establecimientos con horizonte trimestral, ofrece explicabilidad SHAP y soporta la planificaci\'on operativa de visitas en la aplicaci\'on Prevex.}
 
-Los objetivos espec\'{\i}ficos (Secci\'on~\ref{sec:objetivos-especificos}) se cubren as\'{\i}:
-\begin{enumerate}
-	\item Panel tabular y modelo XGBoost trimestral: Cap\'{\i}tulo~\ref{ch:metodologia}, resultados en holdout~2025.
-	\item Rankings versionados con SHAP e importaci\'on a BD operativa: Cap\'{\i}tulo~\ref{ch:metodologia} y aplicaci\'on documentada en la demo.
-	\item Aplicaci\'on web por roles (priorizaci\'on, detalle, agenda, estad\'isticas): Cap\'{\i}tulos~\ref{ch:descripcion} y~\ref{ch:metodologia}.
-	\item Investigaci\'on con usuarios: Cap\'{\i}tulo~\ref{ch:descripcion} y anexos de encuesta y entrevistas.
-	\item Arquitectura, Ley~25.326 y validaci\'on (incluidas pruebas automatizadas): Cap\'{\i}tulo~\ref{ch:metodologia}; el modelo de negocio se desarrolla en el Cap\'{\i}tulo~\ref{ch:negocio}.
-\end{enumerate}
+\corr{La Tabla~\ref{tab:cumplimiento-objetivos} resume el estado de cada objetivo espec\'{\i}fico con evidencia verificable.}
+
+\begin{table}[htbp]
+	\centering
+	\caption{\corr{Cumplimiento de objetivos espec\'{\i}ficos y evidencia.} \fuentepropia}
+	\label{tab:cumplimiento-objetivos}
+	\small
+	\begin{tabular}{@{}p{0.34\textwidth}p{0.14\textwidth}p{0.42\textwidth}@{}}
+		\hline
+		\textbf{Objetivo} & \textbf{Estado} & \textbf{Evidencia} \\
+		\hline
+		Panel tabular + XGBoost trimestral & Cumplido & Pipeline, holdout~2025 (PR-AUC~0,515; top-50~93,5\,\%); Cap.~\ref{ch:metodologia} \\
+		Rankings versionados + SHAP & Cumplido & Snapshots en BD operativa; ficha con factores SHAP; Cap.~\ref{ch:metodologia} \\
+		App web por roles (prioridad, agenda, stats) & Cumplido & API + React; demo local y AWS; Sec.~\ref{sec:demo} \\
+		Investigaci\'on con usuarios & Cumplido parcial & Encuesta~248 + 3 entrevistas; falta entrevista activa del pagador ART; Cap.~\ref{ch:descripcion} \\
+		Arquitectura, Ley~25.326 y validaci\'on & Cumplido & Cap.~\ref{ch:metodologia}; Coverlet~95,14\,\%; 39 tests OK; negocio en Cap.~\ref{ch:negocio} \\
+		\hline
+	\end{tabular}
+\end{table}
 
 \section{Trabajo futuro}
 
@@ -42,5 +53,6 @@ Las l\'ineas de trabajo identificadas para versiones posteriores del prototipo s
 	\item \textbf{Autenticaci\'on institucional:} reemplazar el esquema JWT propio por el directorio de identidad de la ART (Active Directory o equivalente), eliminando la gesti\'on de contrase\~nas en el prototipo y simplificando el alta de usuarios. \nuevo{El MFA TOTP del prototipo se mantiene como capa intermedia hasta esa integraci\'on.}
 	\item \textbf{Clasificador de salida para el modelo generativo:} validar que la respuesta del modelo generativo respete el esquema de cuatro secciones antes de persistirla en la BD operativa, y registrar todas las invocaciones para auditor\'{\i}a.
 	\item \textbf{Evaluaci\'on de impacto de datos personales:} si el prototipo se extiende a datos nominales de trabajadores, realizar una evaluaci\'on formal bajo Ley~25.326 y notificar a la AAIP seg\'un corresponda.
+	\item \corr{\textbf{Piloto con ART pagadora:} concretar una prueba controlada con un \'area de prevenci\'on activa (usuario + decisor + pagador) para cerrar la entrevista faltante y medir adopci\'on real.}
 	\item \textbf{Extensi\'on a otras aseguradoras:} la arquitectura AWS Free Tier y el pipeline offline est\'an dise\~nados para ser reutilizables con otra ART que disponga de un panel equivalente; documentar ese proceso de adaptaci\'on queda como tarea futura.
 \end{itemize}

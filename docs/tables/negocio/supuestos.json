@@ -1,27 +1,12 @@
 {
   "moneda": "USD",
   "horizonte_anos": 5,
-  "tasa_descuento": 0.12,
+  "tasa_descuento": 0.18,
   "inversion_inicial_usd": 8000.0,
   "nota": "Inversion inicial de productizacion comercial.",
   "escenarios": {
     "pesimista": {
       "label": "Pesimista",
-      "price_month": 500.0,
-      "arts": [
-        1,
-        1,
-        1,
-        1,
-        1
-      ],
-      "fixed_opex": 3000.0,
-      "var_per_art": 800.0,
-      "cac": 3000.0,
-      "historia": "Una ART fija los 5 anos (~5% del mercado) a USD 500/mes. VAN cercano a cero / levemente negativo; TIR ~0%; no recupera en el horizonte."
-    },
-    "base": {
-      "label": "Base",
       "price_month": 500.0,
       "arts": [
         3,
@@ -30,13 +15,13 @@
         3,
         3
       ],
-      "fixed_opex": 3000.0,
+      "fixed_opex": 15000.0,
       "var_per_art": 800.0,
       "cac": 3000.0,
-      "historia": "Tres ART fijas los 5 anos (~14% del mercado); mismo precio USD 500/mes."
+      "historia": "Tres ART fijas (~14% del mercado) a USD 500/mes, con sueldos en el opex. Cerca del punto de equilibrio (~2,9 ART); VAN negativo."
     },
-    "optimista": {
-      "label": "Optimista",
+    "base": {
+      "label": "Base",
       "price_month": 500.0,
       "arts": [
         5,
@@ -45,10 +30,25 @@
         5,
         5
       ],
-      "fixed_opex": 3000.0,
+      "fixed_opex": 15000.0,
       "var_per_art": 800.0,
       "cac": 3000.0,
-      "historia": "Cinco ART fijas los 5 anos (~23% del mercado); mismo precio USD 500/mes."
+      "historia": "Cinco ART fijas (~23% del mercado); mismo precio; opex con infra + sueldo."
+    },
+    "optimista": {
+      "label": "Optimista",
+      "price_month": 500.0,
+      "arts": [
+        7,
+        7,
+        7,
+        7,
+        7
+      ],
+      "fixed_opex": 15000.0,
+      "var_per_art": 800.0,
+      "cac": 3000.0,
+      "historia": "Siete ART fijas (~32% del mercado); mismo precio; opex con infra + sueldo."
     }
   }
 }

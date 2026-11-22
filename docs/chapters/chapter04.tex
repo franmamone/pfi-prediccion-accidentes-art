@@ -4,7 +4,11 @@ Esta secci\'on documenta las decisiones de implementaci\'on del prototipo: metod
 
 \section{Metodolog\'ia}
 
-El desarrollo adopta un enfoque iterativo, alineado a un ciclo \'agil de entrega incremental: cada iteraci\'on entrega un incremento usable (datos, modelo, ranking, aplicaci\'on u operaci\'on) y se valida antes de avanzar.
+\corr{El desarrollo adopta un enfoque \textbf{iterativo e incremental}, alineado a un ciclo \'agil de entrega.
+Se eligi\'o ese m\'etodo porque el problema combina incertidumbre de datos (calidad y cobertura del core ART), incertidumbre de modelo (qu\'e horizonte y qu\'e lista operativa son \'utiles) e incertidumbre de producto (qu\'e necesita el preventor en campo).
+Un plan en cascada \'unico habr\'{\i}a forzado a cerrar esas decisiones demasiado temprano.
+En cambio, cada iteraci\'on entreg\'o un incremento usable, se valid\'o con evidencia (m\'etricas, demo o user research) y reci\'en entonces se avanz\'o.}
+
 Las etapas principales son:
 \begin{enumerate}
 	\item ingenier\'ia de datos sobre la BD core de la ART (vistas y panel establecimiento$\times$mes);
@@ -13,6 +17,24 @@ Las etapas principales son:
 	\item construcci\'on de API REST + frontend React para uso por Preventores;
 	\item anal\'itica hist\'orica (snapshots, cobertura y precisi\'on observada).
 \end{enumerate}
+
+\begin{table}[htbp]
+	\centering
+	\caption{\corr{Iteraciones principales del PFI y entrega validada.} \fuentepropia}
+	\label{tab:iteraciones-pfi}
+	\small
+	\begin{tabular}{@{}p{0.16\textwidth}p{0.22\textwidth}p{0.52\textwidth}@{}}
+		\hline
+		\textbf{Per\'{\i}odo} & \textbf{Hito} & \textbf{Incremento validado} \\
+		\hline
+		May--jun 2026 & 25\,\% & Marco te\'orico, estado del arte y alcance del problema. \\
+		Jul--ago 2026 & 50\,\% & Panel, XGBoost, ranking SHAP y prototipo local (API + React). \\
+		Sep 2026 & 75\,\% & Agenda, anal\'{\i}tica, cobertura Coverlet y endurecimiento operativo. \\
+		Oct 2026 & 90\,\% & Demo AWS, copiloto, MFA, negocio y presentaci\'on oral. \\
+		Nov 2026 & 100\,\% & Documento final con correcciones del evaluador y empaque de entrega. \\
+		\hline
+	\end{tabular}
+\end{table}
 
 Los \'arboles del XGBoost se ajustan solo con 2022 y 2023.
 El a\~no 2024 no entra a ese entrenamiento: se reserva para fijar el umbral de decisi\'on, sin volver a entrenar el modelo.
@@ -244,16 +266,30 @@ En cortes trimestrales no solapados (un trimestre cerrado de planificaci\'on) el
 
 \subsection*{Comparaci\'on con otras pol\'{\i}ticas}
 
-Sobre el mismo holdout, el azar coincide con la tasa base (2,7\,\%).
-La pr\'actica real de visitas, al volumen hist\'orico de referencia, alcanza 17,8\,\%.
-Una regla simple por historial de accidentes, al mismo volumen, llega a 58,2\,\%.
-El modelo en el n\'ucleo (top-50) llega a 93,5\,\%; si se excluyen establecimientos visitados en los \'ultimos tres meses, 89,0\,\%.
-En la lista completa de 1000 la media mensual es 49,5\,\% (unas 19 veces la tasa base), muy por encima de las visitas reales y por debajo del historial puro medido en un recorte m\'as chico.
+\corr{Para responder cu\'anto mejora el modelo frente a criterios simples, se compar\'o la focalizaci\'on a \textbf{mismo volumen} sobre el holdout~2025 (horizonte trimestral).
+La Tabla~\ref{tab:baseline-comparacion} resume la precisi\'on de cada pol\'{\i}tica.
+Lectura: frente a la \textbf{pr\'actica real de visitas}, el n\'ucleo del modelo (~93,5\,\% en top-50) multiplica varias veces el acierto observado (~17,8\,\%).
+Frente a una \textbf{l\'{\i}nea base por siniestralidad previa}, el modelo gana con claridad en el tramo cr\'{\i}tico (93,5\,\% vs 58,2\,\%).
+En la lista completa de~1000 la media mensual (49,5\,\%) sigue ~19 veces la tasa base y muy por encima de las visitas reales, aunque el historial puro sigue siendo un competidor serio si se mira solo un recorte intermedio.
+El valor del prototipo est\'a en decidir a qui\'en visitar primero, con bandas y explicaci\'on SHAP, no en reemplazar el conocimiento de accidentes pasados ni en leer el score como probabilidad.}
 
-Lectura: el modelo supera ampliamente al azar y a las visitas realmente ejecutadas.
-En el tramo cr\'{\i}tico supera tambi\'en a ordenar solo por siniestralidad previa.
-Al bajar hacia los 1000 la precisi\'on media baja (se incluye m\'as masa) y el historial sigue siendo un competidor serio.
-El valor del prototipo est\'a en decidir a qui\'en visitar primero, con bandas y explicaci\'on SHAP, no en reemplazar el conocimiento de accidentes pasados ni en leer el score como probabilidad.
+\begin{table}[H]
+	\centering
+	\caption{\corr{Comparaci\'on de focalizaci\'on (holdout 2025, horizonte 3 meses).} \fuentepropia}
+	\label{tab:baseline-comparacion}
+	\small
+	\begin{tabular}{@{}p{0.42\textwidth}cc@{}}
+		\hline
+		\textbf{Pol\'{\i}tica} & \textbf{Volumen de referencia} & \textbf{Precisi\'on} \\
+		\hline
+		Azar (tasa base) & universo & 2,7\,\% \\
+		Visitas reales ejecutadas & volumen hist\'orico & 17,8\,\% \\
+		Historial de accidentes (regla simple) & mismo $K$ que el n\'ucleo & 58,2\,\% \\
+		Modelo Prevex (top-50 / mes) & 50 & 93,5\,\% \\
+		Modelo Prevex (lista operativa 1000, media mensual) & 1000 & 49,5\,\% \\
+		\hline
+	\end{tabular}
+\end{table}
 
 \section{Avance de implementaci\'on (demo)}\label{sec:demo}
 
@@ -337,26 +373,40 @@ La viabilidad t\'ecnica se apoya en equipos y servicios est\'andar:}
 
 \section{Validaci\'on del sistema}
 
-El prototipo se valida mediante pruebas manuales del flujo completo: autenticaci\'on, visualizaci\'on del ranking, acceso al detalle del establecimiento, generaci\'on del resumen narrativo, registro de visitas en la agenda y consulta de estad\'isticas de cobertura.
-Cada pantalla del recorrido documentado en la Secci\'on~\ref{sec:demo} fue ejercitada contra la instancia local de la API y la BD operativa \texttt{PfiPrevencion}.
+\corr{El prototipo se valida en dos capas: (1)~casos funcionales del recorrido de usuario (manuales y de integraci\'on HTTP); (2)~suite automatizada xUnit + Coverlet sobre el dominio.}
 
-Las m\'etricas de calidad del modelo predictivo est\'an detalladas en la secci\'on de Resultados del modelo: PR-AUC de~0,515, recall del~66,7\,\% al umbral F2 y precisi\'on media mensual de~49,5\,\% en la lista de~1000 (v\'ease la Tabla~\ref{tab:metricas-holdout} y la Tabla~\ref{tab:precision-topk}).
-Estas m\'etricas se calculan sobre el holdout~2025, que el modelo no vio durante el entrenamiento ni durante la calibraci\'on del umbral.
+\corr{Cada pantalla del recorrido documentado en la Secci\'on~\ref{sec:demo} se ejercit\'o contra la BD operativa \texttt{PfiPrevencion}, primero en entorno local y luego en la instancia de demo en AWS (EC2 Free Tier).
+La Tabla~\ref{tab:casos-funcionales} resume los casos funcionales principales con resultado esperado y obtenido.}
 
-\nuevo{Adem\'as de las pruebas manuales, la API se valida con una suite automatizada en xUnit.
-Esa suite combina pruebas unitarias con pruebas de integraci\'on HTTP: arranca la API con \texttt{WebApplicationFactory}, usa SQL LocalDB de prueba y reemplaza Gemini y SMTP por dobles.
-La cobertura de c\'odigo se mide con Coverlet.
-El reporte E75 toma como alcance los servicios de dominio y el \texttt{AppDbContext}, entre ellos geo, MFA, plantillas de correo, tokens e invitaciones.
-Quedan fuera del umbral el composition root en \texttt{Program.cs}, los clientes de I/O externo hacia Gemini y SMTP, y el servicio de copiloto; este \'ultimo se ejercita en integraci\'on, pero no suma al denominador del porcentaje.
-El artefacto vigente est\'a en \texttt{docs/evidence/coverage/}, con el XML de Cobertura y un resumen.
-Al cierre de esta revisi\'on, la cobertura de l\'{\i}neas del alcance de dominio es del~95,14\,\% (umbral exigido: 85\,\%), seg\'un el resumen en \texttt{docs/evidence/coverage/}.
-Las pruebas de integraci\'on sobre login, riesgo, detalle, agenda con candidatos y salud aportan evidencia funcional complementaria; no pretenden que el porcentaje Coverlet cubra todo el monolito de endpoints.}
+\begin{table}[htbp]
+	\centering
+	\caption{\corr{Casos funcionales del prototipo (resultado esperado vs obtenido).} \fuentepropia}
+	\label{tab:casos-funcionales}
+	\small
+	\begin{tabular}{@{}p{0.28\textwidth}p{0.28\textwidth}p{0.18\textwidth}p{0.14\textwidth}@{}}
+		\hline
+		\textbf{Caso} & \textbf{Resultado esperado} & \textbf{Obtenido} & \textbf{Estado} \\
+		\hline
+		Login con usuario v\'alido & JWT y acceso al home & Token emitido; redirecci\'on OK & Aprobado \\
+		Login inv\'alido & Rechazo sin sesi\'on & 401 / mensaje de error & Aprobado \\
+		Ver priorizaci\'on trimestral & Lista $\leq$1000 con bandas & Ranking 3m visible & Aprobado \\
+		Abrir ficha de establecimiento & Detalle + SHAP + dossier & Ficha completa & Aprobado \\
+		Programar visita & Alta en agenda del Preventor & Visita persistida & Aprobado \\
+		Realizar visita con acta & Cierre + hallazgos & Acta guardada & Aprobado \\
+		Copiloto / resumen IA & Texto \'util sin IDs crudos & Respuesta cacheada & Aprobado \\
+		Estad\'isticas de la lista & Gr\'aficos de composici\'on & Series visibles & Aprobado \\
+		MFA (si est\'a exigido) & Segundo factor antes de entrar & Flujo TOTP OK & Aprobado \\
+		\hline
+	\end{tabular}
+\end{table}
 
-\rev{A partir de esos resultados se tomaron decisiones de dise\~no, no solo mediciones.
-El holdout~2025 confirma que el ranking aporta precisi\'on muy por encima de la tasa base: se mantiene el horizonte trimestral y la lista operativa de~1000 como contrato del producto.
-La suite Coverlet (95,14\,\% de l\'{\i}neas en el alcance de dominio) se interpreta como evidencia suficiente para el prototipo; no se ampl\'{\i}a el umbral al monolito completo en esta etapa.
-Las pruebas sobre proyecci\'on del dossier al modelo generativo motivaron la pol\'{\i}tica de enviar solo agregados (sin relatos ni observaciones hist\'oricas), documentada en la secci\'on de riesgos de IA generativa.
-Fallos o huecos en MFA, correo y asignaci\'on geogr\'afica se cubrieron con pruebas de integraci\'on dedicadas antes de dar por cerrada la madurez operativa del hito.}
+\corr{La suite automatizada (xUnit) combina pruebas unitarias con pruebas de integraci\'on HTTP: arranca la API con \texttt{WebApplicationFactory}, usa SQL LocalDB de prueba y reemplaza Gemini y SMTP por dobles.
+Al cierre del reporte E75: \textbf{39 pruebas aprobadas y 0 fallidas}; cobertura de l\'{\i}neas del alcance de dominio \textbf{95,14\,\%} (umbral~85\,\%), con artefactos en \texttt{docs/evidence/coverage/}.
+Quedan fuera del denominador Coverlet el composition root (\texttt{Program.cs}), los clientes Gemini/SMTP y capas HTTP monol\'{\i}ticas ejercitadas por integraci\'on.}
+
+\corr{Las m\'etricas del modelo predictivo (PR-AUC~0,515; recall~66,7\,\% al umbral~F2; precisi\'on media mensual~49,5\,\% en la lista de~1000) constan en la Tabla~\ref{tab:metricas-holdout}, la Tabla~\ref{tab:precision-topk} y la comparaci\'on de l\'{\i}neas base (Tabla~\ref{tab:baseline-comparacion}).}
+
+\corr{Decisiones derivadas: se mantiene el horizonte trimestral y la lista operativa de~1000; la pol\'{\i}tica de prompt solo con agregados se cerr\'o tras las pruebas del dossier; MFA, correo y asignaci\'on geogr\'afica se cubrieron con integraci\'on dedicada antes del hito~90\,\%.}
 
 \section{Privacidad, datos personales y Ley~25.326}
 

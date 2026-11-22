@@ -1,15 +1,15 @@
 \chapter{Modelo de negocio y viabilidad econ\'omica}\label{ch:negocio}
 
-\rev{Este cap\'{\i}tulo complementa el an\'alisis de competencias del Cap\'{\i}tulo~\ref{ch:descripcion} (FODA, Porter y Triple~P) con un modelo de sustentabilidad y un an\'alisis econ\'omico-financiero en d\'olares estadounidenses.
+\corr{Este cap\'{\i}tulo complementa el an\'alisis de competencias del Cap\'{\i}tulo~\ref{ch:descripcion} (FODA, Porter y Triple~P) con un modelo de sustentabilidad y un an\'alisis econ\'omico-financiero en d\'olares estadounidenses.
 Los n\'umeros son supuestos explicitados, coherentes con el alcance del prototipo y con la evidencia de user research; no representan un contrato comercial firmado.}
 
-\section{\rev{Qui\'en usa, qui\'en decide y qui\'en paga}}
+\section{\corr{Qui\'en usa, qui\'en decide y qui\'en paga}}
 
-\rev{Prevex distingue con claridad tres roles econ\'omicos \parencite{osterwalder2010}:}
+\corr{Prevex distingue con claridad tres roles econ\'omicos \parencite{osterwalder2010}:}
 
 \begin{table}[htbp]
 	\centering
-	\caption[Usuario, decisor y pagador de Prevex]{\rev{Usuario, decisor y pagador de Prevex.} \fuentepropia}
+	\caption[Usuario, decisor y pagador de Prevex]{\corr{Usuario, decisor y pagador de Prevex.} \fuentepropia}
 	\label{tab:negocio-roles}
 	\small
 	\begin{tabular}{@{}p{0.22\textwidth}p{0.68\textwidth}@{}}
@@ -23,84 +23,79 @@ Los n\'umeros son supuestos explicitados, coherentes con el alcance del prototip
 	\end{tabular}
 \end{table}
 
-\rev{La cadena de valor se extiende m\'as all\'a del pagador, sin confundir beneficiario con cliente.
+\corr{La cadena de valor se extiende m\'as all\'a del pagador, sin confundir beneficiario con cliente.
 La ART gana eficiencia operativa (ordenamiento de visitas, dossier y normativa a mano, asignaci\'on asistida) y reduce exposici\'on a visitas mal planificadas y a costos de siniestros.
 Los establecimientos se benefician si aplican las recomendaciones del preventor (menos ausentismo, mayor productividad).
 Los trabajadores se benefician si el entorno laboral mejora y baja la probabilidad de accidentes leves, graves o fatales.
 El contrato, no obstante, lo paga la ART.}
 
-\section{\rev{Business Model Canvas}}
+\section{\corr{Business Model Canvas}}
 
-\rev{El lienzo de modelo de negocio \parencite{osterwalder2010} resume c\'omo Prevex crea, entrega y captura valor.
+\corr{El lienzo de modelo de negocio \parencite{osterwalder2010} resume c\'omo Prevex crea, entrega y captura valor.
 Los bloques de segmentos, propuesta de valor, ingresos y costos se apoyan en la encuesta, las entrevistas y el an\'alisis competitivo ya documentados.}
 
 \begin{landscape}
 \begin{figure}[htbp]
 	\centering
-	\rev{\resizebox{0.95\linewidth}{!}{\input{figures/diagramas/business_model_canvas}}}
-	\caption[Business Model Canvas de Prevex]{\rev{Business Model Canvas de Prevex.} \fuentepropia}
+	\corr{\resizebox{0.95\linewidth}{!}{\input{figures/diagramas/business_model_canvas}}}
+	\caption[Business Model Canvas de Prevex]{\corr{Business Model Canvas de Prevex.} \fuentepropia}
 	\label{fig:negocio-canvas}
 \end{figure}
 \end{landscape}
 
-\section{\rev{Fuentes de ingresos y estructura de costos}}
+\section{\corr{Fuentes de ingresos y estructura de costos}}
 
-\rev{La unidad de venta es la ART.
+\corr{La unidad de venta es la ART.
 El mercado de referencia son las \textbf{22 aseguradoras registradas} publicadas por el Estado nacional para elecci\'on del empleador \parencite{srtartlistado}.
 El precio de referencia es \textbf{el mismo} en los tres escenarios: USD~500 por mes (USD~6.000 por a\~no).
-Lo que diferencia pesimista, base y optimista es la \textbf{cartera fija} de clientes (1, 3 o 5 ART durante los cinco a\~nos), no la tarifa ni una rampa gradual.}
+Ese precio se combina con una estructura de costos que ya incluye sueldos (no solo cloud).
+Lo que diferencia pesimista, base y optimista es la \textbf{cartera fija} de clientes (3, 5 o 7 ART durante los cinco a\~nos).}
 
-\rev{Los costos se clasifican as\'{\i}:}
+\corr{Los costos se clasifican as\'{\i}:}
 \begin{itemize}
-	\item \rev{\textbf{Inversi\'on inicial (capex):} USD~8.000 de productizaci\'on m\'{\i}nima (despliegue endurecido, aspectos legales livianos, materiales comerciales y primer onboarding). No es solo la factura de cloud ni de la API generativa, y no incluye las horas del PFI.}
-	\item \rev{\textbf{Costos fijos anuales (opex fijo):} infraestructura cloud base, monitoreo, soporte y ciclo de reentrenamiento del modelo (USD~3.000, unos USD~250 por mes).}
-	\item \rev{\textbf{Costos variables por ART:} uso de API generativa y almacenamiento incremental (USD~800 por ART-a\~no).}
-	\item \rev{\textbf{CAC:} costo de adquisici\'on al incorporar una ART nueva (USD~3.000). En cartera fija se concentra en el a\~no~1.}
+	\item \corr{\textbf{Inversi\'on inicial (capex):} USD~8.000 de productizaci\'on m\'{\i}nima (despliegue endurecido, aspectos legales livianos, materiales comerciales y primer onboarding). No es solo la factura de cloud ni de la API generativa, y no incluye las horas del PFI.}
+	\item \corr{\textbf{Costos fijos anuales (opex fijo):} USD~15.000 en total, compuestos por infraestructura cloud, monitoreo y reentrenamiento (USD~3.000) m\'as \textbf{sueldos} de un perfil part-time de operaciones y soporte (USD~12.000). Sin esa partida el modelo subestimaba el costo real de sostener el producto.}
+	\item \corr{\textbf{Costos variables por ART:} uso de API generativa y almacenamiento incremental (USD~800 por ART-a\~no).}
+	\item \corr{\textbf{CAC:} costo de adquisici\'on al incorporar una ART nueva (USD~3.000). En cartera fija se concentra en el a\~no~1.}
 \end{itemize}
 
 \input{tables/negocio/tab_supuestos}
 
-\section{\rev{Viabilidad econ\'omico-financiera}}
+\section{\corr{Viabilidad econ\'omico-financiera}}
 
-\rev{El an\'alisis se realiza en USD (moneda estable), con horizonte de cinco a\~nos y tasa de descuento $k=12\%$ real, alineada a un costo de oportunidad razonable para software B2B en d\'olares.
-Se reportan VAN, TIR, payback simple y descontado, y punto de equilibrio en n\'umero de ART.
-Los flujos salen de los supuestos del modelo de negocio (precio, adopci\'on, opex fijo, variable y CAC).}
+\corr{El an\'alisis se realiza en USD (moneda estable), con horizonte de cinco a\~nos y tasa de descuento $k=18\%$ real.
+Se reportan VAN, TIR, payback simple y descontado, y punto de equilibrio en n\'umero de ART.}
 
-\rev{Se construyen tres escenarios con el mismo precio y distinta cartera fija.
-La cartera se expresa tambi\'en como fracci\'on del mercado de~22 ART:}
+\corr{Se construyen tres escenarios con el mismo precio y distinta cartera fija (fracci\'on del mercado de~22 ART):}
 
 \begin{itemize}
-	\item \rev{\textbf{Pesimista:} una ART fija los cinco a\~nos (~5\,\% del mercado) a USD~500/mes.}
-	\item \rev{\textbf{Base:} tres ART fijas (~14\,\% del mercado), mismo precio.}
-	\item \rev{\textbf{Optimista:} cinco ART fijas (~23\,\% del mercado), mismo precio.}
+	\item \corr{\textbf{Pesimista:} tres ART fijas (~14\,\% del mercado) a USD~500/mes.}
+	\item \corr{\textbf{Base:} cinco ART fijas (~23\,\% del mercado), mismo precio.}
+	\item \corr{\textbf{Optimista:} siete ART fijas (~32\,\% del mercado), mismo precio.}
 \end{itemize}
 
 \input{tables/negocio/tab_flujo_base}
 
 \input{tables/negocio/tab_indicadores}
 
-\rev{Interpretaci\'on: con precio \'unico, la viabilidad depende de cu\'antas ART permanecen contratadas.
-En el escenario base el VAN es positivo (USD~29.384), la TIR supera a $k$ (~97\,\%) y el payback descontado ronda 1,5~a\~nos.
-El optimista, con cinco clientes, refuerza esa lectura (VAN de USD~61.517; payback de~1,0~a\~no).
-El pesimista, con una sola ART, queda casi neutro / levemente negativo: VAN de USD~-2.748, TIR cercana a~0\,\% y el payback no se completa en cinco a\~nos.
-El ingreso anual es USD~6.000 frente a opex fijo de USD~3.000, variable de USD~800, CAC de USD~3.000 en el a\~no~1 y capex de productizaci\'on de USD~8.000.
-Tras el primer a\~no el margen operativo ronda USD~2.200 anuales: insuficiente para recuperar la inversi\'on al~12\,\% en el horizonte.
-La lectura comercial es que el piloto \'unico no alcanza; con tres ART el proyecto ya genera valor. El plan prioriza validar el primer contrato y cerrar un peque\~no portafolio antes de escalar CAC.}
+\corr{Interpretaci\'on: con sueldos incluidos, el punto de equilibrio ronda \textbf{2,9~ART}.
+El pesimista (tres ART) no cierra: VAN de USD~-13.751 y no recupera la inversi\'on en cinco a\~nos.
+En el escenario base el VAN es positivo (USD~13.687), la TIR (~55\,\%) supera a $k$ y el payback descontado ronda 2,5~a\~nos.
+El optimista, con siete clientes, refuerza la lectura (VAN de USD~41.125; payback descontado de~1,5~a\~nos).
+La lectura comercial es que el portafolio chico por debajo del equilibrio no alcanza cuando se pagan sueldos; con cinco ART el proyecto ya genera valor.}
 
-\rev{Una sensibilidad de $k$ entre~10\% y~15\% no cambia el signo del VAN en base ni en optimista; el pesimista permanece en torno a neutro / levemente negativo.
+\corr{Una sensibilidad de $k$ entre~15\% y~20\% no cambia el signo del VAN en base ni en optimista; el pesimista permanece negativo.
 Los n\'umeros siguen siendo supuestos expl\'{\i}citos, no un contrato firmado.}
 
-\section{\rev{Branding e identidad visual}}
+\section{\corr{Branding e identidad visual}}
 
-\rev{El nombre \emph{Prevex} combina prevenci\'on con explicabilidad: el producto no solo predice, sino que expone los factores que ordenan la lista (SHAP) y apoya la visita con evidencia normativa.}
+\corr{El nombre \emph{Prevex} combina prevenci\'on con explicabilidad: el producto no solo predice, sino que expone los factores que ordenan la lista (SHAP) y apoya la visita con evidencia normativa.}
 
 \begin{figure}[htbp]
 	\centering
 	\includegraphics[width=0.42\textwidth]{figures/logo_prevex.png}
-	\caption[Logotipo de Prevex]{\rev{Logotipo de Prevex utilizado en la interfaz del prototipo.} \fuentepropia}
-	\label{fig:logo-prevex}
+	\caption[Logotipo de Prevex]{\corr{Logotipo de Prevex utilizado en la interfaz del prototipo.} \fuentepropia}
+	\label{fig:negocio-logo}
 \end{figure}
 
-\rev{El isotipo (escudo) evoca protecci\'on laboral; la tipograf\'{\i}a del wordmark busca legibilidad en barra superior y favicon.
-La paleta se mantiene sobria para un producto B2B de aseguradoras: contraste alto en UI, sin ornamentaci\'on que compita con el ranking y los estados de visita.
-La marca aparece en login, encabezado y materiales de la aplicaci\'on; en este documento se presenta como identidad del prototipo evaluado, no como campa\~na comercial.}
+\corr{La marca aparece en login, encabezado y materiales de la aplicaci\'on; en este documento se presenta como identidad del prototipo evaluado, no como campa\~na comercial.}

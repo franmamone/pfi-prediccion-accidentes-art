@@ -6,7 +6,7 @@ En los \'ultimos a\~nos, el escenario comenz\'o a cambiar. La siniestralidad lab
 
 El presente Proyecto Final de Ingenier\'{\i}a (PFI), titulado \emph{Prevex: sistema predictivo con inteligencia artificial para la prevenci\'on proactiva de accidentes laborales en aseguradoras de riesgos del trabajo de Argentina}, responde a esa necesidad. Se propone dise\~nar una herramienta que permita identificar, con antelaci\'on, qu\'e establecimientos tienen mayor probabilidad de registrar accidentes de trabajo en un per\'{\i}odo determinado, de modo que inspectores y preventores puedan priorizar visitas, auditor\'{\i}as y acciones correctivas antes de que el siniestro ocurra. La soluci\'on se concibe como apoyo a la decisi\'on profesional: no reemplaza el juicio del especialista ni las instancias regulatorias, sino que busca hacer m\'as eficiente el uso de los recursos disponibles.
 
-El prototipo Prevex ya incorpora investigaci\'on con usuarios (encuesta y entrevistas) y una aplicaci\'on operativa local para priorizar y gestionar visitas. Las secciones siguientes formalizan el objetivo, los objetivos espec\'{\i}ficos y el alcance del trabajo.
+El prototipo Prevex ya incorpora investigaci\'on con usuarios (encuesta y entrevistas) y \corr{una aplicaci\'on operativa para priorizar y gestionar visitas, validada en entorno local y en una demo desplegada en AWS Free Tier}. Las secciones siguientes formalizan el objetivo, los objetivos espec\'{\i}ficos y el alcance del trabajo.
 
 \section{Objetivo general}\label{sec:objetivo-general}
 
@@ -27,7 +27,7 @@ Dise\~nar, implementar y validar un prototipo de sistema predictivo (Prevex) que
 El alcance del trabajo comprende:
 
 \begin{itemize}
-	\item Un prototipo funcional Prevex (SQL Server operativo \texttt{PfiPrevencion}, API .NET, frontend React), validado en entorno local y dise\~nado para desplegarse en AWS Free Tier seg\'un la arquitectura del Cap\'itulo~\ref{ch:metodologia}.
+	\item \corr{Un prototipo funcional Prevex (SQL Server operativo \texttt{PfiPrevencion}, API .NET, frontend React), validado en entorno local y desplegado como demo en AWS Free Tier (EC2) seg\'un la arquitectura del Cap\'itulo~\ref{ch:metodologia}.}
 	\item Datos de una cartera de establecimientos de una aseguradora argentina (panel del orden de 35.500 establecimientos), anonimizados para el modelado.
 	\item Horizonte predictivo trimestral y lista operativa acotada (hasta 1.000 establecimientos) para planificaci\'on de visitas.
 	\item Roles Preventor, Coordinador y Administrador; idioma de la interfaz en espa\~nol.
@@ -38,5 +38,6 @@ El alcance del trabajo comprende:
 	\item \nuevo{Autenticaci\'on con MFA TOTP opcional u obligatorio seg\'un administraci\'on, e invitaci\'on de usuarios por correo.}
 \end{itemize}
 
-Queda fuera del alcance de este prototipo el despliegue productivo completo en nube como \'unico ambiente obligatorio: la validaci\'on se realiza en entorno local y la arquitectura AWS Free Tier se documenta como dise\~no objetivo, no como entregable ya operando en producci\'on.
+\corr{Queda fuera del alcance el despliegue productivo institucional (alta disponibilidad, SSO corporativo, multi-ART).
+S\'{\i} forma parte del alcance la demo operativa en AWS Free Tier usada para validaci\'on y presentaci\'on, adem\'as del entorno local de desarrollo.}
 

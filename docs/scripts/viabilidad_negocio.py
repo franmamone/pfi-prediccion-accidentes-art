@@ -14,46 +14,46 @@ HERE = Path(__file__).resolve().parent
 OUT_DIR = HERE.parent / "tables" / "negocio"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-K = 0.12  # tasa de descuento real en USD
+K = 0.18  # tasa de descuento real en USD (emprendimiento sin cartera cerrada)
 HORIZON = 5
 I0 = 8000.0  # inversion inicial
 
 # Mercado: 22 ART registradas (argentina.gob.ar / SRT).
-# Cartera fija (misma cantidad de ART los 5 anos). Mismo precio; cambia solo N clientes.
-# Alineado a la slide del hito 90%: precio 500, opex fijo 3000, var 800, CAC 3000, capex 8000, k=12%.
+# Opex fijo = infra cloud (3000) + sueldo part-time ops/soporte (12000) = 15000.
+# Precio 500/mes; cartera 3/5/7; k=18% (correccion devolucion documento 90%).
 ASSUMPTIONS = {
     "pesimista": {
         "label": "Pesimista",
         "price_month": 500.0,
-        "arts": [1, 1, 1, 1, 1],
-        "fixed_opex": 3000.0,
+        "arts": [3, 3, 3, 3, 3],
+        "fixed_opex": 15000.0,
         "var_per_art": 800.0,
         "cac": 3000.0,
         "historia": (
-            "Una ART fija los 5 anos (~5% del mercado) a USD 500/mes. "
-            "VAN cercano a cero / levemente negativo; TIR ~0%; no recupera en el horizonte."
+            "Tres ART fijas (~14% del mercado) a USD 500/mes, con sueldos en el opex. "
+            "Cerca del punto de equilibrio (~2,9 ART); VAN negativo."
         ),
     },
     "base": {
         "label": "Base",
         "price_month": 500.0,
-        "arts": [3, 3, 3, 3, 3],
-        "fixed_opex": 3000.0,
+        "arts": [5, 5, 5, 5, 5],
+        "fixed_opex": 15000.0,
         "var_per_art": 800.0,
         "cac": 3000.0,
         "historia": (
-            "Tres ART fijas los 5 anos (~14% del mercado); mismo precio USD 500/mes."
+            "Cinco ART fijas (~23% del mercado); mismo precio; opex con infra + sueldo."
         ),
     },
     "optimista": {
         "label": "Optimista",
         "price_month": 500.0,
-        "arts": [5, 5, 5, 5, 5],
-        "fixed_opex": 3000.0,
+        "arts": [7, 7, 7, 7, 7],
+        "fixed_opex": 15000.0,
         "var_per_art": 800.0,
         "cac": 3000.0,
         "historia": (
-            "Cinco ART fijas los 5 anos (~23% del mercado); mismo precio USD 500/mes."
+            "Siete ART fijas (~32% del mercado); mismo precio; opex con infra + sueldo."
         ),
     },
 }
@@ -237,7 +237,7 @@ def write_latex(scenarios: list[dict]) -> None:
     lines = [
         r"\begin{table}[htbp]",
         r"\centering",
-        r"\caption[Indicadores de viabilidad por escenario (USD)]{\rev{Indicadores de viabilidad por escenario (USD, $k=12\%$, horizonte 5 a\~nos).} \fuentepropia}",
+        r"\caption[Indicadores de viabilidad por escenario (USD)]{\corr{Indicadores de viabilidad por escenario (USD, $k=18\%$, horizonte 5 a\~nos).} \fuentepropia}",
         r"\label{tab:negocio-indicadores}",
         r"\small",
         r"\begin{tabular}{lrrr}",
@@ -258,7 +258,7 @@ def write_latex(scenarios: list[dict]) -> None:
         )
     )
     def fmt_tir(x: float | None) -> str:
-        # Si no hay cambio de signo, n/d. Si es negativa, se reporta (sigue siendo interpretable).
+        # None = n/d. Negativa se reporta (pesimista ~-45%).
         if x is None:
             return "n/d"
         return fmt_pct(x) + "\\%"
@@ -308,7 +308,7 @@ def write_latex(scenarios: list[dict]) -> None:
     fl = [
         r"\begin{table}[htbp]",
         r"\centering",
-        r"\caption[Flujo de fondos del escenario base (USD)]{\rev{Flujo de fondos del escenario base (USD). A\~no 0 = inversi\'on inicial.} \fuentepropia}",
+        r"\caption[Flujo de fondos del escenario base (USD)]{\corr{Flujo de fondos del escenario base (USD). A\~no 0 = inversi\'on inicial.} \fuentepropia}",
         r"\label{tab:negocio-flujo-base}",
         r"\small",
         r"\begin{tabular}{rrrrrr}",
@@ -340,7 +340,7 @@ def write_latex(scenarios: list[dict]) -> None:
     su = [
         r"\begin{table}[htbp]",
         r"\centering",
-        r"\caption[Supuestos de los escenarios (USD)]{\rev{Supuestos de los escenarios (USD).} \fuentepropia}",
+        r"\caption[Supuestos de los escenarios (USD)]{\corr{Supuestos de los escenarios (USD).} \fuentepropia}",
         r"\label{tab:negocio-supuestos}",
         r"\small",
         r"\begin{tabular}{lrrr}",
@@ -348,8 +348,10 @@ def write_latex(scenarios: list[dict]) -> None:
         r"\textbf{Supuesto} & \textbf{Pesimista} & \textbf{Base} & \textbf{Optimista} \\",
         r"\hline",
         f"Precio mensual / ART & {fmt_usd(p['price_month'])} & {fmt_usd(b['price_month'])} & {fmt_usd(o['price_month'])} \\\\",
-        f"Opex fijo anual & {fmt_usd(p['fixed_opex'])} & {fmt_usd(b['fixed_opex'])} & {fmt_usd(o['fixed_opex'])} \\\\",
-        f"Costo variable / ART-ano & {fmt_usd(p['var_per_art'])} & {fmt_usd(b['var_per_art'])} & {fmt_usd(o['var_per_art'])} \\\\",
+        r"Opex infra anual & USD~3.000 & USD~3.000 & USD~3.000 \\",
+        r"Sueldos (1 perfil part-time) & USD~12.000 & USD~12.000 & USD~12.000 \\",
+        f"Opex fijo total anual & {fmt_usd(p['fixed_opex'])} & {fmt_usd(b['fixed_opex'])} & {fmt_usd(o['fixed_opex'])} \\\\",
+        f"Costo variable / ART-a\\~no & {fmt_usd(p['var_per_art'])} & {fmt_usd(b['var_per_art'])} & {fmt_usd(o['var_per_art'])} \\\\",
         f"CAC por ART nueva & {fmt_usd(p['cac'])} & {fmt_usd(b['cac'])} & {fmt_usd(o['cac'])} \\\\",
         f"ART fijas (5 a\\~nos) & {p['rows'][-1]['arts']} & {b['rows'][-1]['arts']} & {o['rows'][-1]['arts']} \\\\",
         r"\hline",

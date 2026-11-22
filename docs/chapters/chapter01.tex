@@ -66,23 +66,31 @@ Esta secci\'on sistematiza investigaciones, desarrollos y prototipos recientes v
 
 \subsection{Soluciones comerciales y de mercado vigentes}
 
-En el \'ambito comercial y corporativo de las aseguradoras de riesgos del trabajo en la regi\'on, la adopci\'on de sistemas predictivos avanzados a\'un se encuentra en una fase incipiente. La mayor\'{\i}a de las soluciones de software denominadas \emph{Core de Seguros} operan bajo motores de reglas est\'aticas. Estos sistemas clasifican el riesgo de las empresas a partir de cruces de bases de datos simples: por ejemplo, si la empresa pertenece a un rubro de alto riesgo seg\'un el clasificador CIIU, es parte del programa PESE o si ya super\'o un l\'{\i}mite de siniestros denunciados.
+\corr{En el \'ambito comercial y corporativo de las aseguradoras de riesgos del trabajo en la regi\'on, la adopci\'on de sistemas predictivos avanzados a\'un se encuentra en una fase incipiente.
+En la pr\'actica local, los \emph{sistemas core} del ramo ART (por ejemplo, los desarrollados por proveedores especializados del mercado argentino, como el ecosistema en el que se enmarca este PFI) priorizan la administraci\'on de p\'olizas, siniestros, n\'omina y el circuito documental de visitas.
+La priorizaci\'on preventiva suele apoyarse en \textbf{motores de reglas}: rubro CIIU de alto riesgo, pertenencia a PESE, obligaci\'on de PRS o umbrales de siniestralidad acumulada.
+Esas reglas automatizan el control regulatorio, pero no aprenden trayectorias no lineales ni explican al preventor, en lenguaje operativo, por qu\'e un establecimiento concreto sube en la lista del pr\'oximo trimestre.}
 
-Si bien estas herramientas automatizan el control regulatorio, carecen de capacidad predictiva real: no aprenden de la trayectoria de los datos ni pueden identificar combinaciones no lineales de factores que derivan en un accidente. Las plataformas comerciales gen\'ericas de Business Intelligence y an\'alisis predictivo (por ejemplo DataRobot o SAP Analytics Cloud) incorporan m\'odulos de Machine Learning, pero suelen requerir perfiles de Ciencia de Datos para operarlas. Esto las aleja del usuario final objetivo: el preventor o inspector de campo, quien necesita una herramienta interpretable y accionable de forma inmediata.
+\corr{En el mercado internacional de EHS (\emph{Environment, Health and Safety}) aparecen plataformas con m\'odulos anal\'{\i}ticos o predictivos embebidos, orientadas a empresas empleadoras y a programas corporativos de seguridad, no espec\'{\i}ficamente al rol de una ART argentina.
+Ejemplos representativos son Intelex, Cority y Benchmark Gensuite: concentran auditor\'{\i}as, hallazgos, indicadores y, en distintos grados, anal\'{\i}tica avanzada sobre cumplimiento y riesgo operacional \parencite{intelex2024,cority2024,gensuite2024}.
+Su foco es el empleador que gestiona su propio sistema de gesti\'on; no reemplazan el ranking de visitas de una aseguradora sobre una cartera heterog\'enea de establecimientos asegurados.}
 
-La Tabla~\ref{tab:benchmark-comercial} resume esa comparaci\'on de forma sistem\'atica.
+\corr{Las plataformas gen\'ericas de Business Intelligence y AutoML (por ejemplo DataRobot o SAP Analytics Cloud) s\'{\i} permiten entrenar modelos, pero suelen exigir perfiles de ciencia de datos y no entregan de f\'abrica el ciclo agenda--acta--cobertura del preventor.
+As\'{\i}, la brecha que Prevex ataca es doble: (1)~pasar de reglas est\'aticas del core ART a un ranking aprendido y explicable; (2)~empaquetar esa salida en una interfaz operativa para quien visita, sin depender de un laboratorio de datos.}
+
+\corr{La Tabla~\ref{tab:benchmark-comercial} resume esa comparaci\'on de forma sistem\'atica.}
 
 \begin{table}[htbp]
 	\centering
-	\caption{Comparaci\'on de enfoques comerciales frente a Prevex. \fuentepropia}
+	\caption{\corr{Comparaci\'on de enfoques comerciales frente a Prevex.} \fuentepropia}
 	\label{tab:benchmark-comercial}
-	\begin{tabular}{@{}p{0.22\textwidth}p{0.24\textwidth}p{0.24\textwidth}p{0.24\textwidth}@{}}
+	\begin{tabular}{@{}p{0.18\textwidth}p{0.20\textwidth}p{0.20\textwidth}p{0.18\textwidth}p{0.18\textwidth}@{}}
 		\hline
-		\textbf{Atributo} & \textbf{Core (reglas)} & \textbf{Plataformas ML gen\'ericas} & \textbf{Prevex} \\
+		\textbf{Atributo} & \textbf{Core ART (reglas)} & \textbf{EHS (Intelex / Cority / Gensuite)} & \textbf{AutoML / BI} & \textbf{Prevex} \\
 		\hline
-		Predicci\'on & Umbrales y reglas fijas & Modelos entrenables & Ranking trimestral XGBoost \\
-		Explicabilidad & Baja (reglas) & Variable / t\'ecnica & SHAP en lenguaje operativo \\
-		Usuario objetivo & Operaciones / IT & Cient\'{\i}fico de datos & Preventor / coordinador \\
+		Predicci\'on & Umbrales CIIU / PESE / siniestros & Anal\'{\i}tica EHS del empleador & Modelos entrenables & Ranking trimestral XGBoost \\
+		Explicabilidad & Baja (reglas) & Indicadores / reportes & Variable / t\'ecnica & SHAP operativo \\
+		Usuario & Operaciones ART / IT & Higiene del empleador & Cient\'{\i}fico de datos & Preventor / coordinador ART \\
 		\hline
 	\end{tabular}
 \end{table}
